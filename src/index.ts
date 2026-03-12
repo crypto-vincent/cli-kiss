@@ -6,7 +6,7 @@ export function commandTree<Input, Output, Intermediate>(
 ) {
   return async (reader: Reader, input: Input) => {
     const intermediate = await parentCommand(reader, input);
-    const name = reader.nextPositional();
+    const name = reader.consumePositional();
     if (!name) {
       throw new Error("No subcommand provided");
     }
@@ -35,10 +35,6 @@ export async function run<Input, Output>(
 ): Promise<Output> {
   console.log("args:", args);
   console.log("input:", input);
-  const reader = new Reader(
-    new Map([["my-flag", true]]),
-    new Map([["my-option", "value"]]),
-    ["5", "6", "dada", "sub1", "extra1", "extra2"],
-  );
+  const reader = new Reader(args);
   return await command(reader, input);
 }
