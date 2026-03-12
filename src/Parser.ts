@@ -29,10 +29,10 @@ export function command<
   const Optionals extends Array<Optional<any>>,
 >(
   definitions: {
-    flags: Flags;
-    options: Options;
-    requireds: Requireds;
-    optionals: Optionals;
+    flags?: Flags;
+    options?: Options;
+    requireds?: Requireds;
+    optionals?: Optionals;
   },
   processor: (
     input: Input,
@@ -55,46 +55,54 @@ export function command<
 ): Command<Input, Output> {
   return async (reader: Reader, input: Input): Promise<Output> => {
     const flags: { [K in keyof Flags]: boolean } = {} as any;
-    for (const key in definitions.flags) {
-      flags[key] = reader.getFlag(key);
+    if (definitions.flags) {
+      for (const key in definitions.flags) {
+        flags[key] = reader.getFlag(key);
+      }
     }
     const options: {
       [K in keyof Options]: Awaited<ReturnType<Options[K]["decoder"]>>;
     } = {} as any;
-    for (const key in definitions.options) {
-      const optionDef = definitions.options[key]!;
-      const optionValue = reader.getOption(optionDef.long);
-      if (optionValue !== undefined) {
-        // TODO - handle decoding errors
-        options[key] = await optionDef.decoder(optionValue);
+    if (definitions.options) {
+      for (const key in definitions.options) {
+        const optionDef = definitions.options[key]!;
+        const optionValue = reader.getOption(optionDef.long);
+        if (optionValue !== undefined) {
+          // TODO - handle decoding errors
+          options[key] = await optionDef.decoder(optionValue);
+        }
       }
     }
     const requireds: {
       [K in keyof Requireds]: Awaited<ReturnType<Requireds[K]["decoder"]>>;
     } = [] as any;
-    for (let i = 0; i < definitions.requireds.length; i++) {
-      const requiredDef = definitions.requireds[i]!;
-      const value = reader.nextPositional();
-      if (value === undefined) {
-        // TODO - handle missing requireds
-        throw new Error(
-          `Missing required positional argument: ${requiredDef.name}`,
-        );
+    if (definitions.requireds) {
+      for (let i = 0; i < definitions.requireds.length; i++) {
+        const requiredDef = definitions.requireds[i]!;
+        const value = reader.nextPositional();
+        if (value === undefined) {
+          // TODO - handle missing requireds
+          throw new Error(
+            `Missing required positional argument: ${requiredDef.name}`,
+          );
+        }
+        requireds.push(await requiredDef.decoder(value));
       }
-      requireds.push(await requiredDef.decoder(value));
     }
     const optionals: {
       [K in keyof Optionals]:
         | undefined
         | Awaited<ReturnType<Optionals[K]["decoder"]>>;
     } = [] as any;
-    for (let i = 0; i < definitions.optionals.length; i++) {
-      const optionalDef = definitions.optionals[i]!;
-      const positionalValue = reader.nextPositional();
-      if (positionalValue !== undefined) {
-        optionals.push(await optionalDef.decoder(positionalValue));
-      } else {
-        optionals.push(undefined);
+    if (definitions.optionals) {
+      for (let i = 0; i < definitions.optionals.length; i++) {
+        const optionalDef = definitions.optionals[i]!;
+        const positionalValue = reader.nextPositional();
+        if (positionalValue !== undefined) {
+          optionals.push(await optionalDef.decoder(positionalValue));
+        } else {
+          optionals.push(undefined);
+        }
       }
     }
     return await processor(

@@ -1,19 +1,21 @@
 import { Reader } from "./Reader";
 
-export function subcommands<Input, Output>(subcommands: {
-  [key: string]: Command<Input, Output>;
-}) {
+export function commandTree<Input, Output, Intermediate>(
+  parentCommand: Command<Input, Intermediate>,
+  subCommands: { [key: string]: Command<Intermediate, Output> },
+) {
   return async (reader: Reader, input: Input) => {
+    const intermediate = await parentCommand(reader, input);
     const name = reader.nextPositional();
     if (!name) {
       throw new Error("No subcommand provided");
     }
-    const subcommand = subcommands[name];
+    const subcommand = subCommands[name];
     if (subcommand === undefined) {
       throw new Error(`Unknown subcommand: ${name}`);
     }
     try {
-      return await subcommand(reader, input);
+      return await subcommand(reader, intermediate);
     } catch (error) {
       console.error(`Error running subcommand ${name}:`, error);
       throw error;
@@ -36,7 +38,7 @@ export async function run<Input, Output>(
   const reader = new Reader(
     new Map([["my-flag", true]]),
     new Map([["my-option", "value"]]),
-    ["5", "6"],
+    ["5", "6", "dada", "sub1", "extra1", "extra2"],
   );
   return await command(reader, input);
 }
