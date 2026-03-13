@@ -123,6 +123,7 @@ export class Reader {
     }
     if (arg.startsWith("--")) {
       const [longName, valueDirect] = splitFirst(arg.slice(2), "=");
+      /*
       if (longName.startsWith("no-")) {
         const positiveName = longName.slice(3);
         if (this.#registeredFlags.has(positiveName)) {
@@ -135,6 +136,7 @@ export class Reader {
           return null;
         }
       }
+    */
       if (this.#registeredFlags.has(longName)) {
         if (valueDirect !== null) {
           if (valueDirect === "true") {

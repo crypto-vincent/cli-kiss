@@ -7,7 +7,8 @@ it("run", async () => {
     "script.js",
     "--boolean-flag",
     "dodo",
-    "--no-negative-flag",
+    "--negative-flag=false",
+    "--positive-flag=true",
     "123",
     "-abc",
     "5",
@@ -18,6 +19,7 @@ it("run", async () => {
   ]);
 
   stream.registerFlagName("boolean-flag");
+  stream.registerFlagName("positive-flag");
   stream.registerFlagName("negative-flag");
   stream.registerFlagName("unset-flag");
   stream.registerFlagName("a");
@@ -33,6 +35,7 @@ it("run", async () => {
   expect(stream.consumePositional()).toStrictEqual(undefined);
 
   expect(stream.consumeFlag("boolean-flag")).toStrictEqual(true);
+  expect(stream.consumeFlag("positive-flag")).toStrictEqual(true);
   expect(stream.consumeFlag("negative-flag")).toStrictEqual(false);
   expect(stream.consumeFlag("unset-flag")).toStrictEqual(false);
   expect(stream.consumeFlag("a")).toStrictEqual(true);

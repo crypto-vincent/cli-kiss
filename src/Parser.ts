@@ -1,4 +1,3 @@
-import { Command } from ".";
 import { Reader } from "./Reader";
 
 export type Flag = {
@@ -20,53 +19,64 @@ export type Optional<Content> = {
   decoder: (arg: string | undefined) => Content;
 };
 
-export function command<
-  Input,
-  Output,
+export class Parser<
+  Inputs,
   Flags extends { [key: string]: Flag },
   Options extends { [key: string]: Option<any> },
   const Requireds extends Array<Required<any>>,
   const Optionals extends Array<Optional<any>>,
->(
-  definitions: {
-    flags: Flags;
-    options: Options;
-    requireds: Requireds;
-    optionals: Optionals;
-  },
-  processor: (
-    input: Input,
+> {
+  #flags: Flags;
+  #options: Options;
+  #requireds: Requireds;
+  #optionals: Optionals;
+  #packer: (args: {
+    flags: { [K in keyof Flags]: boolean };
+    options: { [K in keyof Options]: ReturnType<Options[K]["decoder"]> };
+    requireds: { [K in keyof Requireds]: ReturnType<Requireds[K]["decoder"]> };
+    optionals: { [K in keyof Optionals]: ReturnType<Optionals[K]["decoder"]> };
+  }) => Inputs;
+
+  constructor(
     args: {
+      flags: Flags;
+      options: Options;
+      requireds: Requireds;
+      optionals: Optionals;
+    },
+    packer: (args: {
       flags: { [K in keyof Flags]: boolean };
-      options: {
-        [K in keyof Options]: Awaited<ReturnType<Options[K]["decoder"]>>;
-      };
+      options: { [K in keyof Options]: ReturnType<Options[K]["decoder"]> };
       requireds: {
-        [K in keyof Requireds]: Awaited<ReturnType<Requireds[K]["decoder"]>>;
+        [K in keyof Requireds]: ReturnType<Requireds[K]["decoder"]>;
       };
       optionals: {
-        [K in keyof Optionals]:
-          | undefined
-          | Awaited<ReturnType<Optionals[K]["decoder"]>>;
+        [K in keyof Optionals]: ReturnType<Optionals[K]["decoder"]>;
       };
-    },
-    rest: Reader,
-  ) => Promise<Output>,
-): Command<Input, Output> {
-  return async (reader: Reader, input: Input): Promise<Output> => {
-    for (const key in definitions.flags) {
-      const flagDef = definitions.flags[key]!;
+    }) => Inputs,
+  ) {
+    this.#flags = args.flags;
+    this.#options = args.options;
+    this.#requireds = args.requireds;
+    this.#optionals = args.optionals;
+    this.#packer = packer;
+  }
+
+  prep(reader: Reader) {
+    for (const key in this.#flags) {
+      const flagDef = this.#flags[key]!;
       reader.registerFlagName(flagDef.long);
     }
-    for (const key in definitions.options) {
-      const optionDef = definitions.options[key]!;
+    for (const key in this.#options) {
+      const optionDef = this.#options[key]!;
       reader.registerOptionName(optionDef.long);
     }
+
     const requireds: {
-      [K in keyof Requireds]: Awaited<ReturnType<Requireds[K]["decoder"]>>;
+      [K in keyof Requireds]: ReturnType<Requireds[K]["decoder"]>;
     } = [] as any;
-    for (let i = 0; i < definitions.requireds.length; i++) {
-      const requiredDef = definitions.requireds[i]!;
+    for (let i = 0; i < this.#requireds.length; i++) {
+      const requiredDef = this.#requireds[i]!;
       const value = reader.consumePositional();
       if (value === undefined) {
         // TODO - beatiful error message with the command usage
@@ -74,39 +84,40 @@ export function command<
           `Missing required positional argument: ${requiredDef.name}`,
         );
       }
-      requireds.push(await requiredDef.decoder(value));
+      requireds.push(requiredDef.decoder(value));
     }
     const optionals: {
-      [K in keyof Optionals]:
-        | undefined
-        | Awaited<ReturnType<Optionals[K]["decoder"]>>;
+      [K in keyof Optionals]: ReturnType<Optionals[K]["decoder"]>;
     } = [] as any;
-    for (let i = 0; i < definitions.optionals.length; i++) {
-      const optionalDef = definitions.optionals[i]!;
+    for (let i = 0; i < this.#optionals.length; i++) {
+      const optionalDef = this.#optionals[i]!;
       const positionalValue = reader.consumePositional();
-      if (positionalValue !== undefined) {
-        optionals.push(await optionalDef.decoder(positionalValue));
-      } else {
-        optionals.push(undefined);
+      optionals.push(optionalDef.decoder(positionalValue));
+    }
+
+    return () => {
+      const flags: {
+        [K in keyof Flags]: boolean;
+      } = {} as any;
+      for (const key in this.#flags) {
+        const flagDef = this.#flags[key]!;
+        flags[key] = reader.consumeFlag(flagDef.long);
       }
-    }
-    const flags: { [K in keyof Flags]: boolean } = {} as any;
-    for (const key in definitions.flags) {
-      const flagDef = definitions.flags[key]!;
-      flags[key] = reader.consumeFlag(flagDef.long);
-    }
-    const options: {
-      [K in keyof Options]: Awaited<ReturnType<Options[K]["decoder"]>>;
-    } = {} as any;
-    for (const key in definitions.options) {
-      const optionDef = definitions.options[key]!;
-      const optionValue = reader.consumeOption(optionDef.long);
-      options[key] = await optionDef.decoder(optionValue);
-    }
-    return await processor(
-      input,
-      { flags, options, requireds, optionals },
-      reader,
-    );
-  };
+      const options: {
+        [K in keyof Options]: ReturnType<Options[K]["decoder"]>;
+      } = {} as any;
+      for (const key in this.#options) {
+        const optionDef = this.#options[key]!;
+        const optionValue = reader.consumeOption(optionDef.long);
+        options[key] = optionDef.decoder(optionValue);
+      }
+
+      return this.#packer({
+        flags,
+        options,
+        requireds,
+        optionals,
+      });
+    };
+  }
 }
