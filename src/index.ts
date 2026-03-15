@@ -1,14 +1,23 @@
-import { Command } from "./command";
+import { Command } from "./Command";
 import { Reader } from "./Reader";
 
-export async function run<Context, End>(
-  args: string[],
+export async function run<Context, Result>(
+  argv: string[],
   context: Context,
-  command: Command<Context, any, any, End>,
-): Promise<End> {
-  console.log("args:", args);
+  command: Command<Context, Result>,
+): Promise<Result> {
+  console.log("argv:", argv);
   console.log("input:", context);
-  const reader = new Reader(args);
-  const gen = command.prep(reader);
-  return await gen(context);
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i]!;
+    if (arg === "--version") {
+      // TODO - version from package.json
+    }
+    if (arg === "--help") {
+      // TODO - help message with the command usage
+    }
+  }
+  const reader = new Reader(argv);
+  const runner = command.prepare(reader);
+  return await runner(context);
 }

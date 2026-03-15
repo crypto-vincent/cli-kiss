@@ -1,72 +1,72 @@
 import { expect, it } from "@jest/globals";
 import { run } from "../src";
-import { Parser } from "../src/Parser";
+import { argSingle } from "../src/Arg";
 import {
-  Command,
-  ContinationSubcommands,
-  ContinuationRest,
-} from "../src/command";
+  commandSimple,
+  commandWithSubcommands,
+  commandWithVariadics,
+} from "../src/Command";
+import { flag } from "../src/Flag";
+import { optionMultipleValues, optionSingleValue } from "../src/Option";
+import { variadics } from "../src/Variadics";
 
-const command = new Command(
-  new Parser(
-    {
-      flags: {
-        booleanFlag: { long: "boolean-flag" },
-      },
-      options: {
-        stringOption: { long: "string-option", decoder: (arg) => arg },
-        numberOption: { long: "number-option", decoder: (arg) => String(arg) },
-      },
-      requireds: [
-        { name: "positional1", decoder: (arg) => Number(arg) },
-        { name: "positional2", decoder: (arg) => BigInt(arg) },
-      ],
-      optionals: [{ name: "optional1", decoder: (arg) => arg }],
-    },
-    (args) => {
-      console.log("parser.args", args);
-      return { parsed: 42n };
-    },
-  ),
-  async (context, inputs) => {
-    console.log("root process", { context, inputs });
+const decoderString = (arg: string) => String(arg);
+const decoderNumber = (arg: string) => Number(arg);
+const decoderBigInt = (arg: string) => BigInt(arg);
+
+const cmd = commandWithSubcommands({
+  flags: {
+    booleanFlag: flag({ long: "boolean-flag" }),
+  },
+  options: {
+    stringOption: optionSingleValue({
+      long: "string-option",
+      decoder: decoderString,
+    }),
+    numberOption: optionMultipleValues({
+      long: "number-option",
+      decoder: decoderNumber,
+    }),
+  },
+  args: [
+    argSingle({ name: "positional1", decoder: decoderNumber }),
+    argSingle({ name: "positional2", decoder: decoderBigInt }),
+  ],
+  handler: async (inputs) => {
+    console.log("root process", inputs);
     return "root result";
   },
-  new ContinationSubcommands({
-    sub1: new Command(
-      new Parser(
-        {
-          flags: {},
-          options: {},
-          requireds: [
-            { name: "subPositional1", decoder: (arg) => Number(arg) },
-          ],
-          optionals: [],
-        },
-        (args) => {
-          console.log("sub1 parser.args", args);
-          return {};
-        },
-      ),
-      async (context, inputs) => {
-        console.log("sub1 process", { context, inputs });
+  subcommands: {
+    sub1: commandSimple({
+      flags: {},
+      options: {},
+      args: [argSingle({ name: "subPositional1", decoder: decoderNumber })],
+      handler: async (inputs) => {
+        console.log("sub1 process", inputs);
         return "sub1 result";
       },
-      new ContinuationRest(),
-    ),
-  }),
-);
+    }),
+    sub2: commandWithVariadics({
+      flags: {},
+      options: {},
+      args: [argSingle({ name: "subPositional1", decoder: decoderNumber })],
+      variadics: variadics([], { decoder: (value) => value }),
+      handler: async (inputs) => {
+        console.log("sub2 process", inputs);
+        return "sub2 result";
+      },
+    }),
+  },
+});
 
 it("run", async () => {
-  console.log(process.argv);
   const res = await run(
     [
       "node",
       "script",
       "40",
       "41",
-      "42",
-      "sub1",
+      "sub2",
       "--string-option=hello",
       "--number-option",
       "123",
@@ -75,7 +75,7 @@ it("run", async () => {
       "--boolean-flag",
     ],
     "dudu",
-    command,
+    cmd,
   );
   console.log("Final:", res);
   expect(true).toBe(true);

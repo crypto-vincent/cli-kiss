@@ -1,85 +1,249 @@
-import { Reader } from "./Reader";
+import { Reader, ReaderPositional } from "./Reader";
 
-export type Parser<Parsed> = {
-  prep: (reader: Reader) => () => Parsed;
+export type Command<Context, Result> = {
+  prepare: (reader: Reader) => (context: Context) => Promise<Result>;
 };
 
-export type Processor<Context, Inputs, Result> = (
-  context: Context,
-  inputs: Inputs,
-) => Promise<Result>;
-
-export type Continuation<Result, End> = {
-  prep: (reader: Reader) => (result: Result) => Promise<End>;
+export type CommandFlag = {
+  prepare: (reader: Reader) => () => boolean;
 };
 
-export class ContinationSubcommands<Result, End> {
-  #subcommands: { [subcommand: string]: Command<Result, any, any, End> };
+export type CommandOption<Value> = {
+  prepare: (reader: Reader) => () => Value;
+};
 
-  constructor(subcommands: {
-    [subcommand: string]: Command<Result, any, any, End>;
-  }) {
-    this.#subcommands = subcommands;
-  }
+export type CommandArg<Value> = {
+  read: (readerPositional: ReaderPositional) => Value;
+};
 
-  prep(reader: Reader) {
-    const name = reader.consumePositional();
-    if (name === undefined) {
-      throw new Error("Expected a subcommand");
-    }
-    const subcommand = this.#subcommands[name];
-    if (subcommand === undefined) {
-      throw new Error(`Unknown subcommand: ${name}`);
-    }
-    console.log("Subcommand selected:", name, subcommand);
-    const subGen = subcommand.prep(reader);
-    return async (result: Result) => {
-      return await subGen(result);
+export type CommandVariadics<Value> = {
+  read: (readerPositional: ReaderPositional) => Value;
+};
+
+// TODO - better types definitions for all factory cases at least
+
+export function commandSimple<
+  Context,
+  Result,
+  Flags extends { [flag: string]: CommandFlag },
+  Options extends { [option: string]: CommandOption<any> },
+  const Args extends Array<CommandArg<any>>,
+>(definition: {
+  flags: Flags;
+  options: Options;
+  args: Args;
+  handler: (inputs: {
+    context: Context;
+    flags: {
+      [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
     };
-  }
-}
-
-export class ContinuationRest<Result> {
-  prep(reader: Reader) {
-    console.log("ContinuationRest.prep");
-    const rest = new Array<string>();
-    while (true) {
-      const arg = reader.consumePositional();
-      if (arg === undefined) {
-        break;
+    options: {
+      [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
+    };
+    args: {
+      [K in keyof Args]: ReturnType<Args[K]["read"]>;
+    }; // TODO - type aliases for those
+  }) => Promise<Result>;
+}): Command<Context, Result> {
+  return {
+    prepare: (reader: Reader) => {
+      const flagsRunners: any = {};
+      if (definition.flags) {
+        for (const flagKey in definition.flags) {
+          const flagDef = definition.flags[flagKey]!;
+          flagsRunners[flagKey] = flagDef.prepare(reader);
+        }
       }
-      rest.push(arg);
-    }
-    return async (result: Result) => {
-      console.log("rest", rest);
-      return { result, rest };
-    };
-  }
+      const optionsRunners: any = {};
+      if (definition.options) {
+        for (const optionKey in definition.options) {
+          const optionDef = definition.options[optionKey]!;
+          optionsRunners[optionKey] = optionDef.prepare(reader);
+        }
+      }
+      const argsValues: any = [];
+      if (definition.args) {
+        for (const argDef of definition.args) {
+          argsValues.push(argDef.read(reader));
+        }
+      }
+      const lastPositional = reader.consumePositional();
+      if (lastPositional !== undefined) {
+        throw Error("Unprocessed positional: ${lastPositional}");
+      }
+      return async (context: Context) => {
+        const flagsValues: any = {};
+        for (const flagKey in flagsRunners) {
+          const flagRunner = flagsRunners[flagKey]!;
+          flagsValues[flagKey] = flagRunner();
+        }
+        const optionsValues: any = {};
+        for (const optionKey in optionsRunners) {
+          const optionRunner = optionsRunners[optionKey]!;
+          optionsValues[optionKey] = optionRunner();
+        }
+        return await definition.handler({
+          context,
+          flags: flagsValues,
+          options: optionsValues,
+          args: argsValues,
+        });
+      };
+    },
+  };
 }
 
-export class Command<Context, Inputs, Result, End> {
-  #parser: Parser<Inputs>;
-  #processor: Processor<Context, Inputs, Result>;
-  #continuation: Continuation<Result, End>;
-
-  constructor(
-    parser: Parser<Inputs>,
-    processor: Processor<Context, Inputs, Result>,
-    continuation: Continuation<Result, End>,
-  ) {
-    this.#parser = parser;
-    this.#processor = processor;
-    this.#continuation = continuation;
-  }
-
-  prep(reader: Reader) {
-    const genThis = this.#parser.prep(reader);
-    const genNext = this.#continuation.prep(reader);
-    return async (context: Context) => {
-      console.log("Running command with context:", context);
-      const inputs = await genThis();
-      const result = await this.#processor(context, inputs);
-      return await genNext(result);
+export function commandWithVariadics<
+  Context,
+  Result,
+  Flags extends { [flag: string]: CommandFlag },
+  Options extends { [option: string]: CommandOption<any> },
+  const Args extends Array<CommandArg<any>>,
+  Variadics,
+>(definition: {
+  flags: Flags;
+  options: Options;
+  args: Args;
+  variadics: CommandVariadics<Variadics>;
+  handler: (inputs: {
+    context: Context;
+    flags: {
+      [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
     };
-  }
+    options: {
+      [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
+    };
+    args: {
+      [K in keyof Args]: ReturnType<Args[K]["read"]>;
+    }; // TODO - type aliases for those
+    variadics: Variadics;
+  }) => Promise<Result>;
+}): Command<Context, Result> {
+  return {
+    prepare: (reader: Reader) => {
+      const flagsRunners: any = {};
+      if (definition.flags) {
+        for (const flagKey in definition.flags) {
+          const flagDef = definition.flags[flagKey]!;
+          flagsRunners[flagKey] = flagDef.prepare(reader);
+        }
+      }
+      const optionsRunners: any = {};
+      if (definition.options) {
+        for (const optionKey in definition.options) {
+          const optionDef = definition.options[optionKey]!;
+          optionsRunners[optionKey] = optionDef.prepare(reader);
+        }
+      }
+      const argsValues: any = [];
+      if (definition.args) {
+        for (const argDef of definition.args) {
+          argsValues.push(argDef.read(reader));
+        }
+      }
+      const variadicsValue = definition.variadics.read(reader);
+      const lastPositional = reader.consumePositional();
+      if (lastPositional !== undefined) {
+        throw Error("Unprocessed positional: ${lastPositional}");
+      }
+      return async (context: Context) => {
+        const flagsValues: any = {};
+        for (const flagKey in flagsRunners) {
+          const flagRunner = flagsRunners[flagKey]!;
+          flagsValues[flagKey] = flagRunner();
+        }
+        const optionsValues: any = {};
+        for (const optionKey in optionsRunners) {
+          const optionRunner = optionsRunners[optionKey]!;
+          optionsValues[optionKey] = optionRunner();
+        }
+        return await definition.handler({
+          context,
+          flags: flagsValues,
+          options: optionsValues,
+          args: argsValues,
+          variadics: variadicsValue,
+        });
+      };
+    },
+  };
+}
+
+export function commandWithSubcommands<
+  Context,
+  Payload,
+  Result,
+  Flags extends { [flag: string]: CommandFlag },
+  Options extends { [option: string]: CommandOption<any> },
+  const Args extends Array<CommandArg<any>>,
+>(definition: {
+  flags: Flags;
+  options: Options;
+  args: Args;
+  handler: (inputs: {
+    context: Context;
+    flags: {
+      [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
+    };
+    options: {
+      [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
+    };
+    args: {
+      [K in keyof Args]: ReturnType<Args[K]["read"]>;
+    };
+  }) => Promise<Payload>;
+  subcommands: { [subcommand: string]: Command<Payload, Result> };
+}): Command<Context, Result> {
+  return {
+    prepare: (reader: Reader) => {
+      const flagsRunners: any = {};
+      if (definition.flags) {
+        for (const flagKey in definition.flags) {
+          const flagDef = definition.flags[flagKey]!;
+          flagsRunners[flagKey] = flagDef.prepare(reader);
+        }
+      }
+      const optionsRunners: any = {};
+      if (definition.options) {
+        for (const optionKey in definition.options) {
+          const optionDef = definition.options[optionKey]!;
+          optionsRunners[optionKey] = optionDef.prepare(reader);
+        }
+      }
+      const argsValues: any = [];
+      if (definition.args) {
+        for (const argDef of definition.args) {
+          argsValues.push(argDef.read(reader));
+        }
+      }
+      const subcommandName = reader.consumePositional();
+      if (subcommandName === undefined) {
+        throw new Error("Expected a subcommand");
+      }
+      const subcommandDef = definition.subcommands[subcommandName];
+      if (subcommandDef === undefined) {
+        throw new Error(`Unknown subcommand: ${subcommandName}`);
+      }
+      const subcommandRunner = subcommandDef.prepare(reader);
+      return async (context: Context) => {
+        const flagsValues: any = {};
+        for (const flagKey in flagsRunners) {
+          const flagRunner = flagsRunners[flagKey];
+          flagsValues[flagKey] = flagRunner();
+        }
+        const optionsValues: any = {};
+        for (const optionKey in optionsRunners) {
+          const optionRunner = optionsRunners[optionKey];
+          optionsValues[optionKey] = optionRunner();
+        }
+        const payload = await definition.handler({
+          context,
+          flags: flagsValues,
+          options: optionsValues,
+          args: argsValues,
+        });
+        return await subcommandRunner(payload);
+      };
+    },
+  };
 }

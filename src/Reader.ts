@@ -1,79 +1,132 @@
+export type ReaderPositional = {
+  consumePositional(): string | undefined;
+};
+
 export class Reader {
   #argv: Array<string>;
-  #registeredFlags: Set<string>;
-  #registeredOptions: Set<string>;
   #parsedIndex: number;
   #parsedDouble: boolean;
-  #parsedFlags: Map<string, boolean | null>;
-  #parsedOptions: Map<string, string | null>;
+
+  #flagKeyByShort: Map<string, string>;
+  #flagKeyByLong: Map<string, string>;
+  #flagInfoByKey: Map<string, {}>;
+  #flagResultByKey: Map<string, boolean | null>;
+
+  #optionKeyByShort: Map<string, string>;
+  #optionKeyByLong: Map<string, string>;
+  #optionInfoByKey: Map<string, {}>; // TODO - what dis
+  #optionResultByKey: Map<string, Array<string> | null>;
 
   constructor(argv: Array<string>) {
     if (argv.length < 2) {
       throw new Error("argv must have at least 2 elements (node and script)");
     }
     this.#argv = argv;
-    this.#registeredFlags = new Set();
-    this.#registeredOptions = new Set();
     this.#parsedIndex = 2;
     this.#parsedDouble = false;
-    this.#parsedFlags = new Map();
-    this.#parsedOptions = new Map();
+
+    this.#flagKeyByShort = new Map();
+    this.#flagKeyByLong = new Map();
+    this.#flagInfoByKey = new Map();
+    this.#flagResultByKey = new Map();
+
+    this.#optionKeyByShort = new Map();
+    this.#optionKeyByLong = new Map();
+    this.#optionInfoByKey = new Map();
+    this.#optionResultByKey = new Map();
   }
 
-  registerFlagName(nameLongOrShort: string) {
-    if (this.#registeredFlags.has(nameLongOrShort)) {
-      throw new Error(`Flag name already registered: ${nameLongOrShort}`);
+  ensureUniqueKey(key: string) {
+    if (this.#flagInfoByKey.has(key)) {
+      throw new Error(`Option already registered: ${key}`);
     }
-    if (this.#registeredOptions.has(nameLongOrShort)) {
-      throw new Error(
-        `Flag name conflicts with an existing option name: ${nameLongOrShort}`,
-      );
+    if (this.#optionInfoByKey.has(key)) {
+      throw new Error(`Option already registered: ${key}`);
     }
-    this.#registeredFlags.add(nameLongOrShort);
   }
 
-  registerOptionName(nameLongOrShort: string) {
-    if (this.#registeredOptions.has(nameLongOrShort)) {
-      throw new Error(`Option name already registered: ${nameLongOrShort}`);
+  ensureUniqueName(nameShortOrLong: string) {
+    // TODO - overall better error handling
+    if (this.#flagKeyByShort.has(nameShortOrLong)) {
+      throw new Error(`Option already registered: ${nameShortOrLong}`);
     }
-    if (this.#registeredFlags.has(nameLongOrShort)) {
-      throw new Error(
-        `Option name conflicts with an existing flag name: ${nameLongOrShort}`,
-      );
+    if (this.#flagKeyByLong.has(nameShortOrLong)) {
+      throw new Error(`Option already registered: ${nameShortOrLong}`);
     }
-    this.#registeredOptions.add(nameLongOrShort);
+    if (this.#optionKeyByShort.has(nameShortOrLong)) {
+      throw new Error(`Option already registered: ${nameShortOrLong}`);
+    }
+    if (this.#optionKeyByLong.has(nameShortOrLong)) {
+      throw new Error(`Option already registered: ${nameShortOrLong}`);
+    }
   }
 
-  consumeFlag(name: string): boolean {
-    if (!this.#registeredFlags.has(name)) {
-      throw new Error(`Flag not registered: ${name}`);
+  registerFlag(definition: {
+    key: string;
+    shorts: Array<string>;
+    longs: Array<string>;
+  }) {
+    this.ensureUniqueKey(definition.key);
+    this.#flagInfoByKey.set(definition.key, {});
+    for (const short of definition.shorts) {
+      this.ensureUniqueName(short);
+      this.#flagKeyByShort.set(short, definition.key);
     }
-    const value = this.#parsedFlags.get(name);
-    if (value === undefined) {
-      this.#parsedFlags.set(name, null);
+    for (const long of definition.longs) {
+      this.ensureUniqueName(long);
+      this.#flagKeyByLong.set(long, definition.key);
+    }
+  }
+
+  registerOption(definition: {
+    key: string;
+    shorts: Array<string>;
+    longs: Array<string>;
+  }) {
+    this.ensureUniqueKey(definition.key);
+    this.#optionInfoByKey.set(definition.key, {});
+    for (const short of definition.shorts) {
+      this.ensureUniqueName(short);
+      this.#optionKeyByShort.set(short, definition.key);
+    }
+    for (const long of definition.longs) {
+      this.ensureUniqueName(long);
+      this.#optionKeyByLong.set(long, definition.key);
+    }
+  }
+
+  consumeFlag(key: string): boolean {
+    const flagInfo = this.#flagInfoByKey.get(key);
+    if (flagInfo === undefined) {
+      throw new Error(`Option flag not registered: ${key}`);
+    }
+    const result = this.#flagResultByKey.get(key);
+    if (result === undefined) {
+      this.#flagResultByKey.set(key, null);
       return false;
     }
-    if (value === null) {
-      throw new Error(`Flag already consumed: ${name}`);
+    if (result === null) {
+      throw new Error(`Option flag already consumed: ${key}`);
     }
-    this.#parsedFlags.set(name, null);
-    return value;
+    this.#flagResultByKey.set(key, null);
+    return result;
   }
 
-  consumeOption(name: string): string | undefined {
-    if (!this.#registeredOptions.has(name)) {
-      throw new Error(`Option not registered: ${name}`);
+  consumeOption(key: string): Array<string> {
+    const optionInfo = this.#optionInfoByKey.get(key);
+    if (optionInfo === undefined) {
+      throw new Error(`Option values not registered: ${key}`);
     }
-    const value = this.#parsedOptions.get(name);
-    if (value === undefined) {
-      this.#parsedOptions.set(name, null);
-      return undefined;
+    const result = this.#optionResultByKey.get(key);
+    if (result === undefined) {
+      this.#optionResultByKey.set(key, null);
+      return new Array<string>();
     }
-    if (value === null) {
-      throw new Error(`Option already consumed: ${name}`);
+    if (result === null) {
+      throw new Error(`Option values already consumed: ${key}`);
     }
-    this.#parsedOptions.set(name, null);
-    return value;
+    this.#optionResultByKey.set(key, null);
+    return result;
   }
 
   consumePositional(): string | undefined {
@@ -87,19 +140,6 @@ export class Reader {
         return positional;
       }
     }
-  }
-
-  private consumeOptionParam(name: string) {
-    const arg = this.consumeArg();
-    if (arg === null) {
-      throw new Error(`Option ${name} requires a value (1)`);
-    }
-    if (!this.#parsedDouble) {
-      if (arg.startsWith("-")) {
-        throw new Error(`Option ${name} requires a value (2)`);
-      }
-    }
-    return arg;
   }
 
   private consumeArg(): string | null {
@@ -117,85 +157,130 @@ export class Reader {
     return arg;
   }
 
+  private consumeOptionValue(name: string) {
+    const arg = this.consumeArg();
+    if (arg === null) {
+      throw new Error(`Option ${name} requires a value`);
+    }
+    if (this.#parsedDouble) {
+      throw new Error(`Option ${name} requires a value before --`);
+    }
+    // TODO - is that weird, could a valid value start with dash ?
+    if (arg.startsWith("-")) {
+      throw new Error(`Option ${name} requires a value, got: ${arg}`);
+    }
+    return arg;
+  }
+
   private parseAsPositional(arg: string): string | null {
     if (this.#parsedDouble) {
       return arg;
     }
     if (arg.startsWith("--")) {
-      const [longName, valueDirect] = splitFirst(arg.slice(2), "=");
-      /*
-      if (longName.startsWith("no-")) {
-        const positiveName = longName.slice(3);
-        if (this.#registeredFlags.has(positiveName)) {
-          if (valueDirect !== null) {
-            throw new Error(
-              `Flag with --no- prefix should not have a value: ${longName}`,
-            );
-          }
-          this.#parsedFlags.set(positiveName, false);
-          return null;
-        }
-      }
-    */
-      if (this.#registeredFlags.has(longName)) {
-        if (valueDirect !== null) {
-          if (valueDirect === "true") {
-            this.#parsedFlags.set(longName, true);
-            return null;
-          }
-          if (valueDirect === "false") {
-            this.#parsedFlags.set(longName, false);
-            return null;
-          }
-          throw new Error(
-            `Invalid parameter for flag: ${longName}, value: ${valueDirect}`,
-          );
-        }
-        this.#parsedFlags.set(longName, true);
-        return null;
-      }
-      if (this.#registeredOptions.has(longName)) {
-        if (valueDirect !== null) {
-          this.#parsedOptions.set(longName, valueDirect);
-          return null;
-        }
-        this.#parsedOptions.set(longName, this.consumeOptionParam(longName));
-        return null;
-      }
-      throw new Error(`Unknown flag or option: ${longName}`);
-    }
-    if (arg.startsWith("-")) {
-      for (let shortIndex = 1; shortIndex < arg.length; shortIndex++) {
-        const shortName = arg[shortIndex]!;
-        this.parseAsShortName(shortName, shortIndex === arg.length - 1);
+      const valueIndexStart = arg.indexOf("=");
+      if (valueIndexStart === -1) {
+        this.consumeOptionLong(arg.slice(2), null);
+      } else {
+        this.consumeOptionLong(
+          arg.slice(2, valueIndexStart),
+          arg.slice(valueIndexStart + 1),
+        );
       }
       return null;
+    }
+    if (arg.startsWith("-")) {
+      let shortIndexStart = 1;
+      let shortIndexEnd = 2;
+      while (shortIndexEnd <= arg.length) {
+        const short = arg.slice(shortIndexStart, shortIndexEnd);
+        const rest = arg.slice(shortIndexEnd);
+        const result = this.tryConsumeOptionShort(short, rest);
+        if (result === true) {
+          return null;
+        }
+        if (result === false) {
+          shortIndexStart = shortIndexEnd;
+        }
+        shortIndexEnd++;
+      }
+      throw new Error(
+        `Unknown short flags or options: ${arg.slice(shortIndexStart)}`,
+      );
     }
     return arg;
   }
 
-  private parseAsShortName(shortName: string, isLast: boolean) {
-    if (this.#registeredFlags.has(shortName)) {
-      this.#parsedFlags.set(shortName, true);
-      return;
-    }
-    if (this.#registeredOptions.has(shortName)) {
-      if (!isLast) {
+  private consumeOptionLong(long: string, direct: string | null): void {
+    const flagKey = this.#flagKeyByLong.get(long);
+    if (flagKey !== undefined) {
+      if (direct !== null) {
+        if (direct === "true") {
+          return this.acknowledgeFlag(flagKey, true);
+        }
+        if (direct === "false") {
+          return this.acknowledgeFlag(flagKey, false);
+        }
         throw new Error(
-          `Option ${shortName} requires a value, but is not last in group`,
+          `Invalid parameter for long flag: ${flagKey}, value: ${direct}`,
         );
       }
-      this.#parsedOptions.set(shortName, this.consumeOptionParam(shortName));
-      return;
+      return this.acknowledgeFlag(flagKey, true);
     }
-    throw new Error(`Unknown flag or option: ${shortName}`);
+    const optionKey = this.#optionKeyByLong.get(long);
+    if (optionKey !== undefined) {
+      if (direct !== null) {
+        return this.acknowledgeOption(optionKey, direct);
+      }
+      return this.acknowledgeOption(optionKey, this.consumeOptionValue(long));
+    }
+    throw new Error(`Unknown long flag or option: ${long}`);
   }
-}
 
-function splitFirst(str: string, delimiter: string): [string, string | null] {
-  const index = str.indexOf(delimiter);
-  if (index === -1) {
-    return [str, null];
+  private tryConsumeOptionShort(short: string, rest: string): boolean | null {
+    const flagKey = this.#flagKeyByShort.get(short);
+    if (flagKey !== undefined) {
+      if (rest.startsWith("=")) {
+        if (rest === "=true") {
+          this.acknowledgeFlag(flagKey, true);
+          return true;
+        }
+        if (rest === "=false") {
+          this.acknowledgeFlag(flagKey, false);
+          return true;
+        }
+        throw new Error(
+          `Invalid parameter for short flag: ${short}, value: ${rest}`,
+        );
+      }
+      this.acknowledgeFlag(flagKey, true);
+      return rest === "";
+    }
+    const optionKey = this.#optionKeyByShort.get(short);
+    if (optionKey !== undefined) {
+      if (rest === "") {
+        this.acknowledgeOption(optionKey, this.consumeOptionValue(short));
+        return true;
+      }
+      if (rest.startsWith("=")) {
+        this.acknowledgeOption(optionKey, rest.slice(1));
+      } else {
+        this.acknowledgeOption(optionKey, rest);
+      }
+      return true;
+    }
+    return null;
   }
-  return [str.slice(0, index), str.slice(index + delimiter.length)];
+
+  private acknowledgeFlag(key: string, value: boolean) {
+    if (this.#flagResultByKey.has(key)) {
+      throw new Error(`Flag already set: ${key}`);
+    }
+    this.#flagResultByKey.set(key, value);
+  }
+
+  private acknowledgeOption(key: string, value: string) {
+    const values = this.#optionResultByKey.get(key) ?? new Array<string>();
+    values.push(value);
+    this.#optionResultByKey.set(key, values);
+  }
 }
