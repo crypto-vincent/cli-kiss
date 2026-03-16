@@ -1,19 +1,26 @@
 import { CommandUsage } from "./Command";
 
-export function usageFormatter(commandUsage: CommandUsage): string {
+export function usageFormatter(
+  cliName: string,
+  commandUsage: CommandUsage,
+): string {
   const lines = new Array<string>();
   if (commandUsage.description) {
     lines.push("");
     lines.push(commandUsage.description);
   }
+  lines.push("");
+  lines.push(`Usage: ${cliName} ${commandUsage.breadcrumbs.join(" ")}`);
   if (commandUsage.arguments.length > 0) {
     lines.push("");
     lines.push("Arguments:");
+    lines.push("");
     const rows = new Array<Array<string>>();
     for (const argumentUsage of commandUsage.arguments) {
-      const columns = [];
+      const columns = new Array<string>();
       columns.push("");
       columns.push(argumentUsage.label);
+      columns.push("");
       if (argumentUsage.description) {
         columns.push(argumentUsage.description);
       }
@@ -24,12 +31,13 @@ export function usageFormatter(commandUsage: CommandUsage): string {
   if (commandUsage.options.length > 0) {
     lines.push("");
     lines.push("Options:");
+    lines.push("");
     const rows = new Array<Array<string>>();
     for (const optionUsage of commandUsage.options) {
-      const columns = [];
+      const columns = new Array<string>();
       columns.push("");
       if (optionUsage.short) {
-        columns.push(`-${optionUsage.short}`);
+        columns.push(`-${optionUsage.short},`);
       } else {
         columns.push("");
       }
@@ -38,6 +46,7 @@ export function usageFormatter(commandUsage: CommandUsage): string {
       } else {
         columns.push(`--${optionUsage.long}`);
       }
+      columns.push("");
       if (optionUsage.description) {
         columns.push(optionUsage.description);
       }
@@ -48,11 +57,13 @@ export function usageFormatter(commandUsage: CommandUsage): string {
   if (commandUsage.subcommands.length > 0) {
     lines.push("");
     lines.push("Subcommands:");
+    lines.push("");
     const rows = new Array<Array<string>>();
     for (const subcommand of commandUsage.subcommands) {
-      const columns = [];
+      const columns = new Array<string>();
       columns.push("");
       columns.push(subcommand.name);
+      columns.push("");
       if (subcommand.description) {
         columns.push(subcommand.description);
       }
@@ -88,6 +99,6 @@ function pushGrid(lines: Array<string>, rows: Array<Array<string>>) {
         cells.push(cell);
       }
     }
-    lines.push(cells.join("  "));
+    lines.push(cells.join(" "));
   }
 }

@@ -14,7 +14,7 @@ export type ArgumentUsage = {
 export function argumentRequired<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  label?: string;
+  label?: Uppercase<string>;
 }): Argument<Value> {
   return {
     generateUsage() {
@@ -38,7 +38,7 @@ export function argumentRequired<Value>(definition: {
 export function argumentOptional<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  label?: string;
+  label?: Uppercase<string>;
   default: () => Value;
 }): Argument<Value> {
   return {
@@ -61,7 +61,7 @@ export function argumentOptional<Value>(definition: {
 export function argumentVariadics<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  label?: string;
+  label?: Uppercase<string>;
   endDelimiter?: string;
 }): Argument<Array<Value>> {
   return {

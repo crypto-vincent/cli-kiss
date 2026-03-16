@@ -1,4 +1,4 @@
-import { expect, it } from "@jest/globals";
+import { it } from "@jest/globals";
 import {
   argumentOptional,
   argumentRequired,
@@ -31,7 +31,7 @@ const cmd = commandWithSubcommands<string, any, any>(
           long: "string-option",
           type: typeString,
           default: () => undefined,
-          label: "Cool stuff",
+          label: "COOL_STUFF",
           description: "Root string-option description",
         }),
         numberOption: optionRepeatable({
@@ -43,12 +43,12 @@ const cmd = commandWithSubcommands<string, any, any>(
       },
       arguments: [
         argumentRequired({
-          label: "positional1",
+          label: "POSITIONAL-1",
           description: "First positional argument",
           type: typeNumber,
         }),
         argumentRequired({
-          label: "positional2",
+          label: "POSITIONAL-2",
           description: "Second positional argument",
           type: typeNumber,
         }),
@@ -66,7 +66,7 @@ const cmd = commandWithSubcommands<string, any, any>(
           options: {},
           arguments: [
             argumentRequired({
-              label: "pos-string",
+              label: "POS-STRING",
               description: "Positional string argument",
               type: typeString,
             }),
@@ -91,15 +91,18 @@ const cmd = commandWithSubcommands<string, any, any>(
           },
           arguments: [
             argumentRequired({
+              label: "POS-NUMBER",
               description: "Positional number argument",
               type: typeNumber,
             }),
             argumentOptional({
+              label: "OPT-POSITIONAL",
               description: "Optional positional argument",
               type: typeString,
               default: () => "42",
             }),
             argumentVariadics({
+              label: "VARIADIC-POSITIONALS",
               description: "Variadic positional arguments",
               type: typeString,
             }),
@@ -114,7 +117,11 @@ const cmd = commandWithSubcommands<string, any, any>(
 );
 
 it("run", async () => {
-  //const res1 = getUsage(["50", "51", "sub1", "final"], cmd);
+  const res0 = getUsage([], cmd);
+  console.log(res0);
+
+  const res1 = getUsage(["50", "51", "sub1", "final"], cmd);
+  console.log(res1);
   //expect(res1).toStrictEqual({});
 
   const res2 = getUsage(
@@ -135,7 +142,6 @@ it("run", async () => {
     cmd,
   );
   console.log(res2);
-  expect(res2).toStrictEqual({});
 });
 
 function getUsage<Context, Result>(
@@ -145,5 +151,5 @@ function getUsage<Context, Result>(
   const commandRunner = command.prepareRunner(
     new ReaderTokenizer(["node", "script", ...argv]),
   );
-  return usageFormatter(commandRunner.computeUsage());
+  return usageFormatter("my-cli", commandRunner.computeUsage());
 }

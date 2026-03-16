@@ -16,8 +16,8 @@ export type CommandRunner<Context, Result> = {
 };
 
 export type CommandUsage = {
+  breadcrumbs: Array<string>;
   description: string | undefined;
-  // TODO - parsed values
   options: Array<OptionUsage>;
   arguments: Array<ArgumentUsage>;
   subcommands: Array<{
@@ -38,6 +38,9 @@ export function command<Context, Result>(
       function computeUsage(): CommandUsage {
         const processorUsage = processor.computeUsage();
         return {
+          breadcrumbs: processorUsage.arguments.map(
+            (argument) => argument.label,
+          ),
           description,
           options: processorUsage.options,
           arguments: processorUsage.arguments,
@@ -72,7 +75,7 @@ export function command<Context, Result>(
 export function commandWithSubcommands<Context, Payload, Result>(
   description: string,
   processor: Processor<Context, Payload>,
-  subcommands: { [subcommand: string]: Command<Payload, Result> },
+  subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
 ): Command<Context, Result> {
   return {
     getDescription() {
@@ -85,7 +88,8 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandName === undefined) {
           throw new Error("Expected a subcommand");
         }
-        const subcommandInput = subcommands[subcommandName];
+        const subcommandInput =
+          subcommands[subcommandName as Lowercase<string>];
         if (subcommandInput === undefined) {
           throw new Error(`Unknown subcommand: ${subcommandName}`);
         }
@@ -96,6 +100,10 @@ export function commandWithSubcommands<Context, Payload, Result>(
             const processorUsage = processor.computeUsage();
             const subcommandUsage = subcommandRunner.computeUsage();
             return {
+              breadcrumbs: processorUsage.arguments
+                .map((argument) => argument.label)
+                .concat([subcommandName])
+                .concat(subcommandUsage.breadcrumbs),
               description: subcommandUsage.description,
               options: processorUsage.options.concat(subcommandUsage.options),
               arguments: processorUsage.arguments.concat(
@@ -114,6 +122,9 @@ export function commandWithSubcommands<Context, Payload, Result>(
           computeUsage() {
             const processorUsage = processor.computeUsage();
             return {
+              breadcrumbs: processorUsage.arguments
+                .map((argument) => argument.label)
+                .concat(["<SUBCOMMAND>"]),
               description,
               options: processorUsage.options,
               arguments: processorUsage.arguments,

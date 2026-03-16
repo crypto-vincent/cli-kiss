@@ -8,18 +8,18 @@ export type Option<Value> = {
 
 export type OptionUsage = {
   description: string | undefined;
-  long: string;
+  long: Lowercase<string>; // TODO - better type for long option names ?
   short: string | undefined;
-  label: string | undefined;
+  label: Uppercase<string> | undefined;
 };
 
 export type OptionConsumer<Value> = () => Value;
 
 export function optionFlag(definition: {
   description?: string;
-  long: string;
+  long: Lowercase<string>;
   short?: string;
-  aliases?: { longs?: Array<string>; shorts?: Array<string> };
+  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   default?: () => boolean;
 }): Option<boolean> {
   return {
@@ -58,10 +58,10 @@ export function optionFlag(definition: {
 export function optionRepeatable<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  long: string;
+  long: Lowercase<string>;
   short?: string;
-  aliases?: { longs?: Array<string>; shorts?: Array<string> };
-  label?: string;
+  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
+  label?: Uppercase<string>;
 }): Option<Array<Value>> {
   return {
     generateUsage() {
@@ -69,7 +69,8 @@ export function optionRepeatable<Value>(definition: {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        label: `<${definition.label ?? definition.type.label}>`,
+        label:
+          `<${definition.label ?? definition.type.label}>` as Uppercase<string>,
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {
@@ -93,10 +94,10 @@ export function optionRepeatable<Value>(definition: {
 export function optionSingleValue<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  long: string;
+  long: Lowercase<string>;
   short?: string;
-  aliases?: { longs?: Array<string>; shorts?: Array<string> };
-  label?: string;
+  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
+  label?: Uppercase<string>;
   default: () => Value;
 }): Option<Value> {
   return {
@@ -105,7 +106,8 @@ export function optionSingleValue<Value>(definition: {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        label: `<${definition.label ?? definition.type.label}>`,
+        label:
+          `<${definition.label ?? definition.type.label}>` as Uppercase<string>,
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {
