@@ -1,14 +1,17 @@
 import { expect, it } from "@jest/globals";
-import { run } from "../src";
-import { argSingle } from "../src/Arg";
 import {
+  argSingle,
   commandWithFixedArgs,
   commandWithSubcommand,
   commandWithVariadics,
-} from "../src/Command";
-import { flag } from "../src/Flag";
-import { optionMultipleValues, optionSingleValue } from "../src/Option";
-import { variadics } from "../src/Variadics";
+  flag,
+  optionMultipleValues,
+  optionSingleValue,
+  runWithArgv,
+  variadics,
+} from "../src";
+
+// TODO - support completions generation ??
 
 const decoderString = (arg: string) => String(arg);
 const decoderNumber = (arg: string) => Number(arg);
@@ -59,7 +62,7 @@ const cmd = commandWithSubcommand({
 });
 
 it("run", async () => {
-  const res = await run(
+  const res = await runWithArgv(
     [
       "node",
       "script",
@@ -74,7 +77,7 @@ it("run", async () => {
       "--boolean-flag",
       "final",
     ],
-    "dudu",
+    "Run Context Input",
     cmd,
   );
   expect(res).toStrictEqual({
@@ -82,7 +85,7 @@ it("run", async () => {
     sub: {
       context: {
         root: {
-          context: "dudu",
+          context: "Run Context Input",
           inputs: {
             flags: { booleanFlag: true },
             options: { stringOption: "hello", numberOption: [123] },
