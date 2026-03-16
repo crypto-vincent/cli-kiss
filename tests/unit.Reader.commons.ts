@@ -1,5 +1,5 @@
 import { expect, it } from "@jest/globals";
-import { Reader } from "../src/Reader";
+import { Reader } from "../src";
 
 it("run", async () => {
   const stream = new Reader([
