@@ -1,8 +1,7 @@
-export * from "./Argument";
-export * from "./Command";
-export * from "./Option";
-export * from "./Processor";
-export * from "./Reader";
-export * from "./Run";
-export * from "./Type";
-// TODO - any other way to bundle this ?
+export * from "./lib/Argument";
+export * from "./lib/Command";
+export * from "./lib/Option";
+export * from "./lib/Processor";
+export * from "./lib/Reader";
+export * from "./lib/Run";
+export * from "./lib/Type";

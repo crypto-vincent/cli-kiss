@@ -4,7 +4,7 @@ export type Type<Value> = {
 };
 
 export const typeBoolean = {
-  label: "Boolean",
+  label: "BOOLEAN",
   decoder(value: string) {
     if (value === "true") {
       return true;
@@ -17,7 +17,7 @@ export const typeBoolean = {
 };
 
 export const typeDate = {
-  label: "Date",
+  label: "DATE",
   decoder(value: string) {
     const timestamp = Date.parse(value);
     if (isNaN(timestamp)) {
@@ -28,35 +28,25 @@ export const typeDate = {
 };
 
 export const typeString = {
-  label: "String",
+  label: "STRING",
   decoder(value: string) {
     return value;
   },
 };
 
 export const typeNumber = {
-  label: "Number",
+  label: "NUMBER",
   decoder(value: string) {
     return Number(value);
   },
 };
 
 export const typeBigInt = {
-  label: "BigInt",
+  label: "BIGINT",
   decoder(value: string) {
     return BigInt(value);
   },
 };
-
-export function typeLabelled<Value>(
-  label: string,
-  type: Type<Value>,
-): Type<Value> {
-  return {
-    label,
-    decoder: type.decoder,
-  };
-}
 
 export function typeCommaArray(elementType: Type<any>): Type<Array<any>> {
   return {

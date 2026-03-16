@@ -1,5 +1,6 @@
-import { Command, commandUsageToString } from "./Command";
+import { Command } from "./Command";
 import { ReaderTokenizer } from "./Reader";
+import { usageFormatter } from "./Usage";
 
 export async function runWithArgv<Context, Result>(
   argv: string[],
@@ -28,7 +29,7 @@ export async function runWithArgv<Context, Result>(
   try {
     const commandRunner = command.prepareRunner(readerTokenizer);
     if (readerTokenizer.consumeFlag("help")) {
-      console.log(commandUsageToString(commandRunner.computeUsage()));
+      console.log(usageFormatter(commandRunner.computeUsage()));
       process.exit(0);
     }
     return await commandRunner.execute(context);

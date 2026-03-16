@@ -10,7 +10,7 @@ export type OptionUsage = {
   description: string | undefined;
   long: string;
   short: string | undefined;
-  value: string | undefined;
+  label: string | undefined;
 };
 
 export type OptionConsumer<Value> = () => Value;
@@ -28,7 +28,7 @@ export function optionFlag(definition: {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        value: undefined,
+        label: undefined,
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {
@@ -69,7 +69,7 @@ export function optionRepeatable<Value>(definition: {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        value: `<${definition.label ?? definition.type.label}> ...`,
+        label: `<${definition.label ?? definition.type.label}>`,
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {
@@ -105,7 +105,7 @@ export function optionSingleValue<Value>(definition: {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        value: `<${definition.label ?? definition.type.label}>`,
+        label: `<${definition.label ?? definition.type.label}>`,
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {

@@ -3,6 +3,7 @@ import { Option, OptionUsage } from "./Option";
 import { ReaderTokenizer } from "./Reader";
 
 export type Processor<Context, Result> = {
+  computeUsage(): ProcessorUsage;
   prepareResolver(
     readerTokenizer: ReaderTokenizer,
   ): ProcessorResolver<Context, Result>;
@@ -14,7 +15,6 @@ export type ProcessorResolver<Context, Result> = () => ProcessorRunner<
 >;
 
 export type ProcessorRunner<Context, Result> = {
-  computeUsage(): ProcessorUsage;
   execute(context: Context): Promise<Result>;
 };
 
@@ -45,6 +45,18 @@ export function processor<
   ) => Promise<Result>,
 ): Processor<Context, Result> {
   return {
+    computeUsage() {
+      const optionsUsage = new Array<OptionUsage>();
+      for (const optionKey in inputs.options) {
+        const optionInput = inputs.options[optionKey]!;
+        optionsUsage.push(optionInput.generateUsage());
+      }
+      const argumentsUsage = new Array<ArgumentUsage>();
+      for (const argumentInput of inputs.arguments) {
+        argumentsUsage.push(argumentInput.generateUsage());
+      }
+      return { options: optionsUsage, arguments: argumentsUsage };
+    },
     prepareResolver(readerTokenizer: ReaderTokenizer) {
       const optionsConsumers: any = {};
       for (const optionKey in inputs.options) {
@@ -62,19 +74,6 @@ export function processor<
           optionsValues[optionKey] = optionsConsumers[optionKey]!();
         }
         return {
-          computeUsage() {
-            const optionsUsage = new Array<OptionUsage>();
-            for (const optionKey in inputs.options) {
-              const optionInput = inputs.options[optionKey]!;
-              // TODO - use values from inputs for usages
-              optionsUsage.push(optionInput.generateUsage());
-            }
-            const argumentsUsage = new Array<ArgumentUsage>();
-            for (const argumentInput of inputs.arguments) {
-              argumentsUsage.push(argumentInput.generateUsage());
-            }
-            return { options: optionsUsage, arguments: argumentsUsage };
-          },
           async execute(context: Context) {
             return await handler(context, {
               options: optionsValues,

@@ -5,7 +5,6 @@ import {
   argumentVariadics,
   Command,
   command,
-  commandUsageToString,
   commandWithSubcommands,
   optionFlag,
   optionRepeatable,
@@ -15,6 +14,7 @@ import {
   typeNumber,
   typeString,
 } from "../src";
+import { usageFormatter } from "../src/lib/Usage";
 
 const cmd = commandWithSubcommands<string, any, any>(
   "Root command description",
@@ -134,6 +134,7 @@ it("run", async () => {
     ],
     cmd,
   );
+  console.log(res2);
   expect(res2).toStrictEqual({});
 });
 
@@ -144,5 +145,5 @@ function getUsage<Context, Result>(
   const commandRunner = command.prepareRunner(
     new ReaderTokenizer(["node", "script", ...argv]),
   );
-  return commandUsageToString(commandRunner.computeUsage());
+  return usageFormatter(commandRunner.computeUsage());
 }
