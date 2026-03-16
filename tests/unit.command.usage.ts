@@ -148,8 +148,6 @@ function getUsage<Context, Result>(
   argv: Array<string>,
   command: Command<Context, Result>,
 ) {
-  const commandRunner = command.prepareRunner(
-    new ReaderTokenizer(["node", "script", ...argv]),
-  );
+  const commandRunner = command.prepareRunner(new ReaderTokenizer(argv));
   return usageFormatter("my-cli", commandRunner.computeUsage());
 }

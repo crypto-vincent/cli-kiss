@@ -3,8 +3,6 @@ import { ReaderTokenizer } from "../src";
 
 it("run", async () => {
   const stream = new ReaderTokenizer([
-    "node",
-    "script.js",
     "positional-0",
     "-aasof-normal",
     "-bbsof-positive=true",

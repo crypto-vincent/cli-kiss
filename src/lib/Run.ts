@@ -6,10 +6,10 @@ export async function runWithArgv<Context, Result>(
   argv: string[],
   context: Context,
   command: Command<Context, Result>,
-  cliInfo?: { name?: string; version?: string },
+  cliInfo?: { name?: string; version?: string; helpOnError?: boolean },
 ): Promise<Result> {
   const cliName = cliInfo?.name ?? argv[1]!;
-  const readerTokenizer = new ReaderTokenizer(argv);
+  const readerTokenizer = new ReaderTokenizer(argv.slice(2));
   readerTokenizer.registerFlag({
     key: "help",
     shorts: [],
@@ -34,7 +34,7 @@ export async function runWithArgv<Context, Result>(
     const commandRunner = command.prepareRunner(readerTokenizer);
     if (cliInfo?.version) {
       if (readerTokenizer.consumeFlag("version")) {
-        console.log(cliName, cliInfo?.version);
+        console.log(cliName, cliInfo.version);
         process.exit(0);
       }
     }
@@ -42,7 +42,15 @@ export async function runWithArgv<Context, Result>(
       console.log(usageFormatter(cliName, commandRunner.computeUsage()));
       process.exit(0);
     }
-    return await commandRunner.execute(context);
+    try {
+      return await commandRunner.execute(context);
+    } catch (error) {
+      if (cliInfo?.helpOnError ?? true) {
+        console.log(usageFormatter(cliName, commandRunner.computeUsage()));
+      }
+      console.error(error);
+      process.exit(1);
+    }
   } catch (error) {
     console.error(error);
     process.exit(1);

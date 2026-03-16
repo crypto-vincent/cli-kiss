@@ -3,8 +3,6 @@ import { ReaderTokenizer } from "../src";
 
 it("run", async () => {
   const readerTokenizer = new ReaderTokenizer([
-    "node",
-    "script.js",
     "--option=1.1",
     "--option-alias1=1.2",
     "--option-alias2",

@@ -3,7 +3,7 @@ export type ReaderPositionals = {
 };
 
 export class ReaderTokenizer {
-  #argv: Array<string>;
+  #parsedArgv: Array<string>;
   #parsedIndex: number;
   #parsedDouble: boolean;
 
@@ -18,11 +18,8 @@ export class ReaderTokenizer {
   #optionResultByKey: Map<string, Array<string> | null>;
 
   constructor(argv: Array<string>) {
-    if (argv.length < 2) {
-      throw new Error("argv must have at least 2 elements (node and script)");
-    }
-    this.#argv = argv;
-    this.#parsedIndex = 2;
+    this.#parsedArgv = argv;
+    this.#parsedIndex = 0;
     this.#parsedDouble = false;
 
     // TODO - this seems like a good candidate for abstraction
@@ -119,7 +116,7 @@ export class ReaderTokenizer {
   }
 
   #consumeArg(): string | null {
-    const arg = this.#argv[this.#parsedIndex];
+    const arg = this.#parsedArgv[this.#parsedIndex];
     if (arg === undefined) {
       return null;
     }
