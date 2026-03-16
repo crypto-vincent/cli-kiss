@@ -2,8 +2,8 @@ import { expect, it } from "@jest/globals";
 import { run } from "../src";
 import { argSingle } from "../src/Arg";
 import {
-  commandSimple,
-  commandWithSubcommands,
+  commandWithFixedArgs,
+  commandWithSubcommand,
   commandWithVariadics,
 } from "../src/Command";
 import { flag } from "../src/Flag";
@@ -12,9 +12,8 @@ import { variadics } from "../src/Variadics";
 
 const decoderString = (arg: string) => String(arg);
 const decoderNumber = (arg: string) => Number(arg);
-const decoderBigInt = (arg: string) => BigInt(arg);
 
-const cmd = commandWithSubcommands({
+const cmd = commandWithSubcommand({
   flags: {
     booleanFlag: flag({ long: "boolean-flag" }),
   },
@@ -30,30 +29,30 @@ const cmd = commandWithSubcommands({
   },
   args: [
     argSingle({ name: "positional1", decoder: decoderNumber }),
-    argSingle({ name: "positional2", decoder: decoderBigInt }),
+    argSingle({ name: "positional2", decoder: decoderNumber }),
   ],
-  handler: async (inputs) => {
-    console.log("root process", inputs);
-    return "root result";
+  handler: async (context: string, inputs) => {
+    return { root: { context, inputs } };
   },
   subcommands: {
-    sub1: commandSimple({
+    sub1: commandWithFixedArgs({
       flags: {},
       options: {},
       args: [argSingle({ name: "subPositional1", decoder: decoderNumber })],
-      handler: async (inputs) => {
-        console.log("sub1 process", inputs);
-        return "sub1 result";
+      handler: async (context: {}, inputs) => {
+        return { sub: { context, inputs }, from: "sub1" };
       },
     }),
     sub2: commandWithVariadics({
       flags: {},
       options: {},
       args: [argSingle({ name: "subPositional1", decoder: decoderNumber })],
-      variadics: variadics([], { decoder: (value) => value }),
-      handler: async (inputs) => {
-        console.log("sub2 process", inputs);
-        return "sub2 result";
+      variadics: variadics({
+        optionals: [{ decoder: (value) => value }],
+        rests: { decoder: (value) => value },
+      }),
+      handler: async (context: {}, inputs) => {
+        return { sub: { context, inputs }, from: "sub2" };
       },
     }),
   },
@@ -73,10 +72,30 @@ it("run", async () => {
       "88.88",
       "a,b",
       "--boolean-flag",
+      "final",
     ],
     "dudu",
     cmd,
   );
-  console.log("Final:", res);
-  expect(true).toBe(true);
+  expect(res).toStrictEqual({
+    from: "sub2",
+    sub: {
+      context: {
+        root: {
+          context: "dudu",
+          inputs: {
+            flags: { booleanFlag: true },
+            options: { stringOption: "hello", numberOption: [123] },
+            args: [40, 41],
+          },
+        },
+      },
+      inputs: {
+        flags: {},
+        options: {},
+        args: [88.88],
+        variadics: { optionals: ["a,b"], rests: ["final"] },
+      },
+    },
+  });
 });

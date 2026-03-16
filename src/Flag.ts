@@ -4,10 +4,7 @@ import { Reader } from "./Reader";
 export function flag(definition: {
   long: string;
   short?: string;
-  aliases?: {
-    longs?: Array<string>;
-    shorts?: Array<string>;
-  };
+  aliases?: { longs?: Array<string>; shorts?: Array<string> };
 }): CommandFlag {
   return {
     prepare: (reader: Reader) => {

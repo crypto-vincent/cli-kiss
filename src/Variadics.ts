@@ -6,17 +6,17 @@ export function variadics<
     decoder: (value: string | undefined) => any;
   }>,
   Rest,
->(
-  optionals: Optionals,
-  rests: { decoder: (value: string) => Rest },
-): CommandVariadics<{
+>(definition: {
+  optionals: Optionals;
+  rests: { decoder: (value: string) => Rest };
+}): CommandVariadics<{
   optionals: { [K in keyof Optionals]: ReturnType<Optionals[K]["decoder"]> };
   rests: Array<Rest>;
 }> {
   return {
     read: (readerPositional: ReaderPositional) => {
       const optionalsValues: any = [];
-      for (const optional of optionals) {
+      for (const optional of definition.optionals) {
         optionalsValues.push(
           optional.decoder(readerPositional.consumePositional()),
         );
@@ -27,7 +27,7 @@ export function variadics<
         if (positional === undefined) {
           break;
         }
-        restsValues.push(rests.decoder(positional));
+        restsValues.push(definition.rests.decoder(positional));
       }
       return { optionals: optionalsValues, rests: restsValues };
     },

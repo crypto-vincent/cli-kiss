@@ -47,6 +47,7 @@ export class Reader {
 
   ensureUniqueName(nameShortOrLong: string) {
     // TODO - overall better error handling
+    // TODO - short flag overlap might be annoying here
     if (this.#flagKeyByShort.has(nameShortOrLong)) {
       throw new Error(`Option already registered: ${nameShortOrLong}`);
     }

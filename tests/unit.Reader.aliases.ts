@@ -13,6 +13,7 @@ it("run", async () => {
     "-o",
     "1.5",
     "--flag-alias",
+    "-fa2",
   ]);
 
   reader.registerOption({
@@ -22,14 +23,18 @@ it("run", async () => {
   });
 
   reader.registerFlag({
-    key: "flag",
-    longs: ["flag", "flag-alias"],
+    key: "flag1",
+    longs: ["flag1", "flag-alias"],
     shorts: [],
+  });
+  reader.registerFlag({
+    key: "flag2",
+    longs: ["flag2"],
+    shorts: ["fa2"],
   });
 
   expect(reader.consumePositional()).toStrictEqual(undefined);
 
-  expect(reader.consumeFlag("flag")).toStrictEqual(true);
   expect(reader.consumeOption("option")).toStrictEqual([
     "1.1",
     "1.2",
@@ -37,4 +42,7 @@ it("run", async () => {
     "1.4",
     "1.5",
   ]);
+
+  expect(reader.consumeFlag("flag1")).toStrictEqual(true);
+  expect(reader.consumeFlag("flag2")).toStrictEqual(true);
 });

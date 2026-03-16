@@ -22,7 +22,7 @@ export type CommandVariadics<Value> = {
 
 // TODO - better types definitions for all factory cases at least
 
-export function commandSimple<
+export function commandWithFixedArgs<
   Context,
   Result,
   Flags extends { [flag: string]: CommandFlag },
@@ -32,18 +32,20 @@ export function commandSimple<
   flags: Flags;
   options: Options;
   args: Args;
-  handler: (inputs: {
-    context: Context;
-    flags: {
-      [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
-    };
-    options: {
-      [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
-    };
-    args: {
-      [K in keyof Args]: ReturnType<Args[K]["read"]>;
-    }; // TODO - type aliases for those
-  }) => Promise<Result>;
+  handler: (
+    context: Context,
+    inputs: {
+      flags: {
+        [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
+      };
+      options: {
+        [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
+      };
+      args: {
+        [K in keyof Args]: ReturnType<Args[K]["read"]>;
+      }; // TODO - type aliases for those
+    },
+  ) => Promise<Result>;
 }): Command<Context, Result> {
   return {
     prepare: (reader: Reader) => {
@@ -69,7 +71,7 @@ export function commandSimple<
       }
       const lastPositional = reader.consumePositional();
       if (lastPositional !== undefined) {
-        throw Error("Unprocessed positional: ${lastPositional}");
+        throw Error(`Unprocessed positional: ${lastPositional}`);
       }
       return async (context: Context) => {
         const flagsValues: any = {};
@@ -82,8 +84,7 @@ export function commandSimple<
           const optionRunner = optionsRunners[optionKey]!;
           optionsValues[optionKey] = optionRunner();
         }
-        return await definition.handler({
-          context,
+        return await definition.handler(context, {
           flags: flagsValues,
           options: optionsValues,
           args: argsValues,
@@ -105,19 +106,21 @@ export function commandWithVariadics<
   options: Options;
   args: Args;
   variadics: CommandVariadics<Variadics>;
-  handler: (inputs: {
-    context: Context;
-    flags: {
-      [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
-    };
-    options: {
-      [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
-    };
-    args: {
-      [K in keyof Args]: ReturnType<Args[K]["read"]>;
-    }; // TODO - type aliases for those
-    variadics: Variadics;
-  }) => Promise<Result>;
+  handler: (
+    context: Context,
+    inputs: {
+      flags: {
+        [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
+      };
+      options: {
+        [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
+      };
+      args: {
+        [K in keyof Args]: ReturnType<Args[K]["read"]>;
+      }; // TODO - type aliases for those
+      variadics: Variadics;
+    },
+  ) => Promise<Result>;
 }): Command<Context, Result> {
   return {
     prepare: (reader: Reader) => {
@@ -144,7 +147,7 @@ export function commandWithVariadics<
       const variadicsValue = definition.variadics.read(reader);
       const lastPositional = reader.consumePositional();
       if (lastPositional !== undefined) {
-        throw Error("Unprocessed positional: ${lastPositional}");
+        throw Error(`Unprocessed positional: ${lastPositional}`);
       }
       return async (context: Context) => {
         const flagsValues: any = {};
@@ -157,8 +160,7 @@ export function commandWithVariadics<
           const optionRunner = optionsRunners[optionKey]!;
           optionsValues[optionKey] = optionRunner();
         }
-        return await definition.handler({
-          context,
+        return await definition.handler(context, {
           flags: flagsValues,
           options: optionsValues,
           args: argsValues,
@@ -169,7 +171,7 @@ export function commandWithVariadics<
   };
 }
 
-export function commandWithSubcommands<
+export function commandWithSubcommand<
   Context,
   Payload,
   Result,
@@ -180,18 +182,20 @@ export function commandWithSubcommands<
   flags: Flags;
   options: Options;
   args: Args;
-  handler: (inputs: {
-    context: Context;
-    flags: {
-      [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
-    };
-    options: {
-      [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
-    };
-    args: {
-      [K in keyof Args]: ReturnType<Args[K]["read"]>;
-    };
-  }) => Promise<Payload>;
+  handler: (
+    context: Context,
+    inputs: {
+      flags: {
+        [K in keyof Flags]: ReturnType<ReturnType<Flags[K]["prepare"]>>;
+      };
+      options: {
+        [K in keyof Options]: ReturnType<ReturnType<Options[K]["prepare"]>>;
+      };
+      args: {
+        [K in keyof Args]: ReturnType<Args[K]["read"]>;
+      };
+    },
+  ) => Promise<Payload>;
   subcommands: { [subcommand: string]: Command<Payload, Result> };
 }): Command<Context, Result> {
   return {
@@ -236,8 +240,7 @@ export function commandWithSubcommands<
           const optionRunner = optionsRunners[optionKey];
           optionsValues[optionKey] = optionRunner();
         }
-        const payload = await definition.handler({
-          context,
+        const payload = await definition.handler(context, {
           flags: flagsValues,
           options: optionsValues,
           args: argsValues,

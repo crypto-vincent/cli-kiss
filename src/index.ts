@@ -6,8 +6,6 @@ export async function run<Context, Result>(
   context: Context,
   command: Command<Context, Result>,
 ): Promise<Result> {
-  console.log("argv:", argv);
-  console.log("input:", context);
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]!;
     if (arg === "--version") {

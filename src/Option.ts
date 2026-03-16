@@ -4,10 +4,7 @@ import { Reader } from "./Reader";
 export function optionMultipleValues<Value>(definition: {
   long: string;
   short?: string;
-  aliases?: {
-    longs?: Array<string>;
-    shorts?: Array<string>;
-  };
+  aliases?: { longs?: Array<string>; shorts?: Array<string> };
   decoder: (value: string) => Value;
 }): CommandOption<Array<Value>> {
   return {
