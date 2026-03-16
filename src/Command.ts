@@ -20,7 +20,7 @@ export type CommandVariadics<Value> = {
   read: (readerPositional: ReaderPositional) => Value;
 };
 
-// TODO - better types definitions for all factory cases at least
+// TODO - better types inputs for all factory cases at least
 
 export function commandWithFixedArgs<
   Context,
@@ -28,10 +28,12 @@ export function commandWithFixedArgs<
   Flags extends { [flag: string]: CommandFlag },
   Options extends { [option: string]: CommandOption<any> },
   const Args extends Array<CommandArg<any>>,
->(definition: {
-  flags: Flags;
-  options: Options;
-  args: Args;
+>(
+  inputs: {
+    flags: Flags;
+    options: Options;
+    args: Args;
+  },
   handler: (
     context: Context,
     inputs: {
@@ -45,27 +47,27 @@ export function commandWithFixedArgs<
         [K in keyof Args]: ReturnType<Args[K]["read"]>;
       }; // TODO - type aliases for those
     },
-  ) => Promise<Result>;
-}): Command<Context, Result> {
+  ) => Promise<Result>,
+): Command<Context, Result> {
   return {
     prepare: (reader: Reader) => {
       const flagsRunners: any = {};
-      if (definition.flags) {
-        for (const flagKey in definition.flags) {
-          const flagDef = definition.flags[flagKey]!;
+      if (inputs.flags) {
+        for (const flagKey in inputs.flags) {
+          const flagDef = inputs.flags[flagKey]!;
           flagsRunners[flagKey] = flagDef.prepare(reader);
         }
       }
       const optionsRunners: any = {};
-      if (definition.options) {
-        for (const optionKey in definition.options) {
-          const optionDef = definition.options[optionKey]!;
+      if (inputs.options) {
+        for (const optionKey in inputs.options) {
+          const optionDef = inputs.options[optionKey]!;
           optionsRunners[optionKey] = optionDef.prepare(reader);
         }
       }
       const argsValues: any = [];
-      if (definition.args) {
-        for (const argDef of definition.args) {
+      if (inputs.args) {
+        for (const argDef of inputs.args) {
           argsValues.push(argDef.read(reader));
         }
       }
@@ -84,7 +86,7 @@ export function commandWithFixedArgs<
           const optionRunner = optionsRunners[optionKey]!;
           optionsValues[optionKey] = optionRunner();
         }
-        return await definition.handler(context, {
+        return await handler(context, {
           flags: flagsValues,
           options: optionsValues,
           args: argsValues,
@@ -101,11 +103,13 @@ export function commandWithVariadics<
   Options extends { [option: string]: CommandOption<any> },
   const Args extends Array<CommandArg<any>>,
   Variadics,
->(definition: {
-  flags: Flags;
-  options: Options;
-  args: Args;
-  variadics: CommandVariadics<Variadics>;
+>(
+  inputs: {
+    flags: Flags;
+    options: Options;
+    args: Args;
+    variadics: CommandVariadics<Variadics>;
+  },
   handler: (
     context: Context,
     inputs: {
@@ -120,31 +124,31 @@ export function commandWithVariadics<
       }; // TODO - type aliases for those
       variadics: Variadics;
     },
-  ) => Promise<Result>;
-}): Command<Context, Result> {
+  ) => Promise<Result>,
+): Command<Context, Result> {
   return {
     prepare: (reader: Reader) => {
       const flagsRunners: any = {};
-      if (definition.flags) {
-        for (const flagKey in definition.flags) {
-          const flagDef = definition.flags[flagKey]!;
+      if (inputs.flags) {
+        for (const flagKey in inputs.flags) {
+          const flagDef = inputs.flags[flagKey]!;
           flagsRunners[flagKey] = flagDef.prepare(reader);
         }
       }
       const optionsRunners: any = {};
-      if (definition.options) {
-        for (const optionKey in definition.options) {
-          const optionDef = definition.options[optionKey]!;
+      if (inputs.options) {
+        for (const optionKey in inputs.options) {
+          const optionDef = inputs.options[optionKey]!;
           optionsRunners[optionKey] = optionDef.prepare(reader);
         }
       }
       const argsValues: any = [];
-      if (definition.args) {
-        for (const argDef of definition.args) {
+      if (inputs.args) {
+        for (const argDef of inputs.args) {
           argsValues.push(argDef.read(reader));
         }
       }
-      const variadicsValue = definition.variadics.read(reader);
+      const variadicsValue = inputs.variadics.read(reader);
       const lastPositional = reader.consumePositional();
       if (lastPositional !== undefined) {
         throw Error(`Unprocessed positional: ${lastPositional}`);
@@ -160,7 +164,7 @@ export function commandWithVariadics<
           const optionRunner = optionsRunners[optionKey]!;
           optionsValues[optionKey] = optionRunner();
         }
-        return await definition.handler(context, {
+        return await handler(context, {
           flags: flagsValues,
           options: optionsValues,
           args: argsValues,
@@ -178,10 +182,12 @@ export function commandWithSubcommand<
   Flags extends { [flag: string]: CommandFlag },
   Options extends { [option: string]: CommandOption<any> },
   const Args extends Array<CommandArg<any>>,
->(definition: {
-  flags: Flags;
-  options: Options;
-  args: Args;
+>(
+  inputs: {
+    flags: Flags;
+    options: Options;
+    args: Args;
+  },
   handler: (
     context: Context,
     inputs: {
@@ -195,28 +201,30 @@ export function commandWithSubcommand<
         [K in keyof Args]: ReturnType<Args[K]["read"]>;
       };
     },
-  ) => Promise<Payload>;
-  subcommands: { [subcommand: string]: Command<Payload, Result> };
-}): Command<Context, Result> {
+  ) => Promise<Payload>,
+  subcommands: {
+    [subcommand: string]: Command<Payload, Result>;
+  },
+): Command<Context, Result> {
   return {
     prepare: (reader: Reader) => {
       const flagsRunners: any = {};
-      if (definition.flags) {
-        for (const flagKey in definition.flags) {
-          const flagDef = definition.flags[flagKey]!;
+      if (inputs.flags) {
+        for (const flagKey in inputs.flags) {
+          const flagDef = inputs.flags[flagKey]!;
           flagsRunners[flagKey] = flagDef.prepare(reader);
         }
       }
       const optionsRunners: any = {};
-      if (definition.options) {
-        for (const optionKey in definition.options) {
-          const optionDef = definition.options[optionKey]!;
+      if (inputs.options) {
+        for (const optionKey in inputs.options) {
+          const optionDef = inputs.options[optionKey]!;
           optionsRunners[optionKey] = optionDef.prepare(reader);
         }
       }
       const argsValues: any = [];
-      if (definition.args) {
-        for (const argDef of definition.args) {
+      if (inputs.args) {
+        for (const argDef of inputs.args) {
           argsValues.push(argDef.read(reader));
         }
       }
@@ -224,7 +232,7 @@ export function commandWithSubcommand<
       if (subcommandName === undefined) {
         throw new Error("Expected a subcommand");
       }
-      const subcommandDef = definition.subcommands[subcommandName];
+      const subcommandDef = subcommands[subcommandName];
       if (subcommandDef === undefined) {
         throw new Error(`Unknown subcommand: ${subcommandName}`);
       }
@@ -240,7 +248,7 @@ export function commandWithSubcommand<
           const optionRunner = optionsRunners[optionKey];
           optionsValues[optionKey] = optionRunner();
         }
-        const payload = await definition.handler(context, {
+        const payload = await handler(context, {
           flags: flagsValues,
           options: optionsValues,
           args: argsValues,
