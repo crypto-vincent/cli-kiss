@@ -2,7 +2,7 @@ import { expect, it } from "@jest/globals";
 import { ReaderTokenizer } from "../src";
 
 it("run", async () => {
-  const reader = new ReaderTokenizer([
+  const readerTokenizer = new ReaderTokenizer([
     "node",
     "script.js",
     "--option=1.1",
@@ -16,26 +16,26 @@ it("run", async () => {
     "-fa2",
   ]);
 
-  reader.registerOption({
+  readerTokenizer.registerOption({
     key: "option",
     longs: ["option", "option-alias1", "option-alias2"],
     shorts: ["pts", "o"],
   });
 
-  reader.registerFlag({
+  readerTokenizer.registerFlag({
     key: "flag1",
     longs: ["flag1", "flag-alias"],
     shorts: [],
   });
-  reader.registerFlag({
+  readerTokenizer.registerFlag({
     key: "flag2",
     longs: ["flag2"],
     shorts: ["fa2"],
   });
 
-  expect(reader.consumePositional()).toStrictEqual(undefined);
+  expect(readerTokenizer.consumePositional()).toStrictEqual(undefined);
 
-  expect(reader.consumeOption("option")).toStrictEqual([
+  expect(readerTokenizer.consumeOption("option")).toStrictEqual([
     "1.1",
     "1.2",
     "1.3",
@@ -43,6 +43,6 @@ it("run", async () => {
     "1.5",
   ]);
 
-  expect(reader.consumeFlag("flag1")).toStrictEqual(true);
-  expect(reader.consumeFlag("flag2")).toStrictEqual(true);
+  expect(readerTokenizer.consumeFlag("flag1")).toStrictEqual(true);
+  expect(readerTokenizer.consumeFlag("flag2")).toStrictEqual(true);
 });

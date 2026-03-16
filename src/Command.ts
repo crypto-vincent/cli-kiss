@@ -18,11 +18,11 @@ export function command<Context, Result>(
   return {
     prepareInterpreter: (readerTokenizer: ReaderTokenizer) => {
       const processorFactory = processor.prepareFactory(readerTokenizer);
-      const processorInterpreter = processorFactory();
       const lastPositional = readerTokenizer.consumePositional();
       if (lastPositional !== undefined) {
         throw Error(`Unprocessed positional: ${lastPositional}`);
       }
+      const processorInterpreter = processorFactory();
       return {
         evaluate: async (context: Context) => {
           return await processorInterpreter(context);

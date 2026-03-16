@@ -1,4 +1,4 @@
-export type ReaderPositional = {
+export type ReaderPositionals = {
   consumePositional(): string | undefined;
 };
 

@@ -25,6 +25,6 @@ export async function runWithArgv<Context, Result>(
     longs: ["completion"],
   });
   */
-  const commandRunner = command.prepareInterpreter(readerTokenizer);
-  return await commandRunner.evaluate(context);
+  const commandInterpreter = command.prepareInterpreter(readerTokenizer);
+  return await commandInterpreter.evaluate(context);
 }
