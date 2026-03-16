@@ -1,21 +1,30 @@
 import { Command } from "./Command";
-import { Reader } from "./Reader";
+import { ReaderTokenizer } from "./Reader";
 
 export async function runWithArgv<Context, Result>(
   argv: string[],
   context: Context,
   command: Command<Context, Result>,
 ): Promise<Result> {
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i]!;
-    if (arg === "--version") {
-      // TODO - version from package.json
-    }
-    if (arg === "--help") {
-      // TODO - help message with the command usage
-    }
-  }
-  const reader = new Reader(argv);
-  const runner = command.prepare(reader);
-  return await runner(context);
+  const readerTokenizer = new ReaderTokenizer(argv);
+  readerTokenizer.registerFlag({
+    key: "version",
+    shorts: [],
+    longs: ["version"],
+  });
+  readerTokenizer.registerFlag({
+    key: "help",
+    shorts: [],
+    longs: ["help"],
+  });
+  /*
+  // TODO - handle completions ?
+  readerTokenizer.registerFlag({
+    key: "completion",
+    shorts: [],
+    longs: ["completion"],
+  });
+  */
+  const commandRunner = command.prepareInterpreter(readerTokenizer);
+  return await commandRunner.evaluate(context);
 }

@@ -1,74 +1,109 @@
 import { expect, it } from "@jest/globals";
 import {
-  argSingle,
-  commandWithFixedArgs,
-  commandWithSubcommand,
-  commandWithVariadics,
-  flag,
-  optionMultipleValues,
+  argumentOptional,
+  argumentRequired,
+  argumentVariadics,
+  command,
+  commandWithSubcommands,
+  optionFlag,
+  optionRepeatable,
   optionSingleValue,
+  processor,
   runWithArgv,
-  variadics,
+  typeNumber,
+  typeString,
 } from "../src";
 
-// TODO - support completions generation ??
-
-const decoderString = (arg: string) => String(arg);
-const decoderNumber = (arg: string) => Number(arg);
-
-const cmd = commandWithSubcommand(
-  {
-    flags: {
-      booleanFlag: flag({ long: "boolean-flag" }),
-    },
-    options: {
-      stringOption: optionSingleValue({
-        long: "string-option",
-        decoder: decoderString,
-      }),
-      numberOption: optionMultipleValues({
-        long: "number-option",
-        decoder: decoderNumber,
-      }),
-    },
-    args: [
-      argSingle({ name: "positional1", decoder: decoderNumber }),
-      argSingle({ name: "positional2", decoder: decoderNumber }),
-    ],
-  },
-  async (context: string, inputs) => {
-    return { root: { context, inputs } };
-  },
-  {
-    sub1: commandWithFixedArgs(
-      {
-        flags: {},
-        options: {},
-        args: [argSingle({ name: "subPositional1", decoder: decoderNumber })],
-      },
-      async (context: {}, inputs) => {
-        return { sub: { context, inputs }, from: "sub1" };
-      },
-    ),
-    sub2: commandWithVariadics(
-      {
-        flags: {},
-        options: {},
-        args: [argSingle({ name: "subPositional1", decoder: decoderNumber })],
-        variadics: variadics({
-          optionals: [{ decoder: (value) => value }],
-          rests: { decoder: (value) => value },
+const cmd = commandWithSubcommands<string, any, any>(
+  "Root command description",
+  processor(
+    {
+      options: {
+        booleanFlag: optionFlag({ long: "boolean-flag" }),
+        stringOption: optionSingleValue({
+          long: "string-option",
+          type: typeString,
+          default: () => undefined,
+        }),
+        numberOption: optionRepeatable({
+          long: "number-option",
+          type: typeNumber,
         }),
       },
-      async (context: {}, inputs) => {
-        return { sub: { context, inputs }, from: "sub2" };
-      },
+      arguments: [
+        argumentRequired({ name: "positional1", type: typeNumber }),
+        argumentRequired({ name: "positional2", type: typeNumber }),
+      ],
+    },
+    async (context, inputs) => {
+      return { at: "root", context, inputs };
+    },
+  ),
+  {
+    sub1: command(
+      "Subcommand 1 description",
+      processor(
+        {
+          options: {},
+          arguments: [
+            argumentRequired({ name: "pos-string", type: typeString }),
+          ],
+        },
+        async (context, inputs) => {
+          return { at: "sub1", context, inputs };
+        },
+      ),
+    ),
+    sub2: command(
+      "Subcommand 2 description",
+      processor(
+        {
+          options: {},
+          arguments: [
+            argumentRequired({ name: "pos-number", type: typeNumber }),
+            argumentOptional({
+              name: "pos-optional",
+              type: typeString,
+              default: () => "42",
+            }),
+            argumentVariadics({ name: "variadics", type: typeString }),
+          ],
+        },
+        async (context, inputs) => {
+          return { at: "sub2", context, inputs };
+        },
+      ),
     ),
   },
 );
 
 it("run", async () => {
-  const res = await runWithArgv(
+  const res1 = await runWithArgv(
+    ["node", "script", "50", "51", "sub1", "final"],
+    "Run Context Input",
+    cmd,
+  );
+  expect(res1).toStrictEqual({
+    context: {
+      context: "Run Context Input",
+      inputs: {
+        options: {
+          booleanFlag: false,
+          stringOption: undefined,
+          numberOption: [],
+        },
+        arguments: [50, 51],
+      },
+      at: "root",
+    },
+    inputs: {
+      options: {},
+      arguments: ["final"],
+    },
+    at: "sub1",
+  });
+
+  const res2 = await runWithArgv(
     [
       "node",
       "script",
@@ -78,6 +113,8 @@ it("run", async () => {
       "--string-option=hello",
       "--number-option",
       "123",
+      "--number-option",
+      "1234",
       "88.88",
       "a,b",
       "--boolean-flag",
@@ -86,25 +123,23 @@ it("run", async () => {
     "Run Context Input",
     cmd,
   );
-  expect(res).toStrictEqual({
-    from: "sub2",
-    sub: {
-      context: {
-        root: {
-          context: "Run Context Input",
-          inputs: {
-            flags: { booleanFlag: true },
-            options: { stringOption: "hello", numberOption: [123] },
-            args: [40, 41],
-          },
-        },
-      },
+  expect(res2).toStrictEqual({
+    context: {
+      context: "Run Context Input",
       inputs: {
-        flags: {},
-        options: {},
-        args: [88.88],
-        variadics: { optionals: ["a,b"], rests: ["final"] },
+        options: {
+          booleanFlag: true,
+          stringOption: "hello",
+          numberOption: [123, 1234],
+        },
+        arguments: [40, 41],
       },
+      at: "root",
     },
+    inputs: {
+      options: {},
+      arguments: [88.88, "a,b", ["final"]],
+    },
+    at: "sub2",
   });
 });

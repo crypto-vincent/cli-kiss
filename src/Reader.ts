@@ -2,7 +2,7 @@ export type ReaderPositional = {
   consumePositional(): string | undefined;
 };
 
-export class Reader {
+export class ReaderTokenizer {
   #argv: Array<string>;
   #parsedIndex: number;
   #parsedDouble: boolean;
@@ -25,6 +25,7 @@ export class Reader {
     this.#parsedIndex = 2;
     this.#parsedDouble = false;
 
+    // TODO - this seems like a good candidate for abstraction
     this.#flagKeyByShort = new Map();
     this.#flagKeyByLong = new Map();
     this.#flagInfoByKey = new Map();

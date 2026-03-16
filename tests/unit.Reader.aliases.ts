@@ -1,8 +1,8 @@
 import { expect, it } from "@jest/globals";
-import { Reader } from "../src";
+import { ReaderTokenizer } from "../src";
 
 it("run", async () => {
-  const reader = new Reader([
+  const reader = new ReaderTokenizer([
     "node",
     "script.js",
     "--option=1.1",
