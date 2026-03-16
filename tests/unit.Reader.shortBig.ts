@@ -72,7 +72,7 @@ it("run", async () => {
   expect(stream.consumeFlag("sof-normal")).toStrictEqual(true);
   expect(stream.consumeFlag("sof-positive")).toStrictEqual(true);
   expect(stream.consumeFlag("sof-negative")).toStrictEqual(false);
-  expect(stream.consumeFlag("sof-unset")).toStrictEqual(false);
+  expect(stream.consumeFlag("sof-unset")).toStrictEqual(undefined);
 
   expect(stream.consumeFlag("aa")).toStrictEqual(true);
   expect(stream.consumeFlag("bb")).toStrictEqual(true);

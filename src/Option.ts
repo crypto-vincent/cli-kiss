@@ -2,21 +2,36 @@ import { ReaderTokenizer } from "./Reader";
 import { Type } from "./Type";
 
 export type Option<Value> = {
-  generateInfo(): { description: string | undefined };
-  prepareConsumer: (readerTokenizer: ReaderTokenizer) => () => Value;
+  generateUsage(): OptionUsage;
+  prepareConsumer(readerTokenizer: ReaderTokenizer): OptionConsumer<Value>;
 };
+
+export type OptionUsage = {
+  description: string | undefined;
+  long: string;
+  short: string | undefined;
+  value: string | undefined;
+};
+
+export type OptionConsumer<Value> = () => Value;
 
 export function optionFlag(definition: {
   description?: string;
   long: string;
   short?: string;
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
+  default?: () => boolean;
 }): Option<boolean> {
   return {
-    generateInfo: () => ({
-      description: definition.description,
-    }),
-    prepareConsumer: (readerTokenizer: ReaderTokenizer) => {
+    generateUsage() {
+      return {
+        description: definition.description,
+        long: definition.long,
+        short: definition.short,
+        value: undefined,
+      };
+    },
+    prepareConsumer(readerTokenizer: ReaderTokenizer) {
       const key = definition.long;
       const longs = [definition.long];
       if (definition.aliases?.longs) {
@@ -28,11 +43,17 @@ export function optionFlag(definition: {
       }
       readerTokenizer.registerFlag({ key, longs, shorts });
       return () => {
-        return readerTokenizer.consumeFlag(key);
+        const value = readerTokenizer.consumeFlag(key);
+        if (value === undefined) {
+          return definition.default ? definition.default() : false;
+        }
+        return value;
       };
     },
   };
 }
+
+// TODO - option with comma-separated values, e.g. --names=alice,bob,charlie
 
 export function optionRepeatable<Value>(definition: {
   description?: string;
@@ -43,10 +64,15 @@ export function optionRepeatable<Value>(definition: {
   label?: string;
 }): Option<Array<Value>> {
   return {
-    generateInfo: () => ({
-      description: definition.description,
-    }),
-    prepareConsumer: (readerTokenizer: ReaderTokenizer) => {
+    generateUsage() {
+      return {
+        description: definition.description,
+        long: definition.long,
+        short: definition.short,
+        value: `<${definition.label ?? definition.type.label}> ...`,
+      };
+    },
+    prepareConsumer(readerTokenizer: ReaderTokenizer) {
       const key = definition.long;
       const longs = definition.long ? [definition.long] : [];
       if (definition.aliases?.longs) {
@@ -74,10 +100,15 @@ export function optionSingleValue<Value>(definition: {
   default: () => Value;
 }): Option<Value> {
   return {
-    generateInfo: () => ({
-      description: definition.description,
-    }),
-    prepareConsumer: (readerTokenizer: ReaderTokenizer) => {
+    generateUsage() {
+      return {
+        description: definition.description,
+        long: definition.long,
+        short: definition.short,
+        value: `<${definition.label ?? definition.type.label}>`,
+      };
+    },
+    prepareConsumer(readerTokenizer: ReaderTokenizer) {
       const key = definition.long;
       const longs = [definition.long];
       if (definition.aliases?.longs) {

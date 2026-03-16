@@ -19,7 +19,7 @@ const cmd = commandWithSubcommands<string, any, any>(
   processor(
     {
       options: {
-        booleanFlag: optionFlag({ long: "boolean-flag" }),
+        booleanFlag: optionFlag({ long: "boolean-flag", default: () => false }),
         stringOption: optionSingleValue({
           long: "string-option",
           type: typeString,
@@ -31,8 +31,8 @@ const cmd = commandWithSubcommands<string, any, any>(
         }),
       },
       arguments: [
-        argumentRequired({ name: "positional1", type: typeNumber }),
-        argumentRequired({ name: "positional2", type: typeNumber }),
+        argumentRequired({ type: typeNumber }),
+        argumentRequired({ type: typeNumber }),
       ],
     },
     async (context, inputs) => {
@@ -45,9 +45,7 @@ const cmd = commandWithSubcommands<string, any, any>(
       processor(
         {
           options: {},
-          arguments: [
-            argumentRequired({ name: "pos-string", type: typeString }),
-          ],
+          arguments: [argumentRequired({ type: typeString })],
         },
         async (context, inputs) => {
           return { at: "sub1", context, inputs };
@@ -60,13 +58,9 @@ const cmd = commandWithSubcommands<string, any, any>(
         {
           options: {},
           arguments: [
-            argumentRequired({ name: "pos-number", type: typeNumber }),
-            argumentOptional({
-              name: "pos-optional",
-              type: typeString,
-              default: () => "42",
-            }),
-            argumentVariadics({ name: "variadics", type: typeString }),
+            argumentRequired({ type: typeNumber }),
+            argumentOptional({ type: typeString, default: () => "42" }),
+            argumentVariadics({ type: typeString }),
           ],
         },
         async (context, inputs) => {

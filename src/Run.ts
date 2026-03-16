@@ -1,4 +1,4 @@
-import { Command } from "./Command";
+import { Command, commandUsageToString } from "./Command";
 import { ReaderTokenizer } from "./Reader";
 
 export async function runWithArgv<Context, Result>(
@@ -25,6 +25,15 @@ export async function runWithArgv<Context, Result>(
     longs: ["completion"],
   });
   */
-  const commandInterpreter = command.prepareInterpreter(readerTokenizer);
-  return await commandInterpreter.evaluate(context);
+  try {
+    const commandRunner = command.prepareRunner(readerTokenizer);
+    if (readerTokenizer.consumeFlag("help")) {
+      console.log(commandUsageToString(commandRunner.computeUsage()));
+      process.exit(0);
+    }
+    return await commandRunner.execute(context);
+  } catch (err) {
+    console.error(`Error: ${err instanceof Error ? err.message : err}`);
+    process.exit(1);
+  }
 }

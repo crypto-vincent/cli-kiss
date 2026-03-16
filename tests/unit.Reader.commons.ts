@@ -103,7 +103,7 @@ it("run", async () => {
   expect(stream.consumeFlag("flag-normal")).toStrictEqual(true);
   expect(stream.consumeFlag("flag-positive")).toStrictEqual(true);
   expect(stream.consumeFlag("flag-negative")).toStrictEqual(false);
-  expect(stream.consumeFlag("flag-unset")).toStrictEqual(false);
+  expect(stream.consumeFlag("flag-unset")).toStrictEqual(undefined);
 
   expect(stream.consumeOption("option-unset")).toStrictEqual([]);
   expect(stream.consumeOption("option-split")).toStrictEqual(["1.1", "1.2"]);

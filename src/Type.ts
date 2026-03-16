@@ -1,11 +1,11 @@
 export type Type<Value> = {
   label: string;
-  decoder: (value: string) => Value;
+  decoder(value: string): Value;
 };
 
 export const typeBoolean = {
   label: "Boolean",
-  decoder: (value: string) => {
+  decoder(value: string) {
     if (value === "true") {
       return true;
     }
@@ -18,7 +18,7 @@ export const typeBoolean = {
 
 export const typeDate = {
   label: "Date",
-  decoder: (value: string) => {
+  decoder(value: string) {
     const timestamp = Date.parse(value);
     if (isNaN(timestamp)) {
       throw new Error(`Invalid date value: ${value}`);
@@ -29,22 +29,40 @@ export const typeDate = {
 
 export const typeString = {
   label: "String",
-  decoder: (value: string) => value,
+  decoder(value: string) {
+    return value;
+  },
 };
 
 export const typeNumber = {
   label: "Number",
-  decoder: (value: string) => Number(value),
+  decoder(value: string) {
+    return Number(value);
+  },
 };
 
 export const typeBigInt = {
   label: "BigInt",
-  decoder: (value: string) => BigInt(value),
+  decoder(value: string) {
+    return BigInt(value);
+  },
 };
 
-export function typeArray(elementType: Type<any>): Type<Array<any>> {
+export function typeLabelled<Value>(
+  label: string,
+  type: Type<Value>,
+): Type<Value> {
   return {
-    label: `Array<${elementType.label}>`,
-    decoder: (value: string) => value.split(",").map(elementType.decoder),
+    label,
+    decoder: type.decoder,
+  };
+}
+
+export function typeCommaArray(elementType: Type<any>): Type<Array<any>> {
+  return {
+    label: `${elementType.label}[${elementType.label},...]`,
+    decoder(value: string) {
+      return value.split(",").map(elementType.decoder);
+    },
   };
 }

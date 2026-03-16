@@ -2,25 +2,33 @@ import { ReaderPositionals } from "./Reader";
 import { Type } from "./Type";
 
 export type Argument<Value> = {
-  generateInfo(): {
-    description: string | undefined;
-  };
-  consumeValue: (readerPositionals: ReaderPositionals) => Value;
+  generateUsage(): ArgumentUsage;
+  consumeValue(readerPositionals: ReaderPositionals): Value;
+};
+
+export type ArgumentUsage = {
+  description: string | undefined;
+  label: string;
 };
 
 export function argumentRequired<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  name: string;
+  label?: string;
 }): Argument<Value> {
   return {
-    generateInfo: () => ({
-      description: definition.description,
-    }),
-    consumeValue: (readerPositionals: ReaderPositionals) => {
+    generateUsage() {
+      return {
+        description: definition.description,
+        label: `<${definition.label ?? definition.type.label}>`,
+      };
+    },
+    consumeValue(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        throw new Error(`Missing required arg: ${definition.name}`);
+        throw new Error(
+          `Missing required arg: <${definition.label ?? definition.type.label}>`,
+        );
       }
       return definition.type.decoder(positional);
     },
@@ -30,14 +38,17 @@ export function argumentRequired<Value>(definition: {
 export function argumentOptional<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  name: string;
+  label?: string;
   default: () => Value;
 }): Argument<Value> {
   return {
-    generateInfo: () => ({
-      description: definition.description,
-    }),
-    consumeValue: (readerPositionals: ReaderPositionals) => {
+    generateUsage() {
+      return {
+        description: definition.description,
+        label: `[${definition.label ?? definition.type.label}]`,
+      };
+    },
+    consumeValue(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
         return definition.default();
@@ -50,14 +61,21 @@ export function argumentOptional<Value>(definition: {
 export function argumentVariadics<Value>(definition: {
   description?: string;
   type: Type<Value>;
-  name: string;
+  label?: string;
   endDelimiter?: string;
 }): Argument<Array<Value>> {
   return {
-    generateInfo: () => ({
-      description: definition.description,
-    }),
-    consumeValue: (readerPositionals: ReaderPositionals) => {
+    generateUsage() {
+      return {
+        description: definition.description,
+        label:
+          `[${definition.label ?? definition.type.label}...]` +
+          (definition.endDelimiter
+            ? ` (end with ${definition.endDelimiter})`
+            : ""),
+      };
+    },
+    consumeValue(readerPositionals: ReaderPositionals) {
       const values: Array<Value> = [];
       while (true) {
         const positional = readerPositionals.consumePositional();

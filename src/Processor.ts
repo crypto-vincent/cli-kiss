@@ -1,16 +1,27 @@
-import { Argument } from "./Argument";
-import { Option } from "./Option";
+import { Argument, ArgumentUsage } from "./Argument";
+import { Option, OptionUsage } from "./Option";
 import { ReaderTokenizer } from "./Reader";
 
 export type Processor<Context, Result> = {
-  prepareFactory: (
+  prepareResolver(
     readerTokenizer: ReaderTokenizer,
-  ) => () => ProcessorInterpreter<Context, Result>;
+  ): ProcessorResolver<Context, Result>;
 };
 
-export type ProcessorInterpreter<Context, Result> = (
-  context: Context,
-) => Promise<Result>;
+export type ProcessorResolver<Context, Result> = () => ProcessorRunner<
+  Context,
+  Result
+>;
+
+export type ProcessorRunner<Context, Result> = {
+  computeUsage(): ProcessorUsage;
+  execute(context: Context): Promise<Result>;
+};
+
+export type ProcessorUsage = {
+  options: Array<OptionUsage>;
+  arguments: Array<ArgumentUsage>;
+};
 
 export function processor<
   Context,
@@ -34,7 +45,7 @@ export function processor<
   ) => Promise<Result>,
 ): Processor<Context, Result> {
   return {
-    prepareFactory: (readerTokenizer: ReaderTokenizer) => {
+    prepareResolver(readerTokenizer: ReaderTokenizer) {
       const optionsConsumers: any = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
@@ -50,11 +61,26 @@ export function processor<
         for (const optionKey in optionsConsumers) {
           optionsValues[optionKey] = optionsConsumers[optionKey]!();
         }
-        return async (context: Context) => {
-          return await handler(context, {
-            options: optionsValues,
-            arguments: argumentsValues,
-          });
+        return {
+          computeUsage() {
+            const optionsUsage = new Array<OptionUsage>();
+            for (const optionKey in inputs.options) {
+              const optionInput = inputs.options[optionKey]!;
+              // TODO - use values from inputs for usages
+              optionsUsage.push(optionInput.generateUsage());
+            }
+            const argumentsUsage = new Array<ArgumentUsage>();
+            for (const argumentInput of inputs.arguments) {
+              argumentsUsage.push(argumentInput.generateUsage());
+            }
+            return { options: optionsUsage, arguments: argumentsUsage };
+          },
+          async execute(context: Context) {
+            return await handler(context, {
+              options: optionsValues,
+              arguments: argumentsValues,
+            });
+          },
         };
       };
     },

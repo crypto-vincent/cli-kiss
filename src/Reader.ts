@@ -71,7 +71,7 @@ export class ReaderTokenizer {
     }
   }
 
-  consumeFlag(key: string): boolean {
+  consumeFlag(key: string): boolean | undefined {
     const flagInfo = this.#flagInfoByKey.get(key);
     if (flagInfo === undefined) {
       throw new Error(`Option flag not registered: ${key}`);
@@ -79,7 +79,7 @@ export class ReaderTokenizer {
     const result = this.#flagResultByKey.get(key);
     if (result === undefined) {
       this.#flagResultByKey.set(key, null);
-      return false;
+      return undefined;
     }
     if (result === null) {
       throw new Error(`Option flag already consumed: ${key}`);
