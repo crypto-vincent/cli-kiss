@@ -1,104 +1,126 @@
 import { CommandUsage } from "./Command";
+import { GridCell, GridRow, gridToPrintableLines } from "./Grid";
+import { TypoSupport, TypoText, typoPrintableString } from "./Typo";
 
-export function usageFormatter(
-  cliName: string,
-  commandUsage: CommandUsage,
-): string {
+export function usageToPrintableLines(params: {
+  cliName: string;
+  commandUsage: CommandUsage;
+  typoSupport: TypoSupport;
+}) {
+  const { cliName, commandUsage, typoSupport } = params;
+
   const lines = new Array<string>();
-  if (commandUsage.description) {
-    lines.push("");
-    lines.push(commandUsage.description);
-  }
+
   lines.push("");
-  lines.push(`Usage: ${cliName} ${commandUsage.breadcrumbs.join(" ")}`);
+  lines.push(typoPrintableString(typoSupport, textDesc(commandUsage.title)));
+  if (commandUsage.description) {
+    for (const descriptionLine of commandUsage.description) {
+      lines.push(typoPrintableString(typoSupport, textSubs(descriptionLine)));
+    }
+  }
+
+  const breadcrumbPrefix = typoPrintableString(
+    typoSupport,
+    textTitle("Usage:"),
+  );
+  const breadcrumbsItems = [
+    typoPrintableString(typoSupport, textName(cliName)),
+  ].concat(
+    commandUsage.breadcrumbs.map((breadcrumb) => {
+      if (breadcrumb.kind === "argument") {
+        return typoPrintableString(typoSupport, textValue(breadcrumb.value));
+      }
+      return typoPrintableString(typoSupport, textName(breadcrumb.value));
+    }),
+  );
+  lines.push("");
+  lines.push(`${breadcrumbPrefix} ${breadcrumbsItems.join(" ")}`);
+
   if (commandUsage.arguments.length > 0) {
     lines.push("");
-    lines.push("Arguments:");
-    lines.push("");
-    const rows = new Array<Array<string>>();
+    lines.push(typoPrintableString(typoSupport, textTitle("Arguments:")));
+    const grid = new Array<GridRow>();
     for (const argumentUsage of commandUsage.arguments) {
-      const columns = new Array<string>();
-      columns.push("");
-      columns.push(argumentUsage.label);
-      columns.push("");
+      const gridRow = new Array<GridCell>();
+      gridRow.push([]);
+      gridRow.push([textValue(argumentUsage.label)]);
+      gridRow.push([]);
       if (argumentUsage.description) {
-        columns.push(argumentUsage.description);
+        gridRow.push([textDesc(argumentUsage.description)]);
       }
-      rows.push(columns);
+      grid.push(gridRow);
     }
-    pushGrid(lines, rows);
+    lines.push(...gridToPrintableLines(grid, typoSupport));
   }
+
   if (commandUsage.options.length > 0) {
     lines.push("");
-    lines.push("Options:");
-    lines.push("");
-    const rows = new Array<Array<string>>();
+    lines.push(typoPrintableString(typoSupport, textTitle("Options:")));
+    const grid = new Array<GridRow>();
     for (const optionUsage of commandUsage.options) {
-      const columns = new Array<string>();
-      columns.push("");
+      const gridRow = new Array<GridCell>();
+      gridRow.push([]);
       if (optionUsage.short) {
-        columns.push(`-${optionUsage.short},`);
+        gridRow.push([textName(`-${optionUsage.short}`), { value: "," }]);
       } else {
-        columns.push("");
+        gridRow.push([]);
       }
       if (optionUsage.label) {
-        columns.push(`--${optionUsage.long} ${optionUsage.label}`);
+        gridRow.push([
+          textName(`--${optionUsage.long} `),
+          textValue(optionUsage.label),
+        ]);
       } else {
-        columns.push(`--${optionUsage.long}`);
+        gridRow.push([
+          textName(`--${optionUsage.long}`),
+          { value: "[=yes|no]", color: "grey" },
+        ]);
       }
-      columns.push("");
+      gridRow.push([]);
       if (optionUsage.description) {
-        columns.push(optionUsage.description);
+        gridRow.push([textDesc(optionUsage.description)]);
       }
-      rows.push(columns);
+      grid.push(gridRow);
     }
-    pushGrid(lines, rows);
+    lines.push(...gridToPrintableLines(grid, typoSupport));
   }
+
   if (commandUsage.subcommands.length > 0) {
     lines.push("");
-    lines.push("Subcommands:");
-    lines.push("");
-    const rows = new Array<Array<string>>();
+    lines.push(typoPrintableString(typoSupport, textTitle("Subcommands:")));
+    const grid = new Array<GridRow>();
     for (const subcommand of commandUsage.subcommands) {
-      const columns = new Array<string>();
-      columns.push("");
-      columns.push(subcommand.name);
-      columns.push("");
-      if (subcommand.description) {
-        columns.push(subcommand.description);
+      const gridRow = new Array<GridCell>();
+      gridRow.push([]);
+      gridRow.push([textName(subcommand.name)]);
+      gridRow.push([]);
+      if (subcommand.title) {
+        gridRow.push([textDesc(subcommand.title)]);
       }
-      rows.push(columns);
+      grid.push(gridRow);
     }
-    pushGrid(lines, rows);
+    lines.push(...gridToPrintableLines(grid, typoSupport));
   }
   lines.push("");
-  return lines.join("\n");
+  return lines;
 }
 
-function pushGrid(lines: Array<string>, rows: Array<Array<string>>) {
-  const widths = new Array<number>();
-  for (const row of rows) {
-    for (let columnIndex = 0; columnIndex < row.length; columnIndex++) {
-      const cell = row[columnIndex]!;
-      if (
-        widths[columnIndex] === undefined ||
-        cell.length > widths[columnIndex]!
-      ) {
-        widths[columnIndex] = cell.length;
-      }
-    }
-  }
-  for (const row of rows) {
-    const cells = new Array<string>();
-    for (let columnIndex = 0; columnIndex < row.length; columnIndex++) {
-      const cell = row[columnIndex]!;
-      if (columnIndex < row.length - 1) {
-        const padding = " ".repeat(widths[columnIndex]! - cell.length);
-        cells.push(cell + padding);
-      } else {
-        cells.push(cell);
-      }
-    }
-    lines.push(cells.join(" "));
-  }
+function textTitle(text: string): TypoText {
+  return { value: text, color: "green", bold: true };
+}
+
+function textSubs(text: string): TypoText {
+  return { value: text, color: "grey" };
+}
+
+function textDesc(text: string): TypoText {
+  return { value: text, bold: true };
+}
+
+function textName(text: string): TypoText {
+  return { value: text, color: "cyan", bold: true };
+}
+
+function textValue(text: string): TypoText {
+  return { value: text, color: "cyan" };
 }

@@ -2,28 +2,28 @@ import { Argument, ArgumentUsage } from "./Argument";
 import { Option, OptionUsage } from "./Option";
 import { ReaderTokenizer } from "./Reader";
 
-export type Processor<Context, Result> = {
-  computeUsage(): ProcessorUsage;
+export type Process<Context, Result> = {
+  computeUsage(): ProcessUsage;
   prepareResolver(
     readerTokenizer: ReaderTokenizer,
-  ): ProcessorResolver<Context, Result>;
+  ): ProcessResolver<Context, Result>;
 };
 
-export type ProcessorResolver<Context, Result> = () => ProcessorRunner<
+export type ProcessResolver<Context, Result> = () => ProcessRunner<
   Context,
   Result
 >;
 
-export type ProcessorRunner<Context, Result> = {
+export type ProcessRunner<Context, Result> = {
   execute(context: Context): Promise<Result>;
 };
 
-export type ProcessorUsage = {
+export type ProcessUsage = {
   options: Array<OptionUsage>;
   arguments: Array<ArgumentUsage>;
 };
 
-export function processor<
+export function process<
   Context,
   Result,
   Options extends { [option: string]: Option<any> },
@@ -43,7 +43,7 @@ export function processor<
       };
     },
   ) => Promise<Result>,
-): Processor<Context, Result> {
+): Process<Context, Result> {
   return {
     computeUsage() {
       const optionsUsage = new Array<OptionUsage>();

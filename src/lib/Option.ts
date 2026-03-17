@@ -122,7 +122,7 @@ export function optionSingleValue<Value>(definition: {
       }
       readerTokenizer.registerOption({ key, longs, shorts });
       return () => {
-        // TODO - error handling
+        // TODO - smooth and beautiful error handling
         const values = readerTokenizer.consumeOption(definition.long);
         if (values.length > 1) {
           throw new Error(

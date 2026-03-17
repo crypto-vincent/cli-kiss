@@ -1,10 +1,10 @@
 import { ArgumentUsage } from "./Argument";
 import { OptionUsage } from "./Option";
-import { Processor } from "./Processor";
+import { Process } from "./Process";
 import { ReaderTokenizer } from "./Reader";
 
 export type Command<Context, Result> = {
-  getDescription(): string | undefined;
+  getTitle(): string | undefined;
   prepareRunner(
     readerTokenizer: ReaderTokenizer,
   ): CommandRunner<Context, Result>;
@@ -16,48 +16,55 @@ export type CommandRunner<Context, Result> = {
 };
 
 export type CommandUsage = {
-  breadcrumbs: Array<string>;
-  description: string | undefined;
+  breadcrumbs: Array<CommandUsageBreadcrumb>;
+  title: string;
+  description: Array<string> | undefined;
   options: Array<OptionUsage>;
   arguments: Array<ArgumentUsage>;
-  subcommands: Array<{
-    name: string;
-    description: string | undefined;
-  }>;
+  subcommands: Array<{ name: string; title: string | undefined }>;
+};
+
+export type CommandUsageBreadcrumb = {
+  kind: "command" | "argument";
+  value: string;
 };
 
 export function command<Context, Result>(
-  description: string,
-  processor: Processor<Context, Result>,
+  metadata: {
+    title: string;
+    description?: Array<string>;
+  },
+  process: Process<Context, Result>,
 ): Command<Context, Result> {
   return {
-    getDescription() {
-      return description;
+    getTitle() {
+      return metadata.title;
     },
     prepareRunner(readerTokenizer: ReaderTokenizer) {
       function computeUsage(): CommandUsage {
-        const processorUsage = processor.computeUsage();
+        const processUsage = process.computeUsage();
         return {
-          breadcrumbs: processorUsage.arguments.map(
-            (argument) => argument.label,
+          breadcrumbs: processUsage.arguments.map((argument) =>
+            breadcrumbArgument(argument.label),
           ),
-          description,
-          options: processorUsage.options,
-          arguments: processorUsage.arguments,
+          title: metadata.title,
+          description: metadata.description,
+          options: processUsage.options,
+          arguments: processUsage.arguments,
           subcommands: [],
         };
       }
       try {
-        const processorResolver = processor.prepareResolver(readerTokenizer);
+        const processResolver = process.prepareResolver(readerTokenizer);
         const lastPositional = readerTokenizer.consumePositional();
         if (lastPositional !== undefined) {
           throw Error(`Unprocessed positional: ${lastPositional}`);
         }
-        const processorRunner = processorResolver();
+        const processRunner = processResolver();
         return {
           computeUsage,
           async execute(context: Context) {
-            return await processorRunner.execute(context);
+            return await processRunner.execute(context);
           },
         };
       } catch (error) {
@@ -73,17 +80,20 @@ export function command<Context, Result>(
 }
 
 export function commandWithSubcommands<Context, Payload, Result>(
-  description: string,
-  processor: Processor<Context, Payload>,
+  metadata: {
+    title: string;
+    description?: Array<string>;
+  },
+  process: Process<Context, Payload>,
   subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
 ): Command<Context, Result> {
   return {
-    getDescription() {
-      return description;
+    getTitle() {
+      return metadata.title;
     },
     prepareRunner(readerTokenizer: ReaderTokenizer) {
       try {
-        const processorResolver = processor.prepareResolver(readerTokenizer);
+        const processResolver = process.prepareResolver(readerTokenizer);
         const subcommandName = readerTokenizer.consumePositional();
         if (subcommandName === undefined) {
           throw new Error("Expected a subcommand");
@@ -94,44 +104,46 @@ export function commandWithSubcommands<Context, Payload, Result>(
           throw new Error(`Unknown subcommand: ${subcommandName}`);
         }
         const subcommandRunner = subcommandInput.prepareRunner(readerTokenizer);
-        const processorRunner = processorResolver();
+        const processRunner = processResolver();
         return {
           computeUsage() {
-            const processorUsage = processor.computeUsage();
+            const processUsage = process.computeUsage();
             const subcommandUsage = subcommandRunner.computeUsage();
             return {
-              breadcrumbs: processorUsage.arguments
-                .map((argument) => argument.label)
-                .concat([subcommandName])
+              breadcrumbs: processUsage.arguments
+                .map((argument) => breadcrumbArgument(argument.label))
+                .concat([breadcrumbCommand(subcommandName)])
                 .concat(subcommandUsage.breadcrumbs),
+              title: subcommandUsage.title,
               description: subcommandUsage.description,
-              options: processorUsage.options.concat(subcommandUsage.options),
-              arguments: processorUsage.arguments.concat(
+              options: processUsage.options.concat(subcommandUsage.options),
+              arguments: processUsage.arguments.concat(
                 subcommandUsage.arguments,
               ),
               subcommands: subcommandUsage.subcommands,
             };
           },
           async execute(context: Context) {
-            const payload = await processorRunner.execute(context);
+            const payload = await processRunner.execute(context);
             return await subcommandRunner.execute(payload);
           },
         };
       } catch (error) {
         return {
           computeUsage() {
-            const processorUsage = processor.computeUsage();
+            const processUsage = process.computeUsage();
             return {
-              breadcrumbs: processorUsage.arguments
-                .map((argument) => argument.label)
-                .concat(["<SUBCOMMAND>"]),
-              description,
-              options: processorUsage.options,
-              arguments: processorUsage.arguments,
+              breadcrumbs: processUsage.arguments
+                .map((argument) => breadcrumbArgument(argument.label))
+                .concat([breadcrumbCommand("<SUBCOMMAND>")]),
+              title: metadata.title,
+              description: metadata.description,
+              options: processUsage.options,
+              arguments: processUsage.arguments,
               subcommands: Object.entries(subcommands).map(
                 ([name, subcommand]) => ({
                   name,
-                  description: subcommand.getDescription(),
+                  title: subcommand.getTitle(),
                 }),
               ),
             };
@@ -143,4 +155,12 @@ export function commandWithSubcommands<Context, Payload, Result>(
       }
     },
   };
+}
+
+function breadcrumbArgument(label: string): CommandUsageBreadcrumb {
+  return { kind: "argument", value: label };
+}
+
+function breadcrumbCommand(name: string): CommandUsageBreadcrumb {
+  return { kind: "command", value: name };
 }

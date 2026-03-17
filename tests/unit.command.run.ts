@@ -8,15 +8,15 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  processor,
+  process,
   runWithArgv,
   typeNumber,
   typeString,
 } from "../src";
 
 const cmd = commandWithSubcommands<string, any, any>(
-  "Root command description",
-  processor(
+  { title: "Root command title" },
+  process(
     {
       options: {
         booleanFlag: optionFlag({ long: "boolean-flag", default: () => false }),
@@ -41,8 +41,8 @@ const cmd = commandWithSubcommands<string, any, any>(
   ),
   {
     sub1: command(
-      "Subcommand 1 description",
-      processor(
+      { title: "Subcommand 1 title" },
+      process(
         {
           options: {},
           arguments: [argumentRequired({ type: typeString })],
@@ -53,8 +53,8 @@ const cmd = commandWithSubcommands<string, any, any>(
       ),
     ),
     sub2: command(
-      "Subcommand 2 description",
-      processor(
+      { title: "Subcommand 2 title" },
+      process(
         {
           options: {},
           arguments: [

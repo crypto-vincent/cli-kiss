@@ -9,16 +9,22 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  processor,
+  process,
   ReaderTokenizer,
   typeNumber,
   typeString,
 } from "../src";
-import { usageFormatter } from "../src/lib/Usage";
+import { usageToPrintableLines } from "../src/lib/Usage";
 
 const cmd = commandWithSubcommands<string, any, any>(
-  "Root command description",
-  processor(
+  {
+    title: "Root command title",
+    description: [
+      "Root command description",
+      "Second line of root command description",
+    ],
+  },
+  process(
     {
       options: {
         booleanFlag: optionFlag({
@@ -31,7 +37,7 @@ const cmd = commandWithSubcommands<string, any, any>(
           long: "string-option",
           type: typeString,
           default: () => undefined,
-          label: "COOL_STUFF",
+          label: "COOL-STUFF",
           description: "Root string-option description",
         }),
         numberOption: optionRepeatable({
@@ -43,12 +49,12 @@ const cmd = commandWithSubcommands<string, any, any>(
       },
       arguments: [
         argumentRequired({
-          label: "POSITIONAL-1",
+          label: "POS-1",
           description: "First positional argument",
           type: typeNumber,
         }),
         argumentRequired({
-          label: "POSITIONAL-2",
+          label: "POS-2",
           description: "Second positional argument",
           type: typeNumber,
         }),
@@ -60,8 +66,14 @@ const cmd = commandWithSubcommands<string, any, any>(
   ),
   {
     sub1: command(
-      "Subcommand 1 description",
-      processor(
+      {
+        title: "Subcommand 1 title",
+        description: [
+          "Subcommand 1 description",
+          "Second line of subcommand 1 description",
+        ],
+      },
+      process(
         {
           options: {},
           arguments: [
@@ -78,8 +90,14 @@ const cmd = commandWithSubcommands<string, any, any>(
       ),
     ),
     sub2: command(
-      "Subcommand 2 description",
-      processor(
+      {
+        title: "Subcommand 2 title",
+        description: [
+          "Subcommand 2 description",
+          "Second line of subcommand 2 description",
+        ],
+      },
+      process(
         {
           options: {
             duduValue: optionSingleValue({
@@ -96,13 +114,13 @@ const cmd = commandWithSubcommands<string, any, any>(
               type: typeNumber,
             }),
             argumentOptional({
-              label: "OPT-POSITIONAL",
+              label: "OPT-POS",
               description: "Optional positional argument",
               type: typeString,
               default: () => "42",
             }),
             argumentVariadics({
-              label: "VARIADIC-POSITIONALS",
+              label: "VARIADIC-POSS",
               description: "Variadic positional arguments",
               type: typeString,
             }),
@@ -117,14 +135,52 @@ const cmd = commandWithSubcommands<string, any, any>(
 );
 
 it("run", async () => {
-  const res0 = getUsage([], cmd);
-  console.log(res0);
+  const usage1 = getUsage([], cmd);
+  expect(usage1).toStrictEqual([
+    "",
+    "{Root command title}+",
+    "{Root command description}@grey",
+    "{Second line of root command description}@grey",
+    "",
+    "{Usage:}@green+ {my-cli}@cyan+ {<POS-1>}@cyan {<POS-2>}@cyan {<SUBCOMMAND>}@cyan+",
+    "",
+    "{Arguments:}@green+",
+    " {<POS-1>}@cyan  {First positional argument}+",
+    " {<POS-2>}@cyan  {Second positional argument}+",
+    "",
+    "{Options:}@green+",
+    " {-b}@cyan+{,} {--boolean-flag}@cyan+{[=yes|no]}@grey       {Root boolean-flag description}+",
+    " {-s}@cyan+{,} {--string-option }@cyan+{<COOL-STUFF>}@cyan  {Root string-option description}+",
+    " {-n}@cyan+{,} {--number-option }@cyan+{<NUMBER>}@cyan      {Root number-option description}+",
+    "",
+    "{Subcommands:}@green+",
+    " {sub1}@cyan+  {Subcommand 1 title}+",
+    " {sub2}@cyan+  {Subcommand 2 title}+",
+    "",
+  ]);
 
-  const res1 = getUsage(["50", "51", "sub1", "final"], cmd);
-  console.log(res1);
-  //expect(res1).toStrictEqual({});
+  const usage2 = getUsage(["50", "51", "sub1", "final"], cmd);
+  expect(usage2).toStrictEqual([
+    "",
+    "{Subcommand 1 title}+",
+    "{Subcommand 1 description}@grey",
+    "{Second line of subcommand 1 description}@grey",
+    "",
+    "{Usage:}@green+ {my-cli}@cyan+ {<POS-1>}@cyan {<POS-2>}@cyan {sub1}@cyan+ {<POS-STRING>}@cyan",
+    "",
+    "{Arguments:}@green+",
+    " {<POS-1>}@cyan       {First positional argument}+",
+    " {<POS-2>}@cyan       {Second positional argument}+",
+    " {<POS-STRING>}@cyan  {Positional string argument}+",
+    "",
+    "{Options:}@green+",
+    " {-b}@cyan+{,} {--boolean-flag}@cyan+{[=yes|no]}@grey       {Root boolean-flag description}+",
+    " {-s}@cyan+{,} {--string-option }@cyan+{<COOL-STUFF>}@cyan  {Root string-option description}+",
+    " {-n}@cyan+{,} {--number-option }@cyan+{<NUMBER>}@cyan      {Root number-option description}+",
+    "",
+  ]);
 
-  const res2 = getUsage(
+  const usage3 = getUsage(
     [
       "40",
       "41",
@@ -141,7 +197,28 @@ it("run", async () => {
     ],
     cmd,
   );
-  console.log(res2);
+  expect(usage3).toStrictEqual([
+    "",
+    "{Subcommand 2 title}+",
+    "{Subcommand 2 description}@grey",
+    "{Second line of subcommand 2 description}@grey",
+    "",
+    "{Usage:}@green+ {my-cli}@cyan+ {<POS-1>}@cyan {<POS-2>}@cyan {sub2}@cyan+ {<POS-NUMBER>}@cyan {[OPT-POS]}@cyan {[VARIADIC-POSS...]}@cyan",
+    "",
+    "{Arguments:}@green+",
+    " {<POS-1>}@cyan             {First positional argument}+",
+    " {<POS-2>}@cyan             {Second positional argument}+",
+    " {<POS-NUMBER>}@cyan        {Positional number argument}+",
+    " {[OPT-POS]}@cyan           {Optional positional argument}+",
+    " {[VARIADIC-POSS...]}@cyan  {Variadic positional arguments}+",
+    "",
+    "{Options:}@green+",
+    " {-b}@cyan+{,} {--boolean-flag}@cyan+{[=yes|no]}@grey       {Root boolean-flag description}+",
+    " {-s}@cyan+{,} {--string-option }@cyan+{<COOL-STUFF>}@cyan  {Root string-option description}+",
+    " {-n}@cyan+{,} {--number-option }@cyan+{<NUMBER>}@cyan      {Root number-option description}+",
+    "     {--dudu }@cyan+{<STRING>}@cyan               {Dudu option description}+",
+    "",
+  ]);
 });
 
 function getUsage<Context, Result>(
@@ -149,5 +226,9 @@ function getUsage<Context, Result>(
   command: Command<Context, Result>,
 ) {
   const commandRunner = command.prepareRunner(new ReaderTokenizer(argv));
-  return usageFormatter("my-cli", commandRunner.computeUsage());
+  return usageToPrintableLines({
+    cliName: "my-cli",
+    commandUsage: commandRunner.computeUsage(),
+    typoSupport: "mock",
+  });
 }

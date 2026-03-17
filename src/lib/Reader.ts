@@ -187,11 +187,9 @@ export class ReaderTokenizer {
     const flagKey = this.#flagKeyByLong.get(long);
     if (flagKey !== undefined) {
       if (direct !== null) {
-        if (direct === "true") {
-          return this.#acknowledgeFlag(flagKey, true);
-        }
-        if (direct === "false") {
-          return this.#acknowledgeFlag(flagKey, false);
+        const value = asBoolean(direct);
+        if (value !== undefined) {
+          return this.#acknowledgeFlag(flagKey, value);
         }
         throw new Error(
           `Invalid parameter for long flag: ${flagKey}, value: ${direct}`,
@@ -213,12 +211,9 @@ export class ReaderTokenizer {
     const flagKey = this.#flagKeyByShort.get(short);
     if (flagKey !== undefined) {
       if (rest.startsWith("=")) {
-        if (rest === "=true") {
-          this.#acknowledgeFlag(flagKey, true);
-          return true;
-        }
-        if (rest === "=false") {
-          this.#acknowledgeFlag(flagKey, false);
+        const value = asBoolean(rest.slice(1));
+        if (value !== undefined) {
+          this.#acknowledgeFlag(flagKey, value);
           return true;
         }
         throw new Error(
@@ -282,4 +277,15 @@ export class ReaderTokenizer {
       throw new Error(`Option already registered: ${nameShortOrLong}`);
     }
   }
+}
+
+function asBoolean(value: string): boolean | undefined {
+  const lower = value.toLowerCase();
+  if (lower === "true" || lower === "t" || lower === "y" || lower === "yes") {
+    return true;
+  }
+  if (lower === "false" || lower === "f" || lower === "n" || lower === "no") {
+    return false;
+  }
+  return undefined;
 }
