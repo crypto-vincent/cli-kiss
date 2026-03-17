@@ -26,21 +26,18 @@ export type ExecutionUsage = {
 export function execution<
   Context,
   Result,
-  Options extends { [option: string]: Option<any> },
-  const Arguments extends Array<Argument<any>>,
+  Options extends { [option: string]: any },
+  const Arguments extends Array<any>,
 >(
-  inputs: { options: Options; arguments: Arguments },
+  inputs: {
+    options: { [K in keyof Options]: Option<Options[K]> };
+    arguments: { [K in keyof Arguments]: Argument<Arguments[K]> };
+  },
   handler: (
     context: Context,
     inputs: {
-      options: {
-        [K in keyof Options]: ReturnType<
-          ReturnType<Options[K]["prepareConsumer"]>
-        >;
-      };
-      arguments: {
-        [K in keyof Arguments]: ReturnType<Arguments[K]["consumeValue"]>;
-      };
+      options: Options;
+      arguments: Arguments;
     },
   ) => Promise<Result>,
 ): Execution<Context, Result> {

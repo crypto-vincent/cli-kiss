@@ -48,10 +48,35 @@ export const typeBigInt: Type<bigint> = {
   },
 };
 
-export function typeCommaArray(elementType: Type<any>): Type<Array<any>> {
+export function typeCommaTuple<
+  const Elements extends Array<any>,
+>(elementTypes: {
+  [K in keyof Elements]: Type<Elements[K]>;
+}): Type<Elements> {
+  return {
+    label: elementTypes
+      .map((elementType) => elementType.label)
+      .join(",") as Uppercase<string>,
+    decoder(value: string) {
+      const parts = value.split(",", elementTypes.length);
+      if (parts.length !== elementTypes.length) {
+        throw new Error(
+          `Invalid tuple value: ${value}, expected ${elementTypes.length} parts`,
+        );
+      }
+      return parts.map((part, index) =>
+        elementTypes[index]!.decoder(part),
+      ) as Elements;
+    },
+  };
+}
+
+export function typeCommaList<Value>(
+  elementType: Type<Value>,
+): Type<Array<Value>> {
   return {
     label:
-      `${elementType.label}[${elementType.label},...]` as Uppercase<string>,
+      `${elementType.label}[,${elementType.label}...]` as Uppercase<string>,
     decoder(value: string) {
       return value.split(",").map(elementType.decoder);
     },

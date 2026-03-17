@@ -9,7 +9,8 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  runWithArgv,
+  runCommand,
+  typeCommaList,
   typeNumber,
   typeString,
 } from "../src";
@@ -27,7 +28,7 @@ const cmd = commandWithSubcommands<string, any, any>(
         }),
         numberOption: optionRepeatable({
           long: "number-option",
-          type: typeNumber,
+          type: typeCommaList(typeNumber),
         }),
       },
       arguments: [
@@ -72,8 +73,9 @@ const cmd = commandWithSubcommands<string, any, any>(
 );
 
 it("run", async () => {
-  const res1 = await runWithArgv(
-    ["node", "script", "50", "51", "sub1", "final"],
+  const res1 = await runCommand(
+    "script",
+    ["50", "51", "sub1", "final"],
     "Run Context Input",
     cmd,
   );
@@ -97,18 +99,17 @@ it("run", async () => {
     at: "sub1",
   });
 
-  const res2 = await runWithArgv(
+  const res2 = await runCommand(
+    "script",
     [
-      "node",
-      "script",
       "40",
       "41",
       "sub2",
       "--string-option=hello",
       "--number-option",
-      "123",
+      "123.1,123.2",
       "--number-option",
-      "1234",
+      "123.3",
       "88.88",
       "a,b",
       "final",
@@ -124,7 +125,7 @@ it("run", async () => {
         options: {
           booleanFlag: true,
           stringOption: "hello",
-          numberOption: [123, 1234],
+          numberOption: [[123.1, 123.2], [123.3]],
         },
         arguments: [40, 41],
       },

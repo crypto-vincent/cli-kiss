@@ -3,18 +3,17 @@ import { ReaderTokenizer } from "./Reader";
 import { typoInferSupport } from "./Typo";
 import { usageToPrintableLines } from "./Usage";
 
-export async function runWithArgv<Context, Result>(
-  argv: string[],
+export async function runCommand<Context, Result>(
+  cliName: Lowercase<string>,
+  cliArgs: Array<string>,
   context: Context,
   command: Command<Context, Result>,
   cliInfo?: {
-    name?: Lowercase<string>;
     version?: string;
     helpOnError?: boolean;
   },
 ): Promise<Result> {
-  const cliName = cliInfo?.name ?? argv[1]!;
-  const readerTokenizer = new ReaderTokenizer(argv.slice(2));
+  const readerTokenizer = new ReaderTokenizer(cliArgs);
   if (cliInfo?.version) {
     readerTokenizer.registerFlag({
       key: "version",
@@ -65,7 +64,7 @@ export async function runWithArgv<Context, Result>(
           }).join("\n"),
         );
       }
-      console.error(error);
+      console.error(error); // TODO - better, prettier errors
       process.exit(1);
     }
   } catch (error) {

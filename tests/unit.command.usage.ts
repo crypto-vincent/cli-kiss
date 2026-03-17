@@ -11,6 +11,8 @@ import {
   optionRepeatable,
   optionSingleValue,
   ReaderTokenizer,
+  typeCommaList,
+  typeCommaTuple,
   typeNumber,
   typeString,
 } from "../src";
@@ -37,11 +39,10 @@ const cmd = commandWithSubcommands<string, any, any>(
           label: "COOL-STUFF",
           description: "Root string-option description",
         }),
-        numberOption: optionRepeatable({
-          short: "n",
-          long: "number-option",
-          type: typeNumber,
-          description: "Root number-option description",
+        complexOption: optionRepeatable({
+          long: "complex-option",
+          type: typeCommaTuple([typeNumber, typeCommaList(typeString)]),
+          description: "Root complex-option description",
         }),
       },
       arguments: [
@@ -117,7 +118,7 @@ const cmd = commandWithSubcommands<string, any, any>(
               default: () => "42",
             }),
             argumentVariadics({
-              label: "VARIADIC-POSS",
+              label: "VARIADIC",
               description: "Variadic positional arguments",
               type: typeString,
             }),
@@ -132,7 +133,8 @@ const cmd = commandWithSubcommands<string, any, any>(
 );
 
 it("run", async () => {
-  const usage1 = getUsage([], cmd);
+  const usage1 = await getUsage([], cmd);
+  // console.log(usage1.join("\n"));
   expect(usage1).toStrictEqual([
     "{Root command description}+",
     "{Root command details}@brightBlack",
@@ -150,13 +152,13 @@ it("run", async () => {
     "{  }{sub2}@brightCyan+{  }{Subcommand 2 description}+",
     "",
     "{Options:}@brightGreen+",
-    "{  }{-b}@brightCyan+{, }{--boolean-flag}@brightCyan+{[=yes|no]}@brightBlack     {  }{Root boolean-flag description}+",
-    "{  }{-s}@brightCyan+{, }{--string-option }@brightCyan+{<COOL-STUFF>}@brightBlue{  }{Root string-option description}+",
-    "{  }{-n}@brightCyan+{, }{--number-option }@brightCyan+{<NUMBER>}@brightBlue    {  }{Root number-option description}+",
+    "{  }{-b}@brightCyan+{, }{--boolean-flag}@brightCyan+                              {  }{Root boolean-flag description}+",
+    "{  }{-s}@brightCyan+{, }{--string-option }@brightCyan+{<COOL-STUFF>}@brightBlue                {  }{Root string-option description}+",
+    "{  }    {--complex-option }@brightCyan+{<NUMBER,STRING[,STRING...]>}@brightBlue{  }{Root complex-option description}+",
     "",
   ]);
 
-  const usage2 = getUsage(["50", "51", "sub1", "final"], cmd);
+  const usage2 = await getUsage(["50", "51", "sub1", "final"], cmd);
   expect(usage2).toStrictEqual([
     "{Subcommand 1 description}+",
     "{Subcommand 1 details}@brightBlack",
@@ -171,18 +173,18 @@ it("run", async () => {
     "{  }{<POS-STRING>}@brightBlue{  }{Positional string argument}+",
     "",
     "{Options:}@brightGreen+",
-    "{  }{-b}@brightCyan+{, }{--boolean-flag}@brightCyan+{[=yes|no]}@brightBlack     {  }{Root boolean-flag description}+",
-    "{  }{-s}@brightCyan+{, }{--string-option }@brightCyan+{<COOL-STUFF>}@brightBlue{  }{Root string-option description}+",
-    "{  }{-n}@brightCyan+{, }{--number-option }@brightCyan+{<NUMBER>}@brightBlue    {  }{Root number-option description}+",
+    "{  }{-b}@brightCyan+{, }{--boolean-flag}@brightCyan+                              {  }{Root boolean-flag description}+",
+    "{  }{-s}@brightCyan+{, }{--string-option }@brightCyan+{<COOL-STUFF>}@brightBlue                {  }{Root string-option description}+",
+    "{  }    {--complex-option }@brightCyan+{<NUMBER,STRING[,STRING...]>}@brightBlue{  }{Root complex-option description}+",
     "",
   ]);
 
-  const usage3 = getUsage(
+  const usage3 = await getUsage(
     [
       "40",
       "41",
       "sub2",
-      "--string-option=hello",
+      "--complex-option=42,hello,world",
       "--number-option",
       "123",
       "--number-option",
@@ -200,29 +202,36 @@ it("run", async () => {
     "{Second line of subcommand 2 details}@brightBlack",
     "",
     "{Usage:}@brightGreen+",
-    "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub2}@brightCyan+ {<POS-NUMBER>}@brightBlue {[OPT-POS]}@brightBlue {[VARIADIC-POSS...]}@brightBlue",
+    "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub2}@brightCyan+ {<POS-NUMBER>}@brightBlue {[OPT-POS]}@brightBlue {[VARIADIC...]}@brightBlue",
     "",
     "{Arguments:}@brightGreen+",
-    "{  }{<POS-1>}@brightBlue           {  }{First positional argument}+",
-    "{  }{<POS-2>}@brightBlue           {  }{Second positional argument}+",
-    "{  }{<POS-NUMBER>}@brightBlue      {  }{Positional number argument}+",
-    "{  }{[OPT-POS]}@brightBlue         {  }{Optional positional argument}+",
-    "{  }{[VARIADIC-POSS...]}@brightBlue{  }{Variadic positional arguments}+",
+    "{  }{<POS-1>}@brightBlue      {  }{First positional argument}+",
+    "{  }{<POS-2>}@brightBlue      {  }{Second positional argument}+",
+    "{  }{<POS-NUMBER>}@brightBlue {  }{Positional number argument}+",
+    "{  }{[OPT-POS]}@brightBlue    {  }{Optional positional argument}+",
+    "{  }{[VARIADIC...]}@brightBlue{  }{Variadic positional arguments}+",
     "",
     "{Options:}@brightGreen+",
-    "{  }{-b}@brightCyan+{, }{--boolean-flag}@brightCyan+{[=yes|no]}@brightBlack     {  }{Root boolean-flag description}+",
-    "{  }{-s}@brightCyan+{, }{--string-option }@brightCyan+{<COOL-STUFF>}@brightBlue{  }{Root string-option description}+",
-    "{  }{-n}@brightCyan+{, }{--number-option }@brightCyan+{<NUMBER>}@brightBlue    {  }{Root number-option description}+",
-    "{  }    {--dudu }@brightCyan+{<STRING>}@brightBlue             {  }{Dudu option description}+",
+    "{  }{-b}@brightCyan+{, }{--boolean-flag}@brightCyan+                              {  }{Root boolean-flag description}+",
+    "{  }{-s}@brightCyan+{, }{--string-option }@brightCyan+{<COOL-STUFF>}@brightBlue                {  }{Root string-option description}+",
+    "{  }    {--complex-option }@brightCyan+{<NUMBER,STRING[,STRING...]>}@brightBlue{  }{Root complex-option description}+",
+    "{  }    {--dudu }@brightCyan+{<STRING>}@brightBlue                             {  }{Dudu option description}+",
     "",
   ]);
 });
 
-function getUsage<Context, Result>(
+async function getUsage<Context, Result>(
   argv: Array<string>,
   command: Command<Context, Result>,
 ) {
   const commandRunner = command.prepareRunner(new ReaderTokenizer(argv));
+  /*
+  try {
+    console.log(await commandRunner.execute({} as Context));
+  } catch (error) {
+    console.error("Error during execution:", error);
+  }
+    */
   return usageToPrintableLines({
     cliName: "my-cli",
     commandUsage: commandRunner.computeUsage(),
