@@ -30,6 +30,7 @@ export function command<Context, Result>(
   metadata: {
     description: string;
     details?: Array<string>;
+    // TODO - examples ?
   },
   execution: Execution<Context, Result>,
 ): Command<Context, Result> {
