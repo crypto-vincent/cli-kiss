@@ -6,10 +6,10 @@ import {
   Command,
   command,
   commandWithSubcommands,
+  execution,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  process,
   ReaderTokenizer,
   typeNumber,
   typeString,
@@ -24,7 +24,7 @@ const cmd = commandWithSubcommands<string, any, any>(
       "Second line of root command description",
     ],
   },
-  process(
+  execution(
     {
       options: {
         booleanFlag: optionFlag({
@@ -73,7 +73,7 @@ const cmd = commandWithSubcommands<string, any, any>(
           "Second line of subcommand 1 description",
         ],
       },
-      process(
+      execution(
         {
           options: {},
           arguments: [
@@ -97,7 +97,7 @@ const cmd = commandWithSubcommands<string, any, any>(
           "Second line of subcommand 2 description",
         ],
       },
-      process(
+      execution(
         {
           options: {
             duduValue: optionSingleValue({

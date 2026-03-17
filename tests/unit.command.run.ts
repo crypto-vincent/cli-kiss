@@ -5,10 +5,10 @@ import {
   argumentVariadics,
   command,
   commandWithSubcommands,
+  execution,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  process,
   runWithArgv,
   typeNumber,
   typeString,
@@ -16,7 +16,7 @@ import {
 
 const cmd = commandWithSubcommands<string, any, any>(
   { title: "Root command title" },
-  process(
+  execution(
     {
       options: {
         booleanFlag: optionFlag({ long: "boolean-flag", default: () => false }),
@@ -42,7 +42,7 @@ const cmd = commandWithSubcommands<string, any, any>(
   {
     sub1: command(
       { title: "Subcommand 1 title" },
-      process(
+      execution(
         {
           options: {},
           arguments: [argumentRequired({ type: typeString })],
@@ -54,7 +54,7 @@ const cmd = commandWithSubcommands<string, any, any>(
     ),
     sub2: command(
       { title: "Subcommand 2 title" },
-      process(
+      execution(
         {
           options: {},
           arguments: [

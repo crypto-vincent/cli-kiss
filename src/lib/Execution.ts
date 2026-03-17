@@ -2,28 +2,28 @@ import { Argument, ArgumentUsage } from "./Argument";
 import { Option, OptionUsage } from "./Option";
 import { ReaderTokenizer } from "./Reader";
 
-export type Process<Context, Result> = {
-  computeUsage(): ProcessUsage;
+export type Execution<Context, Result> = {
+  computeUsage(): ExecutionUsage;
   prepareResolver(
     readerTokenizer: ReaderTokenizer,
-  ): ProcessResolver<Context, Result>;
+  ): ExecutionResolver<Context, Result>;
 };
 
-export type ProcessResolver<Context, Result> = () => ProcessRunner<
+export type ExecutionResolver<Context, Result> = () => ExecutionCallback<
   Context,
   Result
 >;
 
-export type ProcessRunner<Context, Result> = {
-  execute(context: Context): Promise<Result>;
-};
+export type ExecutionCallback<Context, Result> = (
+  context: Context,
+) => Promise<Result>;
 
-export type ProcessUsage = {
+export type ExecutionUsage = {
   options: Array<OptionUsage>;
   arguments: Array<ArgumentUsage>;
 };
 
-export function process<
+export function execution<
   Context,
   Result,
   Options extends { [option: string]: Option<any> },
@@ -43,7 +43,7 @@ export function process<
       };
     },
   ) => Promise<Result>,
-): Process<Context, Result> {
+): Execution<Context, Result> {
   return {
     computeUsage() {
       const optionsUsage = new Array<OptionUsage>();
@@ -73,13 +73,11 @@ export function process<
         for (const optionKey in optionsConsumers) {
           optionsValues[optionKey] = optionsConsumers[optionKey]!();
         }
-        return {
-          async execute(context: Context) {
-            return await handler(context, {
-              options: optionsValues,
-              arguments: argumentsValues,
-            });
-          },
+        return async (context: Context) => {
+          return await handler(context, {
+            options: optionsValues,
+            arguments: argumentsValues,
+          });
         };
       };
     },
