@@ -4,7 +4,7 @@ import { OptionUsage } from "./Option";
 import { ReaderTokenizer } from "./Reader";
 
 export type Command<Context, Result> = {
-  getTitle(): string | undefined;
+  getDescription(): string | undefined;
   prepareRunner(
     readerTokenizer: ReaderTokenizer,
   ): CommandRunner<Context, Result>;
@@ -17,28 +17,25 @@ export type CommandRunner<Context, Result> = {
 
 export type CommandUsage = {
   breadcrumbs: Array<CommandUsageBreadcrumb>;
-  title: string;
-  description: Array<string> | undefined;
+  description: string;
+  details: Array<string> | undefined;
   options: Array<OptionUsage>;
   arguments: Array<ArgumentUsage>;
-  subcommands: Array<{ name: string; title: string | undefined }>;
+  subcommands: Array<{ name: string; description: string | undefined }>;
 };
 
-export type CommandUsageBreadcrumb = {
-  kind: "command" | "argument";
-  value: string;
-};
+export type CommandUsageBreadcrumb = { argument: string } | { command: string };
 
 export function command<Context, Result>(
   metadata: {
-    title: string;
-    description?: Array<string>;
+    description: string;
+    details?: Array<string>;
   },
   execution: Execution<Context, Result>,
 ): Command<Context, Result> {
   return {
-    getTitle() {
-      return metadata.title;
+    getDescription() {
+      return metadata.description;
     },
     prepareRunner(readerTokenizer: ReaderTokenizer) {
       function computeUsage(): CommandUsage {
@@ -47,8 +44,8 @@ export function command<Context, Result>(
           breadcrumbs: executionUsage.arguments.map((argument) =>
             breadcrumbArgument(argument.label),
           ),
-          title: metadata.title,
           description: metadata.description,
+          details: metadata.details,
           options: executionUsage.options,
           arguments: executionUsage.arguments,
           subcommands: [],
@@ -81,15 +78,15 @@ export function command<Context, Result>(
 
 export function commandWithSubcommands<Context, Payload, Result>(
   metadata: {
-    title: string;
-    description?: Array<string>;
+    description: string;
+    details?: Array<string>;
   },
   execution: Execution<Context, Payload>,
   subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
 ): Command<Context, Result> {
   return {
-    getTitle() {
-      return metadata.title;
+    getDescription() {
+      return metadata.description;
     },
     prepareRunner(readerTokenizer: ReaderTokenizer) {
       try {
@@ -114,8 +111,8 @@ export function commandWithSubcommands<Context, Payload, Result>(
                 .map((argument) => breadcrumbArgument(argument.label))
                 .concat([breadcrumbCommand(subcommandName)])
                 .concat(subcommandUsage.breadcrumbs),
-              title: subcommandUsage.title,
               description: subcommandUsage.description,
+              details: subcommandUsage.details,
               options: executionUsage.options.concat(subcommandUsage.options),
               arguments: executionUsage.arguments.concat(
                 subcommandUsage.arguments,
@@ -136,14 +133,14 @@ export function commandWithSubcommands<Context, Payload, Result>(
               breadcrumbs: executionUsage.arguments
                 .map((argument) => breadcrumbArgument(argument.label))
                 .concat([breadcrumbCommand("<SUBCOMMAND>")]),
-              title: metadata.title,
               description: metadata.description,
+              details: metadata.details,
               options: executionUsage.options,
               arguments: executionUsage.arguments,
               subcommands: Object.entries(subcommands).map(
                 ([name, subcommand]) => ({
                   name,
-                  title: subcommand.getTitle(),
+                  description: subcommand.getDescription(),
                 }),
               ),
             };
@@ -157,10 +154,10 @@ export function commandWithSubcommands<Context, Payload, Result>(
   };
 }
 
-function breadcrumbArgument(label: string): CommandUsageBreadcrumb {
-  return { kind: "argument", value: label };
+function breadcrumbArgument(value: string): CommandUsageBreadcrumb {
+  return { argument: value };
 }
 
-function breadcrumbCommand(name: string): CommandUsageBreadcrumb {
-  return { kind: "command", value: name };
+function breadcrumbCommand(value: string): CommandUsageBreadcrumb {
+  return { command: value };
 }

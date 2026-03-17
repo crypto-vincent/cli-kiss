@@ -15,7 +15,7 @@ import {
 } from "../src";
 
 const cmd = commandWithSubcommands<string, any, any>(
-  { title: "Root command title" },
+  { description: "Root command description" },
   execution(
     {
       options: {
@@ -41,7 +41,7 @@ const cmd = commandWithSubcommands<string, any, any>(
   ),
   {
     sub1: command(
-      { title: "Subcommand 1 title" },
+      { description: "Subcommand 1 description" },
       execution(
         {
           options: {},
@@ -53,7 +53,7 @@ const cmd = commandWithSubcommands<string, any, any>(
       ),
     ),
     sub2: command(
-      { title: "Subcommand 2 title" },
+      { description: "Subcommand 2 description" },
       execution(
         {
           options: {},

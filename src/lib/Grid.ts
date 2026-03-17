@@ -4,7 +4,11 @@ export type Grid = Array<GridRow>;
 export type GridRow = Array<GridCell>;
 export type GridCell = Array<TypoText>;
 
-export function gridToPrintableLines(grid: Grid, typoSupport: TypoSupport) {
+export function gridToPrintableLines(
+  grid: Grid,
+  typoSupport: TypoSupport,
+  delimiter: string = "",
+): Array<string> {
   const lines = new Array<string>();
   const gridWidths = new Array<number>();
   for (const gridRow of grid) {
@@ -42,7 +46,7 @@ export function gridToPrintableLines(grid: Grid, typoSupport: TypoSupport) {
         lineColumns.push(parts.join(""));
       }
     }
-    lines.push(lineColumns.join(" "));
+    lines.push(lineColumns.join(delimiter));
   }
   return lines;
 }

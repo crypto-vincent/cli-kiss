@@ -11,74 +11,44 @@ export function usageToPrintableLines(params: {
 
   const lines = new Array<string>();
 
-  lines.push("");
-  lines.push(typoPrintableString(typoSupport, textDesc(commandUsage.title)));
-  if (commandUsage.description) {
-    for (const descriptionLine of commandUsage.description) {
-      lines.push(typoPrintableString(typoSupport, textSubs(descriptionLine)));
+  lines.push(
+    typoPrintableString(typoSupport, textDesc(commandUsage.description)),
+  );
+  if (commandUsage.details) {
+    for (const detailLine of commandUsage.details) {
+      lines.push(typoPrintableString(typoSupport, textSubs(detailLine)));
     }
   }
 
-  const breadcrumbPrefix = typoPrintableString(
-    typoSupport,
-    textTitle("Usage:"),
-  );
-  const breadcrumbsItems = [
+  lines.push("");
+  lines.push(typoPrintableString(typoSupport, textCategory("Usage:")));
+  const breadcrumbs = [
+    " ",
     typoPrintableString(typoSupport, textName(cliName)),
   ].concat(
     commandUsage.breadcrumbs.map((breadcrumb) => {
-      if (breadcrumb.kind === "argument") {
-        return typoPrintableString(typoSupport, textValue(breadcrumb.value));
+      if ("argument" in breadcrumb) {
+        return typoPrintableString(typoSupport, textData(breadcrumb.argument));
       }
-      return typoPrintableString(typoSupport, textName(breadcrumb.value));
+      if ("command" in breadcrumb) {
+        return typoPrintableString(typoSupport, textName(breadcrumb.command));
+      }
+      throw new Error(`Unknown breadcrumb: ${JSON.stringify(breadcrumb)}`);
     }),
   );
-  lines.push("");
-  lines.push(`${breadcrumbPrefix} ${breadcrumbsItems.join(" ")}`);
+  lines.push(breadcrumbs.join(" "));
 
   if (commandUsage.arguments.length > 0) {
     lines.push("");
-    lines.push(typoPrintableString(typoSupport, textTitle("Arguments:")));
+    lines.push(typoPrintableString(typoSupport, textCategory("Arguments:")));
     const grid = new Array<GridRow>();
     for (const argumentUsage of commandUsage.arguments) {
       const gridRow = new Array<GridCell>();
-      gridRow.push([]);
-      gridRow.push([textValue(argumentUsage.label)]);
-      gridRow.push([]);
+      gridRow.push([textDelimiter()]);
+      gridRow.push([textData(argumentUsage.label)]);
       if (argumentUsage.description) {
+        gridRow.push([textDelimiter()]);
         gridRow.push([textDesc(argumentUsage.description)]);
-      }
-      grid.push(gridRow);
-    }
-    lines.push(...gridToPrintableLines(grid, typoSupport));
-  }
-
-  if (commandUsage.options.length > 0) {
-    lines.push("");
-    lines.push(typoPrintableString(typoSupport, textTitle("Options:")));
-    const grid = new Array<GridRow>();
-    for (const optionUsage of commandUsage.options) {
-      const gridRow = new Array<GridCell>();
-      gridRow.push([]);
-      if (optionUsage.short) {
-        gridRow.push([textName(`-${optionUsage.short}`), { value: "," }]);
-      } else {
-        gridRow.push([]);
-      }
-      if (optionUsage.label) {
-        gridRow.push([
-          textName(`--${optionUsage.long} `),
-          textValue(optionUsage.label),
-        ]);
-      } else {
-        gridRow.push([
-          textName(`--${optionUsage.long}`),
-          { value: "[=yes|no]", color: "grey" },
-        ]);
-      }
-      gridRow.push([]);
-      if (optionUsage.description) {
-        gridRow.push([textDesc(optionUsage.description)]);
       }
       grid.push(gridRow);
     }
@@ -87,40 +57,77 @@ export function usageToPrintableLines(params: {
 
   if (commandUsage.subcommands.length > 0) {
     lines.push("");
-    lines.push(typoPrintableString(typoSupport, textTitle("Subcommands:")));
+    lines.push(typoPrintableString(typoSupport, textCategory("Subcommands:")));
     const grid = new Array<GridRow>();
     for (const subcommand of commandUsage.subcommands) {
       const gridRow = new Array<GridCell>();
-      gridRow.push([]);
+      gridRow.push([textDelimiter()]);
       gridRow.push([textName(subcommand.name)]);
-      gridRow.push([]);
-      if (subcommand.title) {
-        gridRow.push([textDesc(subcommand.title)]);
+      if (subcommand.description) {
+        gridRow.push([textDelimiter()]);
+        gridRow.push([textDesc(subcommand.description)]);
       }
       grid.push(gridRow);
     }
     lines.push(...gridToPrintableLines(grid, typoSupport));
   }
+
+  if (commandUsage.options.length > 0) {
+    lines.push("");
+    lines.push(typoPrintableString(typoSupport, textCategory("Options:")));
+    const grid = new Array<GridRow>();
+    for (const optionUsage of commandUsage.options) {
+      const gridRow = new Array<GridCell>();
+      gridRow.push([textDelimiter()]);
+      if (optionUsage.short) {
+        gridRow.push([textName(`-${optionUsage.short}`), { value: ", " }]);
+      } else {
+        gridRow.push([]);
+      }
+      if (optionUsage.label) {
+        gridRow.push([
+          textName(`--${optionUsage.long} `),
+          textData(optionUsage.label),
+        ]);
+      } else {
+        gridRow.push([
+          textName(`--${optionUsage.long}`),
+          textSubs("[=yes|no]"),
+        ]);
+      }
+      if (optionUsage.description) {
+        gridRow.push([textDelimiter()]);
+        gridRow.push([textDesc(optionUsage.description)]);
+      }
+      grid.push(gridRow);
+    }
+    lines.push(...gridToPrintableLines(grid, typoSupport));
+  }
+
   lines.push("");
   return lines;
 }
 
-function textTitle(text: string): TypoText {
-  return { value: text, color: "green", bold: true };
-}
-
-function textSubs(text: string): TypoText {
-  return { value: text, color: "grey" };
+function textCategory(text: string): TypoText {
+  return { value: text, color: "brightGreen", bold: true };
 }
 
 function textDesc(text: string): TypoText {
   return { value: text, bold: true };
 }
 
-function textName(text: string): TypoText {
-  return { value: text, color: "cyan", bold: true };
+function textSubs(text: string): TypoText {
+  return { value: text, color: "brightBlack" };
 }
 
-function textValue(text: string): TypoText {
-  return { value: text, color: "cyan" };
+function textName(text: string): TypoText {
+  return { value: text, color: "brightCyan", bold: true };
+}
+
+function textData(text: string): TypoText {
+  return { value: text, color: "brightBlue" };
+}
+
+function textDelimiter(): TypoText {
+  return { value: "  " };
 }
