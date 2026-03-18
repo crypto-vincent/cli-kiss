@@ -19,21 +19,24 @@ export async function runAndExit<Context>(
     usageOnHelp?: boolean | undefined;
     buildVersion?: string | undefined;
     useColors?: boolean | undefined;
-    onLogStdOut?: ((message: string) => void) | undefined;
+    onLogStdOut?: ((message: string) => void) | undefined; // TODO - this is a problem, deep commands use console
     onLogStdErr?: ((message: string) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
     onError?: ((error: unknown) => void) | undefined;
   },
 ): Promise<never> {
+  // TODO - can those flags could be implemented as a chained command ??
   const readerArgs = new ReaderArgs(cliArgs);
-  if (application?.buildVersion) {
+  const buildVersion = application?.buildVersion;
+  if (buildVersion) {
     readerArgs.registerFlag({
       key: "version",
       shorts: [],
       longs: ["version"],
     });
   }
-  if (application?.usageOnHelp ?? true) {
+  const usageOnHelp = application?.usageOnHelp ?? true;
+  if (usageOnHelp) {
     readerArgs.registerFlag({
       key: "help",
       shorts: [],
@@ -49,42 +52,41 @@ export async function runAndExit<Context>(
   });
   */
   const interpreterFactory = command.createInterpreterFactory(readerArgs);
-  if (application?.buildVersion) {
-    if (readerArgs.consumeFlag("version")) {
-      (application?.onLogStdOut ?? console.log)(
-        [cliName, application.buildVersion].join(" "),
-      );
-      return (application?.onExit ?? process.exit)(0);
-    }
-  }
-  if (application?.usageOnHelp ?? true) {
-    if (readerArgs.consumeFlag("help")) {
-      const typoSupport = chooseTypoSupport(application?.useColors);
-      (application?.onLogStdOut ?? console.log)(
-        computeUsageString(cliName, interpreterFactory, typoSupport),
-      );
-      return (application?.onExit ?? process.exit)(0);
-    }
-  }
+  const onExit = application?.onExit ?? process.exit;
   try {
     const interpreterInstance = interpreterFactory.createInterpreterInstance();
+    const onLogStdOut = application?.onLogStdOut ?? console.log;
+    if (buildVersion) {
+      if (readerArgs.readFlag("version")) {
+        onLogStdOut([cliName, buildVersion].join(" "));
+        return onExit(0);
+      }
+    }
+    if (usageOnHelp) {
+      if (readerArgs.readFlag("help")) {
+        const typoSupport = chooseTypoSupport(application?.useColors);
+        onLogStdOut(
+          computeUsageString(cliName, interpreterFactory, typoSupport),
+        );
+        return onExit(0);
+      }
+    }
     await interpreterInstance.executeWithContext(context);
-    return (application?.onExit ?? process.exit)(0);
+    return onExit(0);
   } catch (error) {
     if (application?.onError) {
       application.onError(error);
     } else {
+      const onLogStdErr = application?.onLogStdErr ?? console.error;
       const typoSupport = chooseTypoSupport(application?.useColors);
       if (application?.usageOnError ?? true) {
-        (application?.onLogStdErr ?? console.error)(
+        onLogStdErr(
           computeUsageString(cliName, interpreterFactory, typoSupport),
         );
       }
-      (application?.onLogStdErr ?? console.error)(
-        computeErrorString(error, typoSupport),
-      );
+      onLogStdErr(computeErrorString(error, typoSupport));
     }
-    return (application?.onExit ?? process.exit)(1);
+    return onExit(1);
   }
 }
 

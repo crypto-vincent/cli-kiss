@@ -176,6 +176,57 @@ export function commandWithSubcommands<Context, Payload, Result>(
   };
 }
 
+export function commandChained<Context, Payload, Result>(
+  metadata: CommandMetadata,
+  execution: Execution<Context, Payload>,
+  nextCommand: Command<Payload, Result>,
+): Command<Context, Result> {
+  return {
+    getDescription() {
+      return metadata.description;
+    },
+    createInterpreterFactory(readerArgs: ReaderArgs) {
+      const executionInterpreterFactory =
+        execution.createInterpreterFactory(readerArgs);
+      const nextCommandInterpreterFactory =
+        nextCommand.createInterpreterFactory(readerArgs);
+      return {
+        generateUsage() {
+          const executionUsage = execution.generateUsage();
+          const nextCommandUsage =
+            nextCommandInterpreterFactory.generateUsage();
+          return {
+            metadata: nextCommandUsage.metadata,
+            breadcrumbs: executionUsage.arguments
+              .map((argument) => breadcrumbArgument(argument.label))
+              .concat(nextCommandUsage.breadcrumbs),
+            options: executionUsage.options.concat(nextCommandUsage.options),
+            arguments: executionUsage.arguments.concat(
+              nextCommandUsage.arguments,
+            ),
+            subcommands: nextCommandUsage.subcommands,
+          };
+        },
+        createInterpreterInstance() {
+          const nextCommandInterpreterInstance =
+            nextCommandInterpreterFactory.createInterpreterInstance();
+          const executionInterpreterInstance =
+            executionInterpreterFactory.createInterpreterInstance();
+          return {
+            async executeWithContext(context: Context) {
+              const payload =
+                await executionInterpreterInstance.executeWithContext(context);
+              return await nextCommandInterpreterInstance.executeWithContext(
+                payload,
+              );
+            },
+          };
+        },
+      };
+    },
+  };
+}
+
 function breadcrumbArgument(value: string): CommandUsageBreadcrumb {
   return { argument: value };
 }

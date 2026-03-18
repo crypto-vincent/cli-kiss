@@ -3,7 +3,7 @@ import { Type, typeDecode } from "./Type";
 
 export type Option<Value> = {
   generateUsage(): OptionUsage;
-  prepareConsumer(readerArgs: ReaderArgs): OptionConsumer<Value>;
+  createReader(readerArgs: ReaderArgs): OptionReader<Value>;
 };
 
 export type OptionUsage = {
@@ -14,7 +14,9 @@ export type OptionUsage = {
   // TODO - default value for usage ? but it can be dynamic, so maybe not
 };
 
-export type OptionConsumer<Value> = () => Value;
+export type OptionReader<Value> = {
+  readValue(): Value;
+};
 
 export function optionFlag(definition: {
   long: Lowercase<string>;
@@ -32,7 +34,7 @@ export function optionFlag(definition: {
         label: undefined,
       };
     },
-    prepareConsumer(readerArgs: ReaderArgs) {
+    createReader(readerArgs: ReaderArgs) {
       const key = computeKey(definition.long, definition.short);
       const longs = [definition.long];
       if (definition.aliases?.longs) {
@@ -43,18 +45,20 @@ export function optionFlag(definition: {
         shorts.push(...definition.aliases?.shorts);
       }
       readerArgs.registerFlag({ key, longs, shorts });
-      return () => {
-        const value = readerArgs.consumeFlag(key);
-        if (value === undefined) {
-          try {
-            return definition.default ? definition.default() : false;
-          } catch (error) {
-            throw new Error(
-              `Error computing default value for flag ${key}: ${error instanceof Error ? error.message : String(error)}`,
-            );
+      return {
+        readValue() {
+          const value = readerArgs.readFlag(key);
+          if (value === undefined) {
+            try {
+              return definition.default ? definition.default() : false;
+            } catch (error) {
+              throw new Error(
+                `Error computing default value for flag ${key}: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
           }
-        }
-        return value;
+          return value;
+        },
       };
     },
   };
@@ -79,7 +83,7 @@ export function optionRepeatable<Value>(definition: {
         label: `<${label}>` as Uppercase<string>,
       };
     },
-    prepareConsumer(readerArgs: ReaderArgs) {
+    createReader(readerArgs: ReaderArgs) {
       const key = computeKey(definition.long, definition.short);
       const longs = definition.long ? [definition.long] : [];
       if (definition.aliases?.longs) {
@@ -90,12 +94,14 @@ export function optionRepeatable<Value>(definition: {
         shorts.push(...definition.aliases?.shorts);
       }
       readerArgs.registerOption({ key, longs, shorts });
-      return () => {
-        return readerArgs
-          .consumeOption(key)
-          .map((value) =>
-            typeDecode(definition.type, value, `${key}: ${label}`),
-          );
+      return {
+        readValue() {
+          return readerArgs
+            .readOption(key)
+            .map((value) =>
+              typeDecode(definition.type, value, `${key}: ${label}`),
+            );
+        },
       };
     },
   };
@@ -120,7 +126,7 @@ export function optionSingleValue<Value>(definition: {
         label: `<${label}>` as Uppercase<string>,
       };
     },
-    prepareConsumer(readerArgs: ReaderArgs) {
+    createReader(readerArgs: ReaderArgs) {
       const key = computeKey(definition.long, definition.short);
       const longs = [definition.long];
       if (definition.aliases?.longs) {
@@ -131,24 +137,26 @@ export function optionSingleValue<Value>(definition: {
         shorts.push(...definition.aliases?.shorts);
       }
       readerArgs.registerOption({ key, longs, shorts });
-      return () => {
-        const values = readerArgs.consumeOption(key);
-        if (values.length > 1) {
-          throw new Error(
-            `Multiple values provided for option: ${key}, expected only one. Found: ${values.map((v) => `"${v}"`).join(", ")}`,
-          );
-        }
-        const firstValue = values[0];
-        if (firstValue === undefined) {
-          try {
-            return definition.default();
-          } catch (error) {
+      return {
+        readValue() {
+          const values = readerArgs.readOption(key);
+          if (values.length > 1) {
             throw new Error(
-              `Error computing default value for option ${key}: ${error instanceof Error ? error.message : String(error)}`,
+              `Multiple values provided for option: ${key}, expected only one. Found: ${values.map((v) => `"${v}"`).join(", ")}`,
             );
           }
-        }
-        return typeDecode(definition.type, firstValue, `${key}: ${label}`);
+          const firstValue = values[0];
+          if (firstValue === undefined) {
+            try {
+              return definition.default();
+            } catch (error) {
+              throw new Error(
+                `Error computing default value for option ${key}: ${error instanceof Error ? error.message : String(error)}`,
+              );
+            }
+          }
+          return typeDecode(definition.type, firstValue, `${key}: ${label}`);
+        },
       };
     },
   };

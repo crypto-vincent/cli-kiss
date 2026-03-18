@@ -98,27 +98,27 @@ it("run", async () => {
   expect(stream.consumePositional()).toStrictEqual("positional-4");
   expect(stream.consumePositional()).toStrictEqual(undefined);
 
-  expect(stream.consumeFlag("flag-normal")).toStrictEqual(true);
-  expect(stream.consumeFlag("flag-positive")).toStrictEqual(true);
-  expect(stream.consumeFlag("flag-negative")).toStrictEqual(false);
-  expect(stream.consumeFlag("flag-unset")).toStrictEqual(undefined);
+  expect(stream.readFlag("flag-normal")).toStrictEqual(true);
+  expect(stream.readFlag("flag-positive")).toStrictEqual(true);
+  expect(stream.readFlag("flag-negative")).toStrictEqual(false);
+  expect(stream.readFlag("flag-unset")).toStrictEqual(undefined);
 
-  expect(stream.consumeOption("option-unset")).toStrictEqual([]);
-  expect(stream.consumeOption("option-split")).toStrictEqual(["1.1", "1.2"]);
-  expect(stream.consumeOption("option-join")).toStrictEqual(["2"]);
+  expect(stream.readOption("option-unset")).toStrictEqual([]);
+  expect(stream.readOption("option-split")).toStrictEqual(["1.1", "1.2"]);
+  expect(stream.readOption("option-join")).toStrictEqual(["2"]);
 
-  expect(stream.consumeFlag("a")).toStrictEqual(true);
-  expect(stream.consumeOption("b")).toStrictEqual(["3.1", "3.2"]);
+  expect(stream.readFlag("a")).toStrictEqual(true);
+  expect(stream.readOption("b")).toStrictEqual(["3.1", "3.2"]);
 
-  expect(stream.consumeFlag("c")).toStrictEqual(true);
-  expect(stream.consumeOption("d")).toStrictEqual(["4.1", "4.2"]);
+  expect(stream.readFlag("c")).toStrictEqual(true);
+  expect(stream.readOption("d")).toStrictEqual(["4.1", "4.2"]);
 
-  expect(stream.consumeFlag("e")).toStrictEqual(true);
-  expect(stream.consumeOption("f")).toStrictEqual(["5.1", "5.2"]);
+  expect(stream.readFlag("e")).toStrictEqual(true);
+  expect(stream.readOption("f")).toStrictEqual(["5.1", "5.2"]);
 
-  expect(stream.consumeFlag("g")).toStrictEqual(true);
-  expect(stream.consumeFlag("h")).toStrictEqual(false);
+  expect(stream.readFlag("g")).toStrictEqual(true);
+  expect(stream.readFlag("h")).toStrictEqual(false);
 
-  expect(stream.consumeFlag("i")).toStrictEqual(true);
-  expect(stream.consumeFlag("j")).toStrictEqual(true);
+  expect(stream.readFlag("i")).toStrictEqual(true);
+  expect(stream.readFlag("j")).toStrictEqual(true);
 });

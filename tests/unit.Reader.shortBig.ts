@@ -67,20 +67,20 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-2");
 
-  expect(stream.consumeFlag("sof-normal")).toStrictEqual(true);
-  expect(stream.consumeFlag("sof-positive")).toStrictEqual(true);
-  expect(stream.consumeFlag("sof-negative")).toStrictEqual(false);
-  expect(stream.consumeFlag("sof-unset")).toStrictEqual(undefined);
+  expect(stream.readFlag("sof-normal")).toStrictEqual(true);
+  expect(stream.readFlag("sof-positive")).toStrictEqual(true);
+  expect(stream.readFlag("sof-negative")).toStrictEqual(false);
+  expect(stream.readFlag("sof-unset")).toStrictEqual(undefined);
 
-  expect(stream.consumeFlag("aa")).toStrictEqual(true);
-  expect(stream.consumeFlag("bb")).toStrictEqual(true);
-  expect(stream.consumeFlag("cc")).toStrictEqual(true);
+  expect(stream.readFlag("aa")).toStrictEqual(true);
+  expect(stream.readFlag("bb")).toStrictEqual(true);
+  expect(stream.readFlag("cc")).toStrictEqual(true);
 
-  expect(stream.consumeOption("sov-unset")).toStrictEqual([]);
-  expect(stream.consumeOption("sov-split")).toStrictEqual(["1.1", "1.2"]);
-  expect(stream.consumeOption("sov-join")).toStrictEqual(["2"]);
+  expect(stream.readOption("sov-unset")).toStrictEqual([]);
+  expect(stream.readOption("sov-split")).toStrictEqual(["1.1", "1.2"]);
+  expect(stream.readOption("sov-join")).toStrictEqual(["2"]);
 
-  expect(stream.consumeFlag("dd")).toStrictEqual(true);
-  expect(stream.consumeFlag("ee")).toStrictEqual(true);
-  expect(stream.consumeFlag("ff")).toStrictEqual(true);
+  expect(stream.readFlag("dd")).toStrictEqual(true);
+  expect(stream.readFlag("ee")).toStrictEqual(true);
+  expect(stream.readFlag("ff")).toStrictEqual(true);
 });

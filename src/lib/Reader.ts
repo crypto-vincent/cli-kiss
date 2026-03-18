@@ -10,12 +10,12 @@ export class ReaderArgs {
   #flagKeyByShort: Map<string, string>;
   #flagKeyByLong: Map<string, string>;
   #flagInfoByKey: Map<string, {}>;
-  #flagResultByKey: Map<string, boolean | null>;
+  #flagResultByKey: Map<string, boolean>;
 
   #optionKeyByShort: Map<string, string>;
   #optionKeyByLong: Map<string, string>;
   #optionInfoByKey: Map<string, {}>; // TODO - what dis for
-  #optionResultByKey: Map<string, Array<string> | null>;
+  #optionResultByKey: Map<string, Array<string>>;
 
   constructor(args: Array<string>) {
     this.#parsedArgs = args;
@@ -68,37 +68,27 @@ export class ReaderArgs {
     }
   }
 
-  consumeFlag(key: string): boolean | undefined {
+  readFlag(key: string): boolean | undefined {
     const flagInfo = this.#flagInfoByKey.get(key);
     if (flagInfo === undefined) {
       throw new Error(`Flag not registered: ${key}`);
     }
     const result = this.#flagResultByKey.get(key);
     if (result === undefined) {
-      this.#flagResultByKey.set(key, null);
       return undefined;
     }
-    if (result === null) {
-      throw new Error(`Flag already consumed: ${key}`);
-    }
-    this.#flagResultByKey.set(key, null);
     return result;
   }
 
-  consumeOption(key: string): Array<string> {
+  readOption(key: string): Array<string> {
     const optionInfo = this.#optionInfoByKey.get(key);
     if (optionInfo === undefined) {
       throw new Error(`Option not registered: ${key}`);
     }
     const result = this.#optionResultByKey.get(key);
     if (result === undefined) {
-      this.#optionResultByKey.set(key, null);
       return new Array<string>();
     }
-    if (result === null) {
-      throw new Error(`Option already consumed: ${key}`);
-    }
-    this.#optionResultByKey.set(key, null);
     return result;
   }
 

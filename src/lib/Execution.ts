@@ -10,6 +10,7 @@ export type Execution<Context, Result> = {
 };
 
 export type ExecutionInterpreterFactory<Context, Result> = {
+  // TODO - could extract arguments and options parsed for usage printing maybe?
   createInterpreterInstance(): ExecutionInterpreterInstance<Context, Result>;
 };
 
@@ -45,7 +46,9 @@ export function execution<
       const optionsUsage = new Array<OptionUsage>();
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
-        optionsUsage.push(optionInput.generateUsage());
+        if (optionInput) {
+          optionsUsage.push(optionInput.generateUsage());
+        }
       }
       const argumentsUsage = new Array<ArgumentUsage>();
       for (const argumentInput of inputs.arguments) {
@@ -54,10 +57,10 @@ export function execution<
       return { options: optionsUsage, arguments: argumentsUsage };
     },
     createInterpreterFactory(readerArgs: ReaderArgs) {
-      const optionsConsumers: any = {};
+      const optionsReaders: any = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
-        optionsConsumers[optionKey] = optionInput.prepareConsumer(readerArgs);
+        optionsReaders[optionKey] = optionInput.createReader(readerArgs);
       }
       const argumentsValues: any = [];
       for (const argumentInput of inputs.arguments) {
@@ -66,8 +69,8 @@ export function execution<
       return {
         createInterpreterInstance() {
           const optionsValues: any = {};
-          for (const optionKey in optionsConsumers) {
-            optionsValues[optionKey] = optionsConsumers[optionKey]!();
+          for (const optionKey in optionsReaders) {
+            optionsValues[optionKey] = optionsReaders[optionKey]!.readValue();
           }
           return {
             executeWithContext(context: Context) {

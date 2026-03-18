@@ -33,7 +33,7 @@ it("run", async () => {
 
   expect(readerArgs.consumePositional()).toStrictEqual(undefined);
 
-  expect(readerArgs.consumeOption("option")).toStrictEqual([
+  expect(readerArgs.readOption("option")).toStrictEqual([
     "1.1",
     "1.2",
     "1.3",
@@ -41,6 +41,6 @@ it("run", async () => {
     "1.5",
   ]);
 
-  expect(readerArgs.consumeFlag("flag1")).toStrictEqual(true);
-  expect(readerArgs.consumeFlag("flag2")).toStrictEqual(true);
+  expect(readerArgs.readFlag("flag1")).toStrictEqual(true);
+  expect(readerArgs.readFlag("flag2")).toStrictEqual(true);
 });
