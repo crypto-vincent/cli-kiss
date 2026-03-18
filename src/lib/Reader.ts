@@ -176,9 +176,8 @@ export class ReaderTokenizer {
         }
         shortIndexEnd++;
       }
-      throw new Error(
-        `Unknown flags or option: -${arg.slice(shortIndexStart)}`,
-      );
+      const leftover = arg.slice(shortIndexStart);
+      throw new Error(`Unknown flag or option: -${leftover}`);
     }
     return arg;
   }
@@ -187,11 +186,13 @@ export class ReaderTokenizer {
     const flagKey = this.#flagKeyByLong.get(long);
     if (flagKey !== undefined) {
       if (direct !== null) {
-        const value = asBoolean(direct);
+        const value = booleanValues.get(direct.toLowerCase());
         if (value !== undefined) {
           return this.#acknowledgeFlag(flagKey, value);
         }
-        throw new Error(`Invalid value for flag: --${long}: "${direct}"`);
+        throw new Error(
+          `Invalid value for flag: --${long}: "${direct}" (expected: ${booleanExpected})`,
+        );
       }
       return this.#acknowledgeFlag(flagKey, true);
     }
@@ -205,19 +206,21 @@ export class ReaderTokenizer {
         this.#consumeOptionValue(`--${long}`),
       );
     }
-    throw new Error(`Unknown long flag or option: --${long}`);
+    throw new Error(`Unknown flag or option: --${long}`);
   }
 
   #tryConsumeOptionShort(short: string, rest: string): boolean | null {
     const flagKey = this.#flagKeyByShort.get(short);
     if (flagKey !== undefined) {
       if (rest.startsWith("=")) {
-        const value = asBoolean(rest.slice(1));
+        const value = booleanValues.get(rest.slice(1).toLowerCase());
         if (value !== undefined) {
           this.#acknowledgeFlag(flagKey, value);
           return true;
         }
-        throw new Error(`Invalid value for flag: -${short}: "${rest}"`);
+        throw new Error(
+          `Invalid value for flag: -${short}: "${rest}" (expected: ${booleanExpected})`,
+        );
       }
       this.#acknowledgeFlag(flagKey, true);
       return rest === "";
@@ -281,13 +284,14 @@ export class ReaderTokenizer {
   }
 }
 
-function asBoolean(value: string): boolean | undefined {
-  const lower = value.toLowerCase();
-  if (lower === "true" || lower === "t" || lower === "y" || lower === "yes") {
-    return true;
-  }
-  if (lower === "false" || lower === "f" || lower === "n" || lower === "no") {
-    return false;
-  }
-  return undefined;
-}
+const booleanExpected = `"yes"|"no"`;
+const booleanValues = new Map<string, boolean>([
+  ["true", true],
+  ["false", false],
+  ["yes", true],
+  ["no", false],
+  ["t", true],
+  ["f", false],
+  ["y", true],
+  ["n", false],
+]);

@@ -137,7 +137,7 @@ export function optionSingleValue<Value>(definition: {
         const values = readerTokenizer.consumeOption(key);
         if (values.length > 1) {
           throw new Error(
-            `Multiple values provided for option: ${key}, expected only one`,
+            `Multiple values provided for option: ${key}, expected only one. Found: ${values.map((v) => `"${v}"`).join(", ")}`,
           );
         }
         const firstValue = values[0];

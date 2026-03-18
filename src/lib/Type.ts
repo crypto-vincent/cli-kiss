@@ -12,7 +12,7 @@ export const typeBoolean: Type<boolean> = {
     if (value === "false") {
       return false;
     }
-    throw new Error(`Invalid boolean: ${value}`);
+    throw new Error(`Invalid boolean: ${value} (expected: "true"|"false")`);
   },
 };
 
@@ -21,7 +21,7 @@ export const typeDate: Type<Date> = {
   decoder(value: string) {
     const timestamp = Date.parse(value);
     if (isNaN(timestamp)) {
-      throw new Error(`Invalid date: ${value}`);
+      throw new Error(`Invalid date: ${value} (expected: ISO_8601 format)`);
     }
     return new Date(timestamp);
   },
