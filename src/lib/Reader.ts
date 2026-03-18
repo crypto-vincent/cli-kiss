@@ -130,17 +130,17 @@ export class ReaderTokenizer {
     return arg;
   }
 
-  #consumeOptionValue(name: string) {
+  #consumeOptionValue(key: string) {
     const arg = this.#consumeArg();
     if (arg === null) {
-      throw new Error(`Option ${name} requires a value but none was provided`);
+      throw new Error(`Option ${key} requires a value but none was provided`);
     }
     if (this.#parsedDouble) {
-      throw new Error(`Option ${name} requires a value before --`);
+      throw new Error(`Option ${key} requires a value before "--"`);
     }
     // TODO - is that weird, could a valid value start with dash ?
     if (arg.startsWith("-")) {
-      throw new Error(`Option ${name} requires a value, got: ${arg}`);
+      throw new Error(`Option ${key} requires a value, got: "${arg}"`);
     }
     return arg;
   }
@@ -191,7 +191,7 @@ export class ReaderTokenizer {
         if (value !== undefined) {
           return this.#acknowledgeFlag(flagKey, value);
         }
-        throw new Error(`Invalid value for flag: --${long}: ${direct}`);
+        throw new Error(`Invalid value for flag: --${long}: "${direct}"`);
       }
       return this.#acknowledgeFlag(flagKey, true);
     }
@@ -200,7 +200,10 @@ export class ReaderTokenizer {
       if (direct !== null) {
         return this.#acknowledgeOption(optionKey, direct);
       }
-      return this.#acknowledgeOption(optionKey, this.#consumeOptionValue(long));
+      return this.#acknowledgeOption(
+        optionKey,
+        this.#consumeOptionValue(`--${long}`),
+      );
     }
     throw new Error(`Unknown long flag or option: --${long}`);
   }
@@ -214,7 +217,7 @@ export class ReaderTokenizer {
           this.#acknowledgeFlag(flagKey, value);
           return true;
         }
-        throw new Error(`Invalid value for flag: -${short}: ${rest}`);
+        throw new Error(`Invalid value for flag: -${short}: "${rest}"`);
       }
       this.#acknowledgeFlag(flagKey, true);
       return rest === "";
@@ -222,7 +225,10 @@ export class ReaderTokenizer {
     const optionKey = this.#optionKeyByShort.get(short);
     if (optionKey !== undefined) {
       if (rest === "") {
-        this.#acknowledgeOption(optionKey, this.#consumeOptionValue(short));
+        this.#acknowledgeOption(
+          optionKey,
+          this.#consumeOptionValue(`-${short}`),
+        );
         return true;
       }
       if (rest.startsWith("=")) {

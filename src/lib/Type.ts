@@ -61,7 +61,7 @@ export function typeCommaTuple<
       const parts = value.split(",", elementTypes.length);
       if (parts.length !== elementTypes.length) {
         throw new Error(
-          `Invalid tuple value: ${value}, expected ${elementTypes.length} comma-separated parts`,
+          `Invalid tuple value: "${value}", expected ${elementTypes.length} comma-separated parts`,
         );
       }
       return parts.map((part, index) =>
@@ -100,7 +100,7 @@ export function typeDecode<Value>(
     return type.decoder(value);
   } catch (error) {
     throw new Error(
-      `Invalid value for ${context}: "${value}": ${
+      `Failed to decode value "${value}" for ${context}: ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
