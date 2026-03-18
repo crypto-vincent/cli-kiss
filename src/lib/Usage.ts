@@ -11,6 +11,7 @@ export function usageToPrintableLines(params: {
 
   const lines = new Array<string>();
 
+  // TODO - description stacking for subcommands ?
   lines.push(
     typoPrintableString(
       typoSupport,

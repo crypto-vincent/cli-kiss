@@ -46,7 +46,13 @@ export function optionFlag(definition: {
       return () => {
         const value = readerArgs.consumeFlag(key);
         if (value === undefined) {
-          return definition.default ? definition.default() : false;
+          try {
+            return definition.default ? definition.default() : false;
+          } catch (error) {
+            throw new Error(
+              `Error computing default value for flag ${key}: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
         }
         return value;
       };
@@ -134,7 +140,13 @@ export function optionSingleValue<Value>(definition: {
         }
         const firstValue = values[0];
         if (firstValue === undefined) {
-          return definition.default();
+          try {
+            return definition.default();
+          } catch (error) {
+            throw new Error(
+              `Error computing default value for option ${key}: ${error instanceof Error ? error.message : String(error)}`,
+            );
+          }
         }
         return typeDecode(definition.type, firstValue, `${key}: ${label}`);
       };

@@ -27,6 +27,13 @@ export const typeDate: Type<Date> = {
   },
 };
 
+export const typeUrl: Type<URL> = {
+  label: "URL",
+  decoder(value: string) {
+    return new URL(value);
+  },
+};
+
 export const typeString: Type<string> = {
   label: "STRING",
   decoder(value: string) {

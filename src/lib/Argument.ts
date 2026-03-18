@@ -51,7 +51,13 @@ export function argumentOptional<Value>(definition: {
     consumeValue(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        return definition.default();
+        try {
+          return definition.default();
+        } catch (error) {
+          throw new Error(
+            `Error computing default value for argument ${label}: ${error instanceof Error ? error.message : String(error)}`,
+          );
+        }
       }
       return typeDecode(definition.type, positional, label);
     },
