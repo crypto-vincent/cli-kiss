@@ -77,14 +77,18 @@ export async function runAndExit<Context>(
     if (application?.onError) {
       application.onError(error);
     } else {
+      const typoSupport = chooseTypoSupport(application?.useColors);
       (application?.onLogStdErr ?? console.error)(
         [
-          typoPrintableString(chooseTypoSupport(application?.useColors), {
+          typoPrintableString(typoSupport, {
             value: "Error:",
             color: "brightRed",
             bold: true,
           }),
-          error instanceof Error ? error.message : error,
+          typoPrintableString(typoSupport, {
+            value: error instanceof Error ? error.message : String(error),
+            bold: true,
+          }),
         ].join(" "),
       );
     }

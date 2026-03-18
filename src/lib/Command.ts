@@ -93,7 +93,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         const executionResolver = execution.createResolver(readerTokenizer);
         const subcommandName = readerTokenizer.consumePositional();
         if (subcommandName === undefined) {
-          throw new Error("Missing required <SUBCOMMAND> argument");
+          throw new Error("Missing required SUBCOMMAND argument");
         }
         const subcommandInput =
           subcommands[subcommandName as Lowercase<string>];

@@ -1,5 +1,5 @@
 import { ReaderPositionals } from "./Reader";
-import { Type } from "./Type";
+import { Type, typeDecode } from "./Type";
 
 export type Argument<Value> = {
   generateUsage(): ArgumentUsage;
@@ -16,21 +16,20 @@ export function argumentRequired<Value>(definition: {
   type: Type<Value>;
   label?: Uppercase<string>;
 }): Argument<Value> {
+  const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
       return {
         description: definition.description,
-        label: `<${definition.label ?? definition.type.label}>`,
+        label: `<${label}>`,
       };
     },
     consumeValue(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        throw new Error(
-          `Missing required arg: <${definition.label ?? definition.type.label}>`,
-        );
+        throw new Error(`Missing required arg: ${label}`);
       }
-      return definition.type.decoder(positional);
+      return typeDecode(definition.type, label, positional);
     },
   };
 }
@@ -41,11 +40,12 @@ export function argumentOptional<Value>(definition: {
   label?: Uppercase<string>;
   default: () => Value;
 }): Argument<Value> {
+  const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
       return {
         description: definition.description,
-        label: `[${definition.label ?? definition.type.label}]`,
+        label: `[${label}]`,
       };
     },
     consumeValue(readerPositionals: ReaderPositionals) {
@@ -53,7 +53,7 @@ export function argumentOptional<Value>(definition: {
       if (positional === undefined) {
         return definition.default();
       }
-      return definition.type.decoder(positional);
+      return typeDecode(definition.type, label, positional);
     },
   };
 }
@@ -64,12 +64,13 @@ export function argumentVariadics<Value>(definition: {
   label?: Uppercase<string>;
   endDelimiter?: string;
 }): Argument<Array<Value>> {
+  const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
       return {
         description: definition.description,
         label:
-          `[${definition.label ?? definition.type.label}...]` +
+          `[${label}...]` +
           (definition.endDelimiter
             ? ` (end with ${definition.endDelimiter})`
             : ""),
@@ -85,7 +86,7 @@ export function argumentVariadics<Value>(definition: {
         ) {
           break;
         }
-        values.push(definition.type.decoder(positional));
+        values.push(typeDecode(definition.type, label, positional));
       }
       return values;
     },

@@ -65,7 +65,7 @@ export function typeCommaTuple<
         );
       }
       return parts.map((part, index) =>
-        elementTypes[index]!.decoder(part),
+        typeDecode(elementTypes[index]!, `[${index}]`, part),
       ) as Elements;
     },
   };
@@ -78,7 +78,25 @@ export function typeCommaList<Value>(
     label:
       `${elementType.label}[,${elementType.label}...]` as Uppercase<string>,
     decoder(value: string) {
-      return value.split(",").map(elementType.decoder);
+      return value
+        .split(",")
+        .map((part, index) => typeDecode(elementType, `[${index}]`, part));
     },
   };
+}
+
+export function typeDecode<Value>(
+  type: Type<Value>,
+  context: string,
+  value: string,
+): Value {
+  try {
+    return type.decoder(value);
+  } catch (error) {
+    throw new Error(
+      `Invalid value for ${context}: ${type.label}: ${value}, error: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
 }

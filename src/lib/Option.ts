@@ -1,5 +1,5 @@
 import { ReaderTokenizer } from "./Reader";
-import { Type } from "./Type";
+import { Type, typeDecode } from "./Type";
 
 export type Option<Value> = {
   generateUsage(): OptionUsage;
@@ -33,7 +33,9 @@ export function optionFlag(definition: {
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {
-      const key = definition.long;
+      const key = definition.short
+        ? `-${definition.short}, --${definition.long}`
+        : `--${definition.long}`;
       const longs = [definition.long];
       if (definition.aliases?.longs) {
         longs.push(...definition.aliases?.longs);
@@ -64,6 +66,7 @@ export function optionRepeatable<Value>(definition: {
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   label?: Uppercase<string>;
 }): Option<Array<Value>> {
+  const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
       // TODO - showcase that it can be repeated ?
@@ -71,12 +74,13 @@ export function optionRepeatable<Value>(definition: {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        label:
-          `<${definition.label ?? definition.type.label}>` as Uppercase<string>,
+        label: `<${label}>` as Uppercase<string>,
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {
-      const key = definition.long;
+      const key = definition.short
+        ? `-${definition.short}, --${definition.long}`
+        : `--${definition.long}`;
       const longs = definition.long ? [definition.long] : [];
       if (definition.aliases?.longs) {
         longs.push(...definition.aliases?.longs);
@@ -87,7 +91,11 @@ export function optionRepeatable<Value>(definition: {
       }
       readerTokenizer.registerOption({ key, longs, shorts });
       return () => {
-        return readerTokenizer.consumeOption(key).map(definition.type.decoder);
+        return readerTokenizer
+          .consumeOption(key)
+          .map((value) =>
+            typeDecode(definition.type, `${key}: ${label}`, value),
+          );
       };
     },
   };
@@ -102,18 +110,20 @@ export function optionSingleValue<Value>(definition: {
   label?: Uppercase<string>;
   default: () => Value;
 }): Option<Value> {
+  const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
       return {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        label:
-          `<${definition.label ?? definition.type.label}>` as Uppercase<string>,
+        label: `<${label}>` as Uppercase<string>,
       };
     },
     prepareConsumer(readerTokenizer: ReaderTokenizer) {
-      const key = definition.long;
+      const key = definition.short
+        ? `-${definition.short}, --${definition.long}`
+        : `--${definition.long}`;
       const longs = [definition.long];
       if (definition.aliases?.longs) {
         longs.push(...definition.aliases?.longs);
@@ -124,18 +134,17 @@ export function optionSingleValue<Value>(definition: {
       }
       readerTokenizer.registerOption({ key, longs, shorts });
       return () => {
-        // TODO - smooth and beautiful error handling
-        const values = readerTokenizer.consumeOption(definition.long);
+        const values = readerTokenizer.consumeOption(key);
         if (values.length > 1) {
           throw new Error(
-            `Multiple values provided for option: ${definition.long}, expected only one`,
+            `Multiple values provided for option: ${key}, expected only one`,
           );
         }
         const firstValue = values[0];
         if (firstValue === undefined) {
           return definition.default();
         }
-        return definition.type.decoder(firstValue);
+        return typeDecode(definition.type, `${key}: ${label}`, firstValue);
       };
     },
   };

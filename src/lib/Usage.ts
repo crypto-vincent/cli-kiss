@@ -12,11 +12,17 @@ export function usageToPrintableLines(params: {
   const lines = new Array<string>();
 
   lines.push(
-    typoPrintableString(typoSupport, textDescription(commandUsage.description)),
+    typoPrintableString(typoSupport, {
+      value: commandUsage.description,
+      bold: true,
+    }),
   );
   if (commandUsage.details) {
     lines.push(
-      typoPrintableString(typoSupport, textDetails(commandUsage.details)),
+      typoPrintableString(typoSupport, {
+        value: commandUsage.details,
+        color: "brightBlack",
+      }),
     );
   }
 
@@ -43,7 +49,7 @@ export function usageToPrintableLines(params: {
 
   if (commandUsage.arguments.length > 0) {
     lines.push("");
-    lines.push(typoPrintableString(typoSupport, textCategory("Arguments:")));
+    lines.push(typoPrintableString(typoSupport, textBlockTitle("Arguments:")));
     const grid = new Array<GridRow>();
     for (const argumentUsage of commandUsage.arguments) {
       const gridRow = new Array<GridCell>();
@@ -60,7 +66,9 @@ export function usageToPrintableLines(params: {
 
   if (commandUsage.subcommands.length > 0) {
     lines.push("");
-    lines.push(typoPrintableString(typoSupport, textCategory("Subcommands:")));
+    lines.push(
+      typoPrintableString(typoSupport, textBlockTitle("Subcommands:")),
+    );
     const grid = new Array<GridRow>();
     for (const subcommand of commandUsage.subcommands) {
       const gridRow = new Array<GridCell>();
@@ -77,7 +85,7 @@ export function usageToPrintableLines(params: {
 
   if (commandUsage.options.length > 0) {
     lines.push("");
-    lines.push(typoPrintableString(typoSupport, textCategory("Options:")));
+    lines.push(typoPrintableString(typoSupport, textBlockTitle("Options:")));
     const grid = new Array<GridRow>();
     for (const optionUsage of commandUsage.options) {
       const gridRow = new Array<GridCell>();
@@ -108,16 +116,12 @@ export function usageToPrintableLines(params: {
   return lines;
 }
 
-function textCategory(text: string): TypoText {
+function textBlockTitle(text: string): TypoText {
   return { value: text, color: "brightGreen", bold: true };
 }
 
 function textDescription(text: string): TypoText {
-  return { value: text, bold: true };
-}
-
-function textDetails(text: string): TypoText {
-  return { value: text, color: "brightBlack" };
+  return { value: text };
 }
 
 function textFixed(text: string): TypoText {
