@@ -3,19 +3,20 @@ import {
   argumentOptional,
   argumentRequired,
   argumentVariadics,
+  Command,
   command,
   commandWithSubcommands,
   execution,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  runCommand,
+  ReaderTokenizer,
   typeCommaList,
   typeNumber,
   typeString,
 } from "../src";
 
-const cmd = commandWithSubcommands<string, any, any>(
+const rootCommand = commandWithSubcommands<string, any, any>(
   { description: "Root command description" },
   execution(
     {
@@ -73,11 +74,10 @@ const cmd = commandWithSubcommands<string, any, any>(
 );
 
 it("run", async () => {
-  const res1 = await runCommand(
-    "script",
+  const res1 = await executeWithArgs(
     ["50", "51", "sub1", "final"],
     "Run Context Input",
-    cmd,
+    rootCommand,
   );
   expect(res1).toStrictEqual({
     context: {
@@ -99,8 +99,7 @@ it("run", async () => {
     at: "sub1",
   });
 
-  const res2 = await runCommand(
-    "script",
+  const res2 = await executeWithArgs(
     [
       "40",
       "41",
@@ -116,7 +115,7 @@ it("run", async () => {
       "--boolean-flag",
     ],
     "Run Context Input",
-    cmd,
+    rootCommand,
   );
   expect(res2).toStrictEqual({
     context: {
@@ -138,3 +137,13 @@ it("run", async () => {
     at: "sub2",
   });
 });
+
+async function executeWithArgs<Context, Result>(
+  args: Array<string>,
+  context: Context,
+  command: Command<Context, Result>,
+) {
+  const readerTokenizer = new ReaderTokenizer(args);
+  const commandInterpreter = command.buildInterpreter(readerTokenizer);
+  return await commandInterpreter.execute(context);
+}

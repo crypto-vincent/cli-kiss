@@ -1,31 +1,38 @@
-import { Command } from "./Command";
+import { Command, CommandInterpreter } from "./Command";
 import { ReaderTokenizer } from "./Reader";
-import { typoInferSupport } from "./Typo";
+import { typoInferProcessSupport, TypoSupport } from "./Typo";
 import { usageToPrintableLines } from "./Usage";
 
-export async function runCommand<Context, Result>(
+export async function runAndExit<Context>(
   cliName: Lowercase<string>,
   cliArgs: Array<string>,
   context: Context,
-  command: Command<Context, Result>,
-  cliInfo?: {
-    version?: string;
-    helpOnError?: boolean;
+  command: Command<Context, void>,
+  application?: {
+    usageOnError?: boolean;
+    usageOnHelp?: boolean;
+    buildVersion?: string;
+    useColors?: boolean;
+    onMessage?: (message: string) => void;
+    onError?: (error: any) => void;
+    onExit?: (code: number) => never;
   },
-): Promise<Result> {
+): Promise<never> {
   const readerTokenizer = new ReaderTokenizer(cliArgs);
-  if (cliInfo?.version) {
+  if (application?.buildVersion) {
     readerTokenizer.registerFlag({
       key: "version",
       shorts: [],
       longs: ["version"],
     });
   }
-  readerTokenizer.registerFlag({
-    key: "help",
-    shorts: [],
-    longs: ["help"],
-  });
+  if (application?.usageOnHelp ?? true) {
+    readerTokenizer.registerFlag({
+      key: "help",
+      shorts: [],
+      longs: ["help"],
+    });
+  }
   /*
   // TODO - handle completions ?
   readerTokenizer.registerFlag({
@@ -34,41 +41,50 @@ export async function runCommand<Context, Result>(
     longs: ["completion"],
   });
   */
-  try {
-    const commandRunner = command.prepareRunner(readerTokenizer);
-    if (cliInfo?.version) {
-      if (readerTokenizer.consumeFlag("version")) {
-        console.log(cliName, cliInfo.version);
-        process.exit(0);
-      }
-    }
-    if (readerTokenizer.consumeFlag("help")) {
-      console.log(
-        usageToPrintableLines({
-          cliName,
-          commandUsage: commandRunner.computeUsage(),
-          typoSupport: typoInferSupport(),
-        }).join("\n"),
+  const commandInterpreter = command.buildInterpreter(readerTokenizer);
+  if (application?.buildVersion) {
+    if (readerTokenizer.consumeFlag("version")) {
+      (application?.onMessage ?? console.log)(
+        [cliName, application.buildVersion].join(" "),
       );
-      process.exit(0);
+      return (application?.onExit ?? process.exit)(0);
     }
-    try {
-      return await commandRunner.execute(context);
-    } catch (error) {
-      if (cliInfo?.helpOnError ?? true) {
-        console.log(
-          usageToPrintableLines({
-            cliName,
-            commandUsage: commandRunner.computeUsage(),
-            typoSupport: typoInferSupport(),
-          }).join("\n"),
-        );
-      }
-      console.error(error); // TODO - better, prettier errors
-      process.exit(1);
-    }
-  } catch (error) {
-    console.error(error);
-    process.exit(1);
   }
+  if (application?.usageOnHelp ?? true) {
+    if (readerTokenizer.consumeFlag("help")) {
+      logUsageMessage(cliName, commandInterpreter, application);
+      return (application?.onExit ?? process.exit)(0);
+    }
+  }
+  try {
+    await commandInterpreter.execute(context);
+    return (application?.onExit ?? process.exit)(0);
+  } catch (error) {
+    if (application?.usageOnError ?? true) {
+      logUsageMessage(cliName, commandInterpreter, application);
+    }
+    (application?.onError ?? console.error)(error);
+    return (application?.onExit ?? process.exit)(1);
+  }
+}
+
+function logUsageMessage<Context, Result>(
+  cliName: Lowercase<string>,
+  commandInterpreter: CommandInterpreter<Context, Result>,
+  application?: { useColors?: boolean; onMessage?: (message: string) => void },
+) {
+  (application?.onMessage ?? console.log)(
+    usageToPrintableLines({
+      cliName,
+      commandUsage: commandInterpreter.computeUsage(),
+      typoSupport: chooseTypoSupport(application?.useColors),
+    }).join("\n"),
+  );
+}
+
+function chooseTypoSupport(useColors?: boolean): TypoSupport {
+  if (useColors === undefined) {
+    return typoInferProcessSupport();
+  }
+  return useColors ? "tty" : "none";
 }

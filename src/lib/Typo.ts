@@ -42,7 +42,10 @@ export function typoPrintableString(
   throw new Error(`Unknown typo support: ${typoSupport}`);
 }
 
-export function typoInferSupport(): TypoSupport {
+export function typoInferProcessSupport(): TypoSupport {
+  if (!process) {
+    return "none";
+  }
   if (process.env) {
     if (process.env["FORCE_COLOR"] === "0") {
       return "none";
@@ -54,7 +57,7 @@ export function typoInferSupport(): TypoSupport {
       return "none";
     }
   }
-  if (!process || !process.stdout || !process.stdout.isTTY) {
+  if (!process.stdout || !process.stdout.isTTY) {
     return "none";
   }
   return "tty";

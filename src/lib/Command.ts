@@ -5,12 +5,12 @@ import { ReaderTokenizer } from "./Reader";
 
 export type Command<Context, Result> = {
   getDescription(): string | undefined;
-  prepareRunner(
+  buildInterpreter(
     readerTokenizer: ReaderTokenizer,
-  ): CommandRunner<Context, Result>;
+  ): CommandInterpreter<Context, Result>;
 };
 
-export type CommandRunner<Context, Result> = {
+export type CommandInterpreter<Context, Result> = {
   computeUsage(): CommandUsage;
   execute(context: Context): Promise<Result>;
 };
@@ -38,7 +38,7 @@ export function command<Context, Result>(
     getDescription() {
       return metadata.description;
     },
-    prepareRunner(readerTokenizer: ReaderTokenizer) {
+    buildInterpreter(readerTokenizer: ReaderTokenizer) {
       function computeUsage(): CommandUsage {
         const executionUsage = execution.computeUsage();
         return {
@@ -89,7 +89,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
     getDescription() {
       return metadata.description;
     },
-    prepareRunner(readerTokenizer: ReaderTokenizer) {
+    buildInterpreter(readerTokenizer: ReaderTokenizer) {
       try {
         const executionResolver = execution.prepareResolver(readerTokenizer);
         const subcommandName = readerTokenizer.consumePositional();
@@ -101,12 +101,13 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandInput === undefined) {
           throw new Error(`Unknown subcommand: ${subcommandName}`);
         }
-        const subcommandRunner = subcommandInput.prepareRunner(readerTokenizer);
+        const subcommandInterpreter =
+          subcommandInput.buildInterpreter(readerTokenizer);
         const executionCallback = executionResolver();
         return {
           computeUsage() {
             const executionUsage = execution.computeUsage();
-            const subcommandUsage = subcommandRunner.computeUsage();
+            const subcommandUsage = subcommandInterpreter.computeUsage();
             return {
               breadcrumbs: executionUsage.arguments
                 .map((argument) => breadcrumbArgument(argument.label))
@@ -123,7 +124,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
           },
           async execute(context: Context) {
             const payload = await executionCallback(context);
-            return await subcommandRunner.execute(payload);
+            return await subcommandInterpreter.execute(payload);
           },
         };
       } catch (error) {

@@ -3,7 +3,7 @@ export type ReaderPositionals = {
 };
 
 export class ReaderTokenizer {
-  #parsedArgv: Array<string>;
+  #parsedArgs: Array<string>;
   #parsedIndex: number;
   #parsedDouble: boolean;
 
@@ -17,8 +17,8 @@ export class ReaderTokenizer {
   #optionInfoByKey: Map<string, {}>; // TODO - what dis for
   #optionResultByKey: Map<string, Array<string> | null>;
 
-  constructor(argv: Array<string>) {
-    this.#parsedArgv = argv;
+  constructor(args: Array<string>) {
+    this.#parsedArgs = args;
     this.#parsedIndex = 0;
     this.#parsedDouble = false;
 
@@ -116,7 +116,7 @@ export class ReaderTokenizer {
   }
 
   #consumeArg(): string | null {
-    const arg = this.#parsedArgv[this.#parsedIndex];
+    const arg = this.#parsedArgs[this.#parsedIndex];
     if (arg === undefined) {
       return null;
     }

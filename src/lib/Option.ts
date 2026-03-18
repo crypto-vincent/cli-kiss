@@ -11,6 +11,7 @@ export type OptionUsage = {
   long: Lowercase<string>; // TODO - better type for long option names ?
   short: string | undefined;
   label: Uppercase<string> | undefined;
+  // TODO - default value for usage ? but it can be dynamic, so maybe not
 };
 
 export type OptionConsumer<Value> = () => Value;
@@ -65,6 +66,7 @@ export function optionRepeatable<Value>(definition: {
 }): Option<Array<Value>> {
   return {
     generateUsage() {
+      // TODO - showcase that it can be repeated ?
       return {
         description: definition.description,
         long: definition.long,

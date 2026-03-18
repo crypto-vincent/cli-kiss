@@ -221,20 +221,21 @@ it("run", async () => {
 });
 
 async function getUsage<Context, Result>(
-  argv: Array<string>,
+  args: Array<string>,
   command: Command<Context, Result>,
 ) {
-  const commandRunner = command.prepareRunner(new ReaderTokenizer(argv));
+  const readerTokenizer = new ReaderTokenizer(args);
+  const commandInterpreter = command.buildInterpreter(readerTokenizer);
   /*
   try {
-    console.log(await commandRunner.execute({} as Context));
+    console.log(await commandInterpreter.execute({} as Context));
   } catch (error) {
     console.error("Error during execution:", error);
   }
     */
   return usageToPrintableLines({
     cliName: "my-cli",
-    commandUsage: commandRunner.computeUsage(),
+    commandUsage: commandInterpreter.computeUsage(),
     typoSupport: "mock",
   });
 }
