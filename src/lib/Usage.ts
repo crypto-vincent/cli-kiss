@@ -21,9 +21,12 @@ export function usageToPrintableLines(params: {
   }
 
   lines.push("");
-  lines.push(typoPrintableString(typoSupport, textCategory("Usage:")));
   const breadcrumbs = [
-    " ",
+    typoPrintableString(typoSupport, {
+      value: "Usage:",
+      color: "brightMagenta",
+      bold: true,
+    }),
     typoPrintableString(typoSupport, textFixed(cliName)),
   ].concat(
     commandUsage.breadcrumbs.map((breadcrumb) => {

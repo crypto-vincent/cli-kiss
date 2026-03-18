@@ -71,7 +71,7 @@ export class ReaderTokenizer {
   consumeFlag(key: string): boolean | undefined {
     const flagInfo = this.#flagInfoByKey.get(key);
     if (flagInfo === undefined) {
-      throw new Error(`Option flag not registered: ${key}`);
+      throw new Error(`Flag not registered: ${key}`);
     }
     const result = this.#flagResultByKey.get(key);
     if (result === undefined) {
@@ -79,7 +79,7 @@ export class ReaderTokenizer {
       return undefined;
     }
     if (result === null) {
-      throw new Error(`Option flag already consumed: ${key}`);
+      throw new Error(`Flag already consumed: ${key}`);
     }
     this.#flagResultByKey.set(key, null);
     return result;
@@ -88,7 +88,7 @@ export class ReaderTokenizer {
   consumeOption(key: string): Array<string> {
     const optionInfo = this.#optionInfoByKey.get(key);
     if (optionInfo === undefined) {
-      throw new Error(`Option values not registered: ${key}`);
+      throw new Error(`Option not registered: ${key}`);
     }
     const result = this.#optionResultByKey.get(key);
     if (result === undefined) {
@@ -96,7 +96,7 @@ export class ReaderTokenizer {
       return new Array<string>();
     }
     if (result === null) {
-      throw new Error(`Option values already consumed: ${key}`);
+      throw new Error(`Option already consumed: ${key}`);
     }
     this.#optionResultByKey.set(key, null);
     return result;
@@ -133,7 +133,7 @@ export class ReaderTokenizer {
   #consumeOptionValue(name: string) {
     const arg = this.#consumeArg();
     if (arg === null) {
-      throw new Error(`Option ${name} requires a value`);
+      throw new Error(`Option ${name} requires a value but none was provided`);
     }
     if (this.#parsedDouble) {
       throw new Error(`Option ${name} requires a value before --`);
@@ -177,7 +177,7 @@ export class ReaderTokenizer {
         shortIndexEnd++;
       }
       throw new Error(
-        `Unknown short flags or options: ${arg.slice(shortIndexStart)}`,
+        `Unknown flags or option: -${arg.slice(shortIndexStart)}`,
       );
     }
     return arg;
@@ -191,9 +191,7 @@ export class ReaderTokenizer {
         if (value !== undefined) {
           return this.#acknowledgeFlag(flagKey, value);
         }
-        throw new Error(
-          `Invalid parameter for long flag: ${flagKey}, value: ${direct}`,
-        );
+        throw new Error(`Invalid value for flag: --${long}: ${direct}`);
       }
       return this.#acknowledgeFlag(flagKey, true);
     }
@@ -204,7 +202,7 @@ export class ReaderTokenizer {
       }
       return this.#acknowledgeOption(optionKey, this.#consumeOptionValue(long));
     }
-    throw new Error(`Unknown long flag or option: ${long}`);
+    throw new Error(`Unknown long flag or option: --${long}`);
   }
 
   #tryConsumeOptionShort(short: string, rest: string): boolean | null {
@@ -216,9 +214,7 @@ export class ReaderTokenizer {
           this.#acknowledgeFlag(flagKey, value);
           return true;
         }
-        throw new Error(
-          `Invalid parameter for short flag: ${short}, value: ${rest}`,
-        );
+        throw new Error(`Invalid value for flag: -${short}: ${rest}`);
       }
       this.#acknowledgeFlag(flagKey, true);
       return rest === "";
@@ -254,7 +250,7 @@ export class ReaderTokenizer {
 
   #ensureUniqueKey(key: string) {
     if (this.#flagInfoByKey.has(key)) {
-      throw new Error(`Option already registered: ${key}`);
+      throw new Error(`Flag already registered: ${key}`);
     }
     if (this.#optionInfoByKey.has(key)) {
       throw new Error(`Option already registered: ${key}`);
@@ -265,16 +261,16 @@ export class ReaderTokenizer {
     // TODO - overall better error handling
     // TODO - short flag overlap might be annoying here
     if (this.#flagKeyByShort.has(nameShortOrLong)) {
-      throw new Error(`Option already registered: ${nameShortOrLong}`);
+      throw new Error(`Flag already registered: -${nameShortOrLong}`);
     }
     if (this.#flagKeyByLong.has(nameShortOrLong)) {
-      throw new Error(`Option already registered: ${nameShortOrLong}`);
+      throw new Error(`Flag already registered: --${nameShortOrLong}`);
     }
     if (this.#optionKeyByShort.has(nameShortOrLong)) {
-      throw new Error(`Option already registered: ${nameShortOrLong}`);
+      throw new Error(`Option already registered: -${nameShortOrLong}`);
     }
     if (this.#optionKeyByLong.has(nameShortOrLong)) {
-      throw new Error(`Option already registered: ${nameShortOrLong}`);
+      throw new Error(`Option already registered: --${nameShortOrLong}`);
     }
   }
 }

@@ -21,8 +21,8 @@ export async function runAndExit<Context>(
     useColors?: boolean | undefined;
     onLogStdOut?: ((message: string) => void) | undefined;
     onLogStdErr?: ((message: string) => void) | undefined;
-    onError?: ((error: unknown) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
+    onError?: ((error: unknown) => void) | undefined;
   },
 ): Promise<never> {
   const readerTokenizer = new ReaderTokenizer(cliArgs);
@@ -78,14 +78,14 @@ export async function runAndExit<Context>(
       application.onError(error);
     } else {
       (application?.onLogStdErr ?? console.error)(
-        typoPrintableString(chooseTypoSupport(application?.useColors), {
-          value: "Error:",
-          color: "brightRed",
-          bold: true,
-        }),
-      );
-      (application?.onLogStdErr ?? console.error)(
-        error instanceof Error ? error.message : error,
+        [
+          typoPrintableString(chooseTypoSupport(application?.useColors), {
+            value: "Error:",
+            color: "brightRed",
+            bold: true,
+          }),
+          error instanceof Error ? error.message : error,
+        ].join(" "),
       );
     }
     return (application?.onExit ?? process.exit)(1);

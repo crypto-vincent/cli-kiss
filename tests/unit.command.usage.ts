@@ -137,13 +137,12 @@ const cmd = commandWithSubcommands<string, any, any>(
 
 it("run", async () => {
   const usage1 = await getUsage([], cmd);
-  // console.log(usage1.join(" "));
+  // console.log(usage1.join("\n"));
   expect(usage1).toStrictEqual([
     "{Root command description}+",
     "{Root command details. Second line of root command details.}@brightBlack",
     "",
-    "{Usage:}@brightGreen+",
-    "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {<SUBCOMMAND>}@brightCyan+",
+    "{Usage:}@brightMagenta+ {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {<SUBCOMMAND>}@brightCyan+",
     "",
     "{Arguments:}@brightGreen+",
     "{  }{<POS-1>}@brightBlue{  }{First positional argument}+",
@@ -165,8 +164,7 @@ it("run", async () => {
     "{Subcommand 1 description}+",
     "{Subcommand 1 details. Second line of subcommand 1 details.}@brightBlack",
     "",
-    "{Usage:}@brightGreen+",
-    "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub1}@brightCyan+ {<POS-STRING>}@brightBlue",
+    "{Usage:}@brightMagenta+ {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub1}@brightCyan+ {<POS-STRING>}@brightBlue",
     "",
     "{Arguments:}@brightGreen+",
     "{  }{<POS-1>}@brightBlue     {  }{First positional argument}+",
@@ -201,8 +199,7 @@ it("run", async () => {
     "{Subcommand 2 description}+",
     "{Subcommand 2 details. Second line of subcommand 2 details.}@brightBlack",
     "",
-    "{Usage:}@brightGreen+",
-    "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub2}@brightCyan+ {<POS-NUMBER>}@brightBlue {[OPT-POS]}@brightBlue {[VARIADIC...]}@brightBlue",
+    "{Usage:}@brightMagenta+ {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub2}@brightCyan+ {<POS-NUMBER>}@brightBlue {[OPT-POS]}@brightBlue {[VARIADIC...]}@brightBlue",
     "",
     "{Arguments:}@brightGreen+",
     "{  }{<POS-1>}@brightBlue      {  }{First positional argument}+",
