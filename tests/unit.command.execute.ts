@@ -74,7 +74,7 @@ const rootCommand = commandWithSubcommands<string, any, any>(
 );
 
 it("run", async () => {
-  const res1 = await executeWithArgs(
+  const res1 = await executeInterpreted(
     ["50", "51", "sub1", "final"],
     "Run Context Input",
     rootCommand,
@@ -99,7 +99,7 @@ it("run", async () => {
     at: "sub1",
   });
 
-  const res2 = await executeWithArgs(
+  const res2 = await executeInterpreted(
     [
       "40",
       "41",
@@ -138,7 +138,7 @@ it("run", async () => {
   });
 });
 
-async function executeWithArgs<Context, Result>(
+async function executeInterpreted<Context, Result>(
   args: Array<string>,
   context: Context,
   command: Command<Context, Result>,

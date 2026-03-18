@@ -4,7 +4,7 @@ import { ReaderTokenizer } from "./Reader";
 
 export type Execution<Context, Result> = {
   computeUsage(): ExecutionUsage;
-  prepareResolver(
+  createResolver(
     readerTokenizer: ReaderTokenizer,
   ): ExecutionResolver<Context, Result>;
 };
@@ -54,7 +54,7 @@ export function execution<
       }
       return { options: optionsUsage, arguments: argumentsUsage };
     },
-    prepareResolver(readerTokenizer: ReaderTokenizer) {
+    createResolver(readerTokenizer: ReaderTokenizer) {
       const optionsConsumers: any = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;

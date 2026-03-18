@@ -10,6 +10,12 @@ export type Command<Context, Result> = {
   ): CommandInterpreter<Context, Result>;
 };
 
+export type CommandMetadata = {
+  description: string;
+  details?: Array<string>;
+  // TODO - printable examples ?
+};
+
 export type CommandInterpreter<Context, Result> = {
   computeUsage(): CommandUsage;
   execute(context: Context): Promise<Result>;
@@ -27,11 +33,7 @@ export type CommandUsage = {
 export type CommandUsageBreadcrumb = { argument: string } | { command: string };
 
 export function command<Context, Result>(
-  metadata: {
-    description: string;
-    details?: Array<string>;
-    // TODO - examples ?
-  },
+  metadata: CommandMetadata,
   execution: Execution<Context, Result>,
 ): Command<Context, Result> {
   return {
@@ -53,7 +55,7 @@ export function command<Context, Result>(
         };
       }
       try {
-        const executionResolver = execution.prepareResolver(readerTokenizer);
+        const executionResolver = execution.createResolver(readerTokenizer);
         const lastPositional = readerTokenizer.consumePositional();
         if (lastPositional !== undefined) {
           throw Error(`Unprocessed positional: ${lastPositional}`);
@@ -78,10 +80,7 @@ export function command<Context, Result>(
 }
 
 export function commandWithSubcommands<Context, Payload, Result>(
-  metadata: {
-    description: string;
-    details?: Array<string>;
-  },
+  metadata: CommandMetadata,
   execution: Execution<Context, Payload>,
   subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
 ): Command<Context, Result> {
@@ -91,7 +90,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
     },
     buildInterpreter(readerTokenizer: ReaderTokenizer) {
       try {
-        const executionResolver = execution.prepareResolver(readerTokenizer);
+        const executionResolver = execution.createResolver(readerTokenizer);
         const subcommandName = readerTokenizer.consumePositional();
         if (subcommandName === undefined) {
           throw new Error("Expected a subcommand");
