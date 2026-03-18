@@ -12,35 +12,37 @@ export function usageToPrintableLines(params: {
   const lines = new Array<string>();
 
   lines.push(
-    typoPrintableString(typoSupport, {
-      value: commandUsage.metadata.description,
-      bold: true,
-    }),
+    typoPrintableString(
+      typoSupport,
+      textOverview(commandUsage.metadata.description),
+    ),
   );
   if (commandUsage.metadata.details) {
     lines.push(
-      typoPrintableString(typoSupport, {
-        value: commandUsage.metadata.details,
-        color: "brightBlack",
-      }),
+      typoPrintableString(
+        typoSupport,
+        textSubtitle(commandUsage.metadata.details),
+      ),
     );
   }
 
   lines.push("");
   const breadcrumbs = [
-    typoPrintableString(typoSupport, {
-      value: "Usage:",
-      color: "brightMagenta",
-      bold: true,
-    }),
-    typoPrintableString(typoSupport, textFixed(cliName)),
+    typoPrintableString(typoSupport, textUsageTitle("Usage:")),
+    typoPrintableString(typoSupport, textConstants(cliName)),
   ].concat(
     commandUsage.breadcrumbs.map((breadcrumb) => {
       if ("argument" in breadcrumb) {
-        return typoPrintableString(typoSupport, textInput(breadcrumb.argument));
+        return typoPrintableString(
+          typoSupport,
+          textUserInput(breadcrumb.argument),
+        );
       }
       if ("command" in breadcrumb) {
-        return typoPrintableString(typoSupport, textFixed(breadcrumb.command));
+        return typoPrintableString(
+          typoSupport,
+          textConstants(breadcrumb.command),
+        );
       }
       throw new Error(`Unknown breadcrumb: ${JSON.stringify(breadcrumb)}`);
     }),
@@ -54,10 +56,10 @@ export function usageToPrintableLines(params: {
     for (const argumentUsage of commandUsage.arguments) {
       const gridRow = new Array<GridCell>();
       gridRow.push([textDelimiter()]);
-      gridRow.push([textInput(argumentUsage.label)]);
+      gridRow.push([textUserInput(argumentUsage.label)]);
       if (argumentUsage.description) {
         gridRow.push([textDelimiter()]);
-        gridRow.push([textDescription(argumentUsage.description)]);
+        gridRow.push([textInformative(argumentUsage.description)]);
       }
       grid.push(gridRow);
     }
@@ -73,10 +75,10 @@ export function usageToPrintableLines(params: {
     for (const subcommand of commandUsage.subcommands) {
       const gridRow = new Array<GridCell>();
       gridRow.push([textDelimiter()]);
-      gridRow.push([textFixed(subcommand.name)]);
+      gridRow.push([textConstants(subcommand.name)]);
       if (subcommand.description) {
         gridRow.push([textDelimiter()]);
-        gridRow.push([textDescription(subcommand.description)]);
+        gridRow.push([textInformative(subcommand.description)]);
       }
       grid.push(gridRow);
     }
@@ -91,21 +93,24 @@ export function usageToPrintableLines(params: {
       const gridRow = new Array<GridCell>();
       gridRow.push([textDelimiter()]);
       if (optionUsage.short) {
-        gridRow.push([textFixed(`-${optionUsage.short}`), { value: ", " }]);
+        gridRow.push([
+          textConstants(`-${optionUsage.short}`),
+          textDelimiter(", "),
+        ]);
       } else {
         gridRow.push([]);
       }
       if (optionUsage.label) {
         gridRow.push([
-          textFixed(`--${optionUsage.long} `),
-          textInput(optionUsage.label),
+          textConstants(`--${optionUsage.long} `),
+          textUserInput(optionUsage.label),
         ]);
       } else {
-        gridRow.push([textFixed(`--${optionUsage.long}`)]);
+        gridRow.push([textConstants(`--${optionUsage.long}`)]);
       }
       if (optionUsage.description) {
         gridRow.push([textDelimiter()]);
-        gridRow.push([textDescription(optionUsage.description)]);
+        gridRow.push([textInformative(optionUsage.description)]);
       }
       grid.push(gridRow);
     }
@@ -116,22 +121,34 @@ export function usageToPrintableLines(params: {
   return lines;
 }
 
-function textBlockTitle(text: string): TypoText {
-  return { value: text, color: "brightGreen", bold: true };
+function textOverview(value: string): TypoText {
+  return { value, bold: true };
 }
 
-function textDescription(text: string): TypoText {
-  return { value: text };
+function textSubtitle(value: string): TypoText {
+  return { value, foregroundColor: "brightBlack", italic: true };
 }
 
-function textFixed(text: string): TypoText {
-  return { value: text, color: "brightCyan", bold: true };
+function textInformative(value: string): TypoText {
+  return { value };
 }
 
-function textInput(text: string): TypoText {
-  return { value: text, color: "brightBlue" };
+function textUsageTitle(value: string): TypoText {
+  return { value, foregroundColor: "brightMagenta", bold: true };
 }
 
-function textDelimiter(): TypoText {
-  return { value: "  " };
+function textBlockTitle(value: string): TypoText {
+  return { value, foregroundColor: "brightGreen", bold: true };
+}
+
+function textConstants(value: string): TypoText {
+  return { value, foregroundColor: "brightCyan", bold: true };
+}
+
+function textUserInput(value: string): TypoText {
+  return { value, foregroundColor: "brightBlue", italic: true };
+}
+
+function textDelimiter(value?: string): TypoText {
+  return { value: value ?? "  " };
 }

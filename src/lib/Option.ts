@@ -33,9 +33,7 @@ export function optionFlag(definition: {
       };
     },
     prepareConsumer(readerArgs: ReaderArgs) {
-      const key = definition.short
-        ? `-${definition.short}, --${definition.long}`
-        : `--${definition.long}`;
+      const key = computeKey(definition.long, definition.short);
       const longs = [definition.long];
       if (definition.aliases?.longs) {
         longs.push(...definition.aliases?.longs);
@@ -76,9 +74,7 @@ export function optionRepeatable<Value>(definition: {
       };
     },
     prepareConsumer(readerArgs: ReaderArgs) {
-      const key = definition.short
-        ? `-${definition.short}, --${definition.long}`
-        : `--${definition.long}`;
+      const key = computeKey(definition.long, definition.short);
       const longs = definition.long ? [definition.long] : [];
       if (definition.aliases?.longs) {
         longs.push(...definition.aliases?.longs);
@@ -119,9 +115,7 @@ export function optionSingleValue<Value>(definition: {
       };
     },
     prepareConsumer(readerArgs: ReaderArgs) {
-      const key = definition.short
-        ? `-${definition.short}, --${definition.long}`
-        : `--${definition.long}`;
+      const key = computeKey(definition.long, definition.short);
       const longs = [definition.long];
       if (definition.aliases?.longs) {
         longs.push(...definition.aliases?.longs);
@@ -146,4 +140,8 @@ export function optionSingleValue<Value>(definition: {
       };
     },
   };
+}
+
+function computeKey(long: Lowercase<string>, short?: string): string {
+  return short ? `-${short}, --${long}` : `--${long}`;
 }

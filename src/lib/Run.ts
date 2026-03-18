@@ -59,61 +59,58 @@ export async function runAndExit<Context>(
   }
   if (application?.usageOnHelp ?? true) {
     if (readerArgs.consumeFlag("help")) {
+      const typoSupport = chooseTypoSupport(application?.useColors);
       (application?.onLogStdOut ?? console.log)(
-        computeUsageString(cliName, interpreterFactory, application?.useColors),
+        computeUsageString(cliName, interpreterFactory, typoSupport),
       );
       return (application?.onExit ?? process.exit)(0);
     }
   }
   try {
     const interpreterInstance = interpreterFactory.createInterpreterInstance();
-    try {
-      // TODO - special errors ???
-      await interpreterInstance.executeWithContext(context);
-      return (application?.onExit ?? process.exit)(0);
-    } catch (error) {
-      if (application?.onError) {
-        application.onError(error);
-      }
-      return (application?.onExit ?? process.exit)(1);
-    }
+    await interpreterInstance.executeWithContext(context);
+    return (application?.onExit ?? process.exit)(0);
   } catch (error) {
-    if (application?.usageOnError ?? true) {
-      (application?.onLogStdErr ?? console.error)(
-        computeUsageString(cliName, interpreterFactory, application?.useColors),
-      );
-    }
     if (application?.onError) {
       application.onError(error);
     } else {
       const typoSupport = chooseTypoSupport(application?.useColors);
+      if (application?.usageOnError ?? true) {
+        (application?.onLogStdErr ?? console.error)(
+          computeUsageString(cliName, interpreterFactory, typoSupport),
+        );
+      }
       (application?.onLogStdErr ?? console.error)(
-        [
-          typoPrintableString(typoSupport, {
-            value: "Error:",
-            color: "brightRed",
-            bold: true,
-          }),
-          typoPrintableString(typoSupport, {
-            value: error instanceof Error ? error.message : String(error),
-            bold: true,
-          }),
-        ].join(" "),
+        computeErrorString(error, typoSupport),
       );
     }
     return (application?.onExit ?? process.exit)(1);
   }
 }
 
+function computeErrorString(error: unknown, typoSupport: TypoSupport) {
+  return [
+    typoPrintableString(typoSupport, {
+      value: "Error:",
+      foregroundColor: "brightRed",
+      bold: true,
+    }),
+    typoPrintableString(typoSupport, {
+      value: error instanceof Error ? error.message : String(error),
+      bold: true,
+    }),
+  ].join(" ");
+}
+
 function computeUsageString<Context, Result>(
   cliName: Lowercase<string>,
   commandInterpreter: CommandInterpreterFactory<Context, Result>,
-  useColors: boolean | undefined,
+  typoSupport: TypoSupport,
 ) {
   return usageToPrintableLines({
     cliName,
     commandUsage: commandInterpreter.generateUsage(),
-    typoSupport: chooseTypoSupport(useColors),
+    typoSupport,
   }).join("\n");
 }
 
