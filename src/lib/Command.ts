@@ -12,7 +12,7 @@ export type Command<Context, Result> = {
 
 export type CommandMetadata = {
   description: string;
-  details?: Array<string>;
+  details?: string;
   // TODO - printable examples ?
 };
 
@@ -24,7 +24,7 @@ export type CommandInterpreter<Context, Result> = {
 export type CommandUsage = {
   breadcrumbs: Array<CommandUsageBreadcrumb>;
   description: string;
-  details: Array<string> | undefined;
+  details: string | undefined;
   options: Array<OptionUsage>;
   arguments: Array<ArgumentUsage>;
   subcommands: Array<{ name: string; description: string | undefined }>;

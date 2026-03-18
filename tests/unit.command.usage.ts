@@ -21,7 +21,10 @@ import { usageToPrintableLines } from "../src/lib/Usage";
 const cmd = commandWithSubcommands<string, any, any>(
   {
     description: "Root command description",
-    details: ["Root command details", "Second line of root command details"],
+    details: [
+      "Root command details.",
+      "Second line of root command details.",
+    ].join(" "),
   },
   execution(
     {
@@ -67,9 +70,9 @@ const cmd = commandWithSubcommands<string, any, any>(
       {
         description: "Subcommand 1 description",
         details: [
-          "Subcommand 1 details",
-          "Second line of subcommand 1 details",
-        ],
+          "Subcommand 1 details.",
+          "Second line of subcommand 1 details.",
+        ].join(" "),
       },
       execution(
         {
@@ -91,9 +94,9 @@ const cmd = commandWithSubcommands<string, any, any>(
       {
         description: "Subcommand 2 description",
         details: [
-          "Subcommand 2 details",
-          "Second line of subcommand 2 details",
-        ],
+          "Subcommand 2 details.",
+          "Second line of subcommand 2 details.",
+        ].join(" "),
       },
       execution(
         {
@@ -134,11 +137,10 @@ const cmd = commandWithSubcommands<string, any, any>(
 
 it("run", async () => {
   const usage1 = await getUsage([], cmd);
-  // console.log(usage1.join("\n"));
+  // console.log(usage1.join(" "));
   expect(usage1).toStrictEqual([
     "{Root command description}+",
-    "{Root command details}@brightBlack",
-    "{Second line of root command details}@brightBlack",
+    "{Root command details. Second line of root command details.}@brightBlack",
     "",
     "{Usage:}@brightGreen+",
     "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {<SUBCOMMAND>}@brightCyan+",
@@ -161,8 +163,7 @@ it("run", async () => {
   const usage2 = await getUsage(["50", "51", "sub1", "final"], cmd);
   expect(usage2).toStrictEqual([
     "{Subcommand 1 description}+",
-    "{Subcommand 1 details}@brightBlack",
-    "{Second line of subcommand 1 details}@brightBlack",
+    "{Subcommand 1 details. Second line of subcommand 1 details.}@brightBlack",
     "",
     "{Usage:}@brightGreen+",
     "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub1}@brightCyan+ {<POS-STRING>}@brightBlue",
@@ -198,8 +199,7 @@ it("run", async () => {
   );
   expect(usage3).toStrictEqual([
     "{Subcommand 2 description}+",
-    "{Subcommand 2 details}@brightBlack",
-    "{Second line of subcommand 2 details}@brightBlack",
+    "{Subcommand 2 details. Second line of subcommand 2 details.}@brightBlack",
     "",
     "{Usage:}@brightGreen+",
     "  {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub2}@brightCyan+ {<POS-NUMBER>}@brightBlue {[OPT-POS]}@brightBlue {[VARIADIC...]}@brightBlue",

@@ -15,9 +15,9 @@ export function usageToPrintableLines(params: {
     typoPrintableString(typoSupport, textDescription(commandUsage.description)),
   );
   if (commandUsage.details) {
-    for (const detailLine of commandUsage.details) {
-      lines.push(typoPrintableString(typoSupport, textDetails(detailLine)));
-    }
+    lines.push(
+      typoPrintableString(typoSupport, textDetails(commandUsage.details)),
+    );
   }
 
   lines.push("");

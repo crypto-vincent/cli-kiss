@@ -1,7 +1,13 @@
 import { Command, CommandInterpreter } from "./Command";
 import { ReaderTokenizer } from "./Reader";
-import { typoInferProcessSupport, TypoSupport } from "./Typo";
+import {
+  typoInferProcessSupport,
+  typoPrintableString,
+  TypoSupport,
+} from "./Typo";
 import { usageToPrintableLines } from "./Usage";
+
+// TODO - add unit tests for this
 
 export async function runAndExit<Context>(
   cliName: Lowercase<string>,
@@ -9,13 +15,14 @@ export async function runAndExit<Context>(
   context: Context,
   command: Command<Context, void>,
   application?: {
-    usageOnError?: boolean;
-    usageOnHelp?: boolean;
-    buildVersion?: string;
-    useColors?: boolean;
-    onMessage?: (message: string) => void;
-    onError?: (error: any) => void;
-    onExit?: (code: number) => never;
+    usageOnError?: boolean | undefined;
+    usageOnHelp?: boolean | undefined;
+    buildVersion?: string | undefined;
+    useColors?: boolean | undefined;
+    onLogStdOut?: ((message: string) => void) | undefined;
+    onLogStdErr?: ((message: string) => void) | undefined;
+    onError?: ((error: unknown) => void) | undefined;
+    onExit?: ((code: number) => never) | undefined;
   },
 ): Promise<never> {
   const readerTokenizer = new ReaderTokenizer(cliArgs);
@@ -44,7 +51,7 @@ export async function runAndExit<Context>(
   const commandInterpreter = command.buildInterpreter(readerTokenizer);
   if (application?.buildVersion) {
     if (readerTokenizer.consumeFlag("version")) {
-      (application?.onMessage ?? console.log)(
+      (application?.onLogStdOut ?? console.log)(
         [cliName, application.buildVersion].join(" "),
       );
       return (application?.onExit ?? process.exit)(0);
@@ -52,7 +59,9 @@ export async function runAndExit<Context>(
   }
   if (application?.usageOnHelp ?? true) {
     if (readerTokenizer.consumeFlag("help")) {
-      logUsageMessage(cliName, commandInterpreter, application);
+      (application?.onLogStdOut ?? console.log)(
+        computeUsageString(cliName, commandInterpreter, application?.useColors),
+      );
       return (application?.onExit ?? process.exit)(0);
     }
   }
@@ -61,25 +70,38 @@ export async function runAndExit<Context>(
     return (application?.onExit ?? process.exit)(0);
   } catch (error) {
     if (application?.usageOnError ?? true) {
-      logUsageMessage(cliName, commandInterpreter, application);
+      (application?.onLogStdErr ?? console.error)(
+        computeUsageString(cliName, commandInterpreter, application?.useColors),
+      );
     }
-    (application?.onError ?? console.error)(error);
+    if (application?.onError) {
+      application.onError(error);
+    } else {
+      (application?.onLogStdErr ?? console.error)(
+        typoPrintableString(chooseTypoSupport(application?.useColors), {
+          value: "Error:",
+          color: "brightRed",
+          bold: true,
+        }),
+      );
+      (application?.onLogStdErr ?? console.error)(
+        error instanceof Error ? error.message : error,
+      );
+    }
     return (application?.onExit ?? process.exit)(1);
   }
 }
 
-function logUsageMessage<Context, Result>(
+function computeUsageString<Context, Result>(
   cliName: Lowercase<string>,
   commandInterpreter: CommandInterpreter<Context, Result>,
-  application?: { useColors?: boolean; onMessage?: (message: string) => void },
+  useColors: boolean | undefined,
 ) {
-  (application?.onMessage ?? console.log)(
-    usageToPrintableLines({
-      cliName,
-      commandUsage: commandInterpreter.computeUsage(),
-      typoSupport: chooseTypoSupport(application?.useColors),
-    }).join("\n"),
-  );
+  return usageToPrintableLines({
+    cliName,
+    commandUsage: commandInterpreter.computeUsage(),
+    typoSupport: chooseTypoSupport(useColors),
+  }).join("\n");
 }
 
 function chooseTypoSupport(useColors?: boolean): TypoSupport {
