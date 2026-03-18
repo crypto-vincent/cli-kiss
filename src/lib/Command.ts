@@ -131,10 +131,10 @@ export function commandWithSubcommands<Context, Payload, Result>(
           },
           createInterpreterInstance() {
             // TODO - unit tests to enforce ordering here
-            const subcommandInterpreterInstance =
-              subcommandInterpreterFactory.createInterpreterInstance();
             const executionInterpreterInstance =
               executionInterpreterFactory.createInterpreterInstance();
+            const subcommandInterpreterInstance =
+              subcommandInterpreterFactory.createInterpreterInstance();
             return {
               async executeWithContext(context: Context) {
                 const payload =
