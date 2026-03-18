@@ -58,7 +58,7 @@ export function command<Context, Result>(
         const executionResolver = execution.createResolver(readerTokenizer);
         const lastPositional = readerTokenizer.consumePositional();
         if (lastPositional !== undefined) {
-          throw Error(`Unexpected argument: ${lastPositional}`);
+          throw Error(`Unexpected argument: "${lastPositional}"`);
         }
         const executionCallback = executionResolver();
         return {
@@ -98,7 +98,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         const subcommandInput =
           subcommands[subcommandName as Lowercase<string>];
         if (subcommandInput === undefined) {
-          throw new Error(`Unknown subcommand name: ${subcommandName}`);
+          throw new Error(`Unknown subcommand name: "${subcommandName}"`);
         }
         const subcommandInterpreter =
           subcommandInput.buildInterpreter(readerTokenizer);

@@ -94,7 +94,7 @@ export function optionRepeatable<Value>(definition: {
         return readerTokenizer
           .consumeOption(key)
           .map((value) =>
-            typeDecode(definition.type, `${key}: ${label}`, value),
+            typeDecode(definition.type, value, `${key}: ${label}`),
           );
       };
     },
@@ -144,7 +144,7 @@ export function optionSingleValue<Value>(definition: {
         if (firstValue === undefined) {
           return definition.default();
         }
-        return typeDecode(definition.type, `${key}: ${label}`, firstValue);
+        return typeDecode(definition.type, firstValue, `${key}: ${label}`);
       };
     },
   };

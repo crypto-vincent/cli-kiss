@@ -27,9 +27,9 @@ export function argumentRequired<Value>(definition: {
     consumeValue(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        throw new Error(`Missing required arg: ${label}`);
+        throw new Error(`Missing required argument: ${label}`);
       }
-      return typeDecode(definition.type, label, positional);
+      return typeDecode(definition.type, positional, label);
     },
   };
 }
@@ -53,7 +53,7 @@ export function argumentOptional<Value>(definition: {
       if (positional === undefined) {
         return definition.default();
       }
-      return typeDecode(definition.type, label, positional);
+      return typeDecode(definition.type, positional, label);
     },
   };
 }
@@ -86,7 +86,7 @@ export function argumentVariadics<Value>(definition: {
         ) {
           break;
         }
-        values.push(typeDecode(definition.type, label, positional));
+        values.push(typeDecode(definition.type, positional, label));
       }
       return values;
     },

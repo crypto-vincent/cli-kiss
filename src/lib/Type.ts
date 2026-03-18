@@ -12,7 +12,7 @@ export const typeBoolean: Type<boolean> = {
     if (value === "false") {
       return false;
     }
-    throw new Error(`Invalid boolean value: ${value}`);
+    throw new Error(`Invalid boolean: ${value}`);
   },
 };
 
@@ -21,7 +21,7 @@ export const typeDate: Type<Date> = {
   decoder(value: string) {
     const timestamp = Date.parse(value);
     if (isNaN(timestamp)) {
-      throw new Error(`Invalid date value: ${value}`);
+      throw new Error(`Invalid date: ${value}`);
     }
     return new Date(timestamp);
   },
@@ -61,11 +61,15 @@ export function typeCommaTuple<
       const parts = value.split(",", elementTypes.length);
       if (parts.length !== elementTypes.length) {
         throw new Error(
-          `Invalid tuple value: ${value}, expected ${elementTypes.length} parts`,
+          `Invalid tuple value: ${value}, expected ${elementTypes.length} comma-separated parts`,
         );
       }
       return parts.map((part, index) =>
-        typeDecode(elementTypes[index]!, `[${index}]`, part),
+        typeDecode(
+          elementTypes[index]!,
+          part,
+          `[${index}].${elementTypes[index]!.label}`,
+        ),
       ) as Elements;
     },
   };
@@ -80,21 +84,23 @@ export function typeCommaList<Value>(
     decoder(value: string) {
       return value
         .split(",")
-        .map((part, index) => typeDecode(elementType, `[${index}]`, part));
+        .map((part, index) =>
+          typeDecode(elementType, part, `[${index}].${elementType.label}`),
+        );
     },
   };
 }
 
 export function typeDecode<Value>(
   type: Type<Value>,
-  context: string,
   value: string,
+  context: string,
 ): Value {
   try {
     return type.decoder(value);
   } catch (error) {
     throw new Error(
-      `Invalid value for ${context}: ${type.label}: ${value}, error: ${
+      `Invalid value for ${context}: "${value}": ${
         error instanceof Error ? error.message : String(error)
       }`,
     );
