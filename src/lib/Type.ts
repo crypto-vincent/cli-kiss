@@ -68,6 +68,7 @@ export function typeCommaTuple<
       const parts = value.split(",", elementTypes.length);
       if (parts.length !== elementTypes.length) {
         throw new Error(
+          // TODO - colored errors ?
           `Invalid tuple value: "${value}", expected ${elementTypes.length} comma-separated parts`,
         );
       }
@@ -87,7 +88,7 @@ export function typeCommaList<Value>(
 ): Type<Array<Value>> {
   return {
     label:
-      `${elementType.label}[,${elementType.label}...]` as Uppercase<string>,
+      `${elementType.label}[,${elementType.label}]...` as Uppercase<string>,
     decoder(value: string) {
       return value
         .split(",")

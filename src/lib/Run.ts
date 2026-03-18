@@ -92,7 +92,7 @@ function computeErrorString(error: unknown, typoSupport: TypoSupport) {
   return [
     typoPrintableString(typoSupport, {
       value: "Error:",
-      foregroundColor: "brightRed",
+      fgColor: "darkRed",
       bold: true,
     }),
     typoPrintableString(typoSupport, {

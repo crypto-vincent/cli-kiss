@@ -22,7 +22,7 @@ export function usageToPrintableLines(params: {
     lines.push(
       typoPrintableString(
         typoSupport,
-        textSubtitle(commandUsage.metadata.details),
+        textSubtleInfo(commandUsage.metadata.details),
       ),
     );
   }
@@ -60,7 +60,7 @@ export function usageToPrintableLines(params: {
       gridRow.push([textUserInput(argumentUsage.label)]);
       if (argumentUsage.description) {
         gridRow.push([textDelimiter()]);
-        gridRow.push([textInformative(argumentUsage.description)]);
+        gridRow.push([textUsefulInfo(argumentUsage.description)]);
       }
       grid.push(gridRow);
     }
@@ -79,7 +79,7 @@ export function usageToPrintableLines(params: {
       gridRow.push([textConstants(subcommand.name)]);
       if (subcommand.description) {
         gridRow.push([textDelimiter()]);
-        gridRow.push([textInformative(subcommand.description)]);
+        gridRow.push([textUsefulInfo(subcommand.description)]);
       }
       grid.push(gridRow);
     }
@@ -103,15 +103,19 @@ export function usageToPrintableLines(params: {
       }
       if (optionUsage.label) {
         gridRow.push([
-          textConstants(`--${optionUsage.long} `),
+          textConstants(`--${optionUsage.long}`),
+          textDelimiter(" "),
           textUserInput(optionUsage.label),
         ]);
       } else {
-        gridRow.push([textConstants(`--${optionUsage.long}`)]);
+        gridRow.push([
+          textConstants(`--${optionUsage.long}`),
+          textSubtleInfo("[=no]"),
+        ]);
       }
       if (optionUsage.description) {
         gridRow.push([textDelimiter()]);
-        gridRow.push([textInformative(optionUsage.description)]);
+        gridRow.push([textUsefulInfo(optionUsage.description)]);
       }
       grid.push(gridRow);
     }
@@ -126,28 +130,28 @@ function textOverview(value: string): TypoText {
   return { value, bold: true };
 }
 
-function textSubtitle(value: string): TypoText {
-  return { value, foregroundColor: "brightBlack", italic: true };
-}
-
-function textInformative(value: string): TypoText {
+function textUsefulInfo(value: string): TypoText {
   return { value };
 }
 
+function textSubtleInfo(value: string): TypoText {
+  return { value, italic: true, dim: true };
+}
+
 function textUsageTitle(value: string): TypoText {
-  return { value, foregroundColor: "brightMagenta", bold: true };
+  return { value, fgColor: "darkMagenta", bold: true };
 }
 
 function textBlockTitle(value: string): TypoText {
-  return { value, foregroundColor: "brightGreen", bold: true };
+  return { value, fgColor: "darkGreen", bold: true };
 }
 
 function textConstants(value: string): TypoText {
-  return { value, foregroundColor: "brightCyan", bold: true };
+  return { value, fgColor: "darkCyan", bold: true };
 }
 
 function textUserInput(value: string): TypoText {
-  return { value, foregroundColor: "brightBlue", italic: true };
+  return { value, fgColor: "darkBlue", bold: true };
 }
 
 function textDelimiter(value?: string): TypoText {

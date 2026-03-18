@@ -19,8 +19,9 @@ export type TypoColor =
 
 export type TypoText = {
   value: string;
-  foregroundColor?: TypoColor;
-  backgroundColor?: TypoColor;
+  fgColor?: TypoColor;
+  bgColor?: TypoColor;
+  dim?: boolean;
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
@@ -35,31 +36,31 @@ export function typoPrintableString(
     return typoText.value;
   }
   if (typoSupport === "tty") {
-    const foregroundColorCode = typoText.foregroundColor
-      ? ttyCodeForegroundColors[typoText.foregroundColor]
+    const fgColorCode = typoText.fgColor
+      ? ttyCodeFgColors[typoText.fgColor]
       : "";
-    const backgroundColorCode = typoText.backgroundColor
-      ? ttyCodeBackgroundColors[typoText.backgroundColor]
+    const bgColorCode = typoText.bgColor
+      ? ttyCodeBgColors[typoText.bgColor]
       : "";
     const boldCode = typoText.bold ? ttyCodeBold : "";
+    const dimCode = typoText.dim ? ttyCodeDim : "";
     const italicCode = typoText.italic ? ttyCodeItalic : "";
     const underlineCode = typoText.underline ? ttyCodeUnderline : "";
     const strikethroughCode = typoText.strikethrough
       ? ttyCodeStrikethrough
       : "";
-    return `${foregroundColorCode}${backgroundColorCode}${boldCode}${italicCode}${underlineCode}${strikethroughCode}${typoText.value}${ttyCodeReset}`;
+    return `${fgColorCode}${bgColorCode}${boldCode}${dimCode}${italicCode}${underlineCode}${strikethroughCode}${typoText.value}${ttyCodeReset}`;
   }
   if (typoSupport === "mock") {
-    const foregroundColorPart = typoText.foregroundColor
-      ? `{${typoText.value}}@${typoText.foregroundColor}`
+    const fgColorPart = typoText.fgColor
+      ? `{${typoText.value}}@${typoText.fgColor}`
       : typoText.value;
-    const backgroundColorPart = typoText.backgroundColor
-      ? `{${foregroundColorPart}}#${typoText.backgroundColor}`
-      : foregroundColorPart;
-    const boldPart = typoText.bold
-      ? `{${backgroundColorPart}}+`
-      : backgroundColorPart;
-    const italicPart = typoText.italic ? `{${boldPart}}*` : boldPart;
+    const bgColorPart = typoText.bgColor
+      ? `{${fgColorPart}}#${typoText.bgColor}`
+      : fgColorPart;
+    const boldPart = typoText.bold ? `{${bgColorPart}}+` : bgColorPart;
+    const dimPart = typoText.dim ? `{${boldPart}}-` : boldPart;
+    const italicPart = typoText.italic ? `{${dimPart}}*` : dimPart;
     const underlinePart = typoText.underline ? `{${italicPart}}_` : italicPart;
     const strikethroughPart = typoText.strikethrough
       ? `{${underlinePart}}~`
@@ -92,10 +93,11 @@ export function typoInferProcessSupport(): TypoSupport {
 
 const ttyCodeReset = "\x1b[0m";
 const ttyCodeBold = "\x1b[1m";
+const ttyCodeDim = "\x1b[2m";
 const ttyCodeItalic = "\x1b[3m";
 const ttyCodeUnderline = "\x1b[4m";
 const ttyCodeStrikethrough = "\x1b[9m";
-const ttyCodeForegroundColors: Record<TypoColor, string> = {
+const ttyCodeFgColors: Record<TypoColor, string> = {
   darkBlack: "\x1b[30m",
   darkRed: "\x1b[31m",
   darkGreen: "\x1b[32m",
@@ -113,7 +115,7 @@ const ttyCodeForegroundColors: Record<TypoColor, string> = {
   brightCyan: "\x1b[96m",
   brightWhite: "\x1b[97m",
 };
-const ttyCodeBackgroundColors: Record<TypoColor, string> = {
+const ttyCodeBgColors: Record<TypoColor, string> = {
   darkBlack: "\x1b[40m",
   darkRed: "\x1b[41m",
   darkGreen: "\x1b[42m",

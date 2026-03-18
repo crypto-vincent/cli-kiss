@@ -137,84 +137,70 @@ const cmd = commandWithSubcommands<string, any, any>(
 
 it("run", async () => {
   const usage1 = await getUsage([], cmd);
-  // console.log(usage1.join("\n"));
+  const usage2 = await getUsage(["50", "51", "sub1"], cmd);
+  const usage3 = await getUsage(["40", "41", "sub2", "--doesn't-exist"], cmd);
+
+  /*
+  console.log(usage1.join("\n"));
+  console.log(usage2.join("\n"));
+  console.log(usage3.join("\n"));
+  */
+
   expect(usage1).toStrictEqual([
     "{Root command description}+",
-    "{{Root command details. Second line of root command details.}@brightBlack}*",
+    "{{Root command details. Second line of root command details.}-}*",
     "",
-    "{{Usage:}@brightMagenta}+ {{my-cli}@brightCyan}+ {{<POS-1>}@brightBlue}* {{<POS-2>}@brightBlue}* {{<SUBCOMMAND>}@brightCyan}+",
+    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{<SUBCOMMAND>}@darkCyan}+",
     "",
-    "{{Arguments:}@brightGreen}+",
-    "  {{<POS-1>}@brightBlue}*  First positional argument",
-    "  {{<POS-2>}@brightBlue}*  Second positional argument",
+    "{{Arguments:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+  First positional argument",
+    "  {{<POS-2>}@darkBlue}+  Second positional argument",
     "",
-    "{{Subcommands:}@brightGreen}+",
-    "  {{sub1}@brightCyan}+  Subcommand 1 description",
-    "  {{sub2}@brightCyan}+  Subcommand 2 description",
+    "{{Subcommands:}@darkGreen}+",
+    "  {{sub1}@darkCyan}+  Subcommand 1 description",
+    "  {{sub2}@darkCyan}+  Subcommand 2 description",
     "",
-    "{{Options:}@brightGreen}+",
-    "  {{-b}@brightCyan}+, {{--boolean-flag}@brightCyan}+                                Root boolean-flag description",
-    "  {{-s}@brightCyan}+, {{--string-option }@brightCyan}+{{<COOL-STUFF>}@brightBlue}*                  Root string-option description",
-    "      {{--complex-option }@brightCyan}+{{<NUMBER,STRING[,STRING...]>}@brightBlue}*  Root complex-option description",
+    "{{Options:}@darkGreen}+",
+    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
+    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
+    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
     "",
   ]);
-
-  const usage2 = await getUsage(["50", "51", "sub1", "final"], cmd);
-  // console.log(usage2);
   expect(usage2).toStrictEqual([
     "{Subcommand 1 description}+",
-    "{{Subcommand 1 details. Second line of subcommand 1 details.}@brightBlack}*",
+    "{{Subcommand 1 details. Second line of subcommand 1 details.}-}*",
     "",
-    "{{Usage:}@brightMagenta}+ {{my-cli}@brightCyan}+ {{<POS-1>}@brightBlue}* {{<POS-2>}@brightBlue}* {{sub1}@brightCyan}+ {{<POS-STRING>}@brightBlue}*",
+    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub1}@darkCyan}+ {{<POS-STRING>}@darkBlue}+",
     "",
-    "{{Arguments:}@brightGreen}+",
-    "  {{<POS-1>}@brightBlue}*       First positional argument",
-    "  {{<POS-2>}@brightBlue}*       Second positional argument",
-    "  {{<POS-STRING>}@brightBlue}*  Positional string argument",
+    "{{Arguments:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+       First positional argument",
+    "  {{<POS-2>}@darkBlue}+       Second positional argument",
+    "  {{<POS-STRING>}@darkBlue}+  Positional string argument",
     "",
-    "{{Options:}@brightGreen}+",
-    "  {{-b}@brightCyan}+, {{--boolean-flag}@brightCyan}+                                Root boolean-flag description",
-    "  {{-s}@brightCyan}+, {{--string-option }@brightCyan}+{{<COOL-STUFF>}@brightBlue}*                  Root string-option description",
-    "      {{--complex-option }@brightCyan}+{{<NUMBER,STRING[,STRING...]>}@brightBlue}*  Root complex-option description",
+    "{{Options:}@darkGreen}+",
+    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
+    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
+    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
     "",
   ]);
-
-  const usage3 = await getUsage(
-    [
-      "40",
-      "41",
-      "sub2",
-      "--complex-option=42,hello,world",
-      "--number-option",
-      "123",
-      "--number-option",
-      "1234",
-      "88.88",
-      "a,b",
-      "final",
-      "--boolean-flag",
-    ],
-    cmd,
-  );
-  // console.log(usage3);
   expect(usage3).toStrictEqual([
     "{Subcommand 2 description}+",
-    "{{Subcommand 2 details. Second line of subcommand 2 details.}@brightBlack}*",
+    "{{Subcommand 2 details. Second line of subcommand 2 details.}-}*",
     "",
-    "{{Usage:}@brightMagenta}+ {{my-cli}@brightCyan}+ {{<POS-1>}@brightBlue}* {{<POS-2>}@brightBlue}* {{sub2}@brightCyan}+ {{<POS-NUMBER>}@brightBlue}* {{[OPT-POS]}@brightBlue}* {{[VARIADIC]...}@brightBlue}*",
+    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub2}@darkCyan}+ {{<POS-NUMBER>}@darkBlue}+ {{[OPT-POS]}@darkBlue}+ {{[VARIADIC]...}@darkBlue}+",
     "",
-    "{{Arguments:}@brightGreen}+",
-    "  {{<POS-1>}@brightBlue}*        First positional argument",
-    "  {{<POS-2>}@brightBlue}*        Second positional argument",
-    "  {{<POS-NUMBER>}@brightBlue}*   Positional number argument",
-    "  {{[OPT-POS]}@brightBlue}*      Optional positional argument",
-    "  {{[VARIADIC]...}@brightBlue}*  Variadic positional arguments",
+    "{{Arguments:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+        First positional argument",
+    "  {{<POS-2>}@darkBlue}+        Second positional argument",
+    "  {{<POS-NUMBER>}@darkBlue}+   Positional number argument",
+    "  {{[OPT-POS]}@darkBlue}+      Optional positional argument",
+    "  {{[VARIADIC]...}@darkBlue}+  Variadic positional arguments",
     "",
-    "{{Options:}@brightGreen}+",
-    "  {{-b}@brightCyan}+, {{--boolean-flag}@brightCyan}+                                Root boolean-flag description",
-    "  {{-s}@brightCyan}+, {{--string-option }@brightCyan}+{{<COOL-STUFF>}@brightBlue}*                  Root string-option description",
-    "      {{--complex-option }@brightCyan}+{{<NUMBER,STRING[,STRING...]>}@brightBlue}*  Root complex-option description",
-    "      {{--dudu }@brightCyan}+{{<STRING>}@brightBlue}*                               Dudu option description",
+    "{{Options:}@darkGreen}+",
+    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
+    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
+    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
+    "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description",
     "",
   ]);
 });
