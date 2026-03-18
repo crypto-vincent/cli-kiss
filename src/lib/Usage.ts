@@ -13,14 +13,14 @@ export function usageToPrintableLines(params: {
 
   lines.push(
     typoPrintableString(typoSupport, {
-      value: commandUsage.description,
+      value: commandUsage.metadata.description,
       bold: true,
     }),
   );
-  if (commandUsage.details) {
+  if (commandUsage.metadata.details) {
     lines.push(
       typoPrintableString(typoSupport, {
-        value: commandUsage.details,
+        value: commandUsage.metadata.details,
         color: "brightBlack",
       }),
     );

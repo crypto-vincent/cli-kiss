@@ -1,22 +1,21 @@
 import { Argument, ArgumentUsage } from "./Argument";
 import { Option, OptionUsage } from "./Option";
-import { ReaderTokenizer } from "./Reader";
+import { ReaderArgs } from "./Reader";
 
 export type Execution<Context, Result> = {
-  computeUsage(): ExecutionUsage;
-  createResolver(
-    readerTokenizer: ReaderTokenizer,
-  ): ExecutionResolver<Context, Result>;
+  generateUsage(): ExecutionUsage;
+  createInterpreterFactory(
+    readerArgs: ReaderArgs,
+  ): ExecutionInterpreterFactory<Context, Result>;
 };
 
-export type ExecutionResolver<Context, Result> = () => ExecutionCallback<
-  Context,
-  Result
->;
+export type ExecutionInterpreterFactory<Context, Result> = {
+  createInterpreterInstance(): ExecutionInterpreterInstance<Context, Result>;
+};
 
-export type ExecutionCallback<Context, Result> = (
-  context: Context,
-) => Promise<Result>;
+export type ExecutionInterpreterInstance<Context, Result> = {
+  executeWithContext(context: Context): Promise<Result>;
+};
 
 export type ExecutionUsage = {
   options: Array<OptionUsage>;
@@ -42,7 +41,7 @@ export function execution<
   ) => Promise<Result>,
 ): Execution<Context, Result> {
   return {
-    computeUsage() {
+    generateUsage() {
       const optionsUsage = new Array<OptionUsage>();
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
@@ -54,28 +53,31 @@ export function execution<
       }
       return { options: optionsUsage, arguments: argumentsUsage };
     },
-    createResolver(readerTokenizer: ReaderTokenizer) {
+    createInterpreterFactory(readerArgs: ReaderArgs) {
       const optionsConsumers: any = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
-        optionsConsumers[optionKey] =
-          optionInput.prepareConsumer(readerTokenizer);
+        optionsConsumers[optionKey] = optionInput.prepareConsumer(readerArgs);
       }
       const argumentsValues: any = [];
       for (const argumentInput of inputs.arguments) {
-        argumentsValues.push(argumentInput.consumeValue(readerTokenizer));
+        argumentsValues.push(argumentInput.consumeValue(readerArgs));
       }
-      return () => {
-        const optionsValues: any = {};
-        for (const optionKey in optionsConsumers) {
-          optionsValues[optionKey] = optionsConsumers[optionKey]!();
-        }
-        return async (context: Context) => {
-          return await handler(context, {
-            options: optionsValues,
-            arguments: argumentsValues,
-          });
-        };
+      return {
+        createInterpreterInstance() {
+          const optionsValues: any = {};
+          for (const optionKey in optionsConsumers) {
+            optionsValues[optionKey] = optionsConsumers[optionKey]!();
+          }
+          return {
+            executeWithContext(context: Context) {
+              return handler(context, {
+                options: optionsValues,
+                arguments: argumentsValues,
+              });
+            },
+          };
+        },
       };
     },
   };

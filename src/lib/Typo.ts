@@ -1,8 +1,25 @@
-export type TypoSupport = "none" | "tty" | "html" | "mock";
+export type TypoSupport = "none" | "tty" | "mock";
+export type TypoColor =
+  | "darkBlack"
+  | "darkRed"
+  | "darkGreen"
+  | "darkYellow"
+  | "darkBlue"
+  | "darkMagenta"
+  | "darkCyan"
+  | "darkWhite"
+  | "brightBlack"
+  | "brightRed"
+  | "brightGreen"
+  | "brightYellow"
+  | "brightBlue"
+  | "brightMagenta"
+  | "brightCyan"
+  | "brightWhite";
 
 export type TypoText = {
   value: string;
-  color?: keyof typeof colorCodes;
+  color?: TypoColor;
   bold?: boolean;
 };
 
@@ -14,18 +31,9 @@ export function typoPrintableString(
     return typoText.value;
   }
   if (typoSupport === "tty") {
-    const colorStartCode = typoText.color ? colorCodes[typoText.color] : "";
-    const colorBoldCode = typoText.bold ? boldCode : "";
-    return `${colorStartCode}${colorBoldCode}${typoText.value}${resetCode}`;
-  }
-  if (typoSupport === "html") {
-    const colorStartTag = typoText.color
-      ? `<span style="color: ${typoText.color}">`
-      : "";
-    const colorEndTag = typoText.color ? "</span>" : "";
-    const boldStartTag = typoText.bold ? "<b>" : "";
-    const boldEndTag = typoText.bold ? "</b>" : "";
-    return `${colorStartTag}${boldStartTag}${typoText.value}${boldEndTag}${colorEndTag}`;
+    const colorStartCode = typoText.color ? ttyCodeColors[typoText.color] : "";
+    const colorBoldCode = typoText.bold ? ttyCodeBold : "";
+    return `${colorStartCode}${colorBoldCode}${typoText.value}${ttyCodeReset}`;
   }
   if (typoSupport === "mock") {
     if (typoText.color && typoText.bold) {
@@ -63,9 +71,9 @@ export function typoInferProcessSupport(): TypoSupport {
   return "tty";
 }
 
-const resetCode = "\x1b[0m";
-const boldCode = "\x1b[1m";
-const colorCodes = {
+const ttyCodeReset = "\x1b[0m";
+const ttyCodeBold = "\x1b[1m";
+const ttyCodeColors: Record<TypoColor, string> = {
   darkBlack: "\x1b[30m",
   darkRed: "\x1b[31m",
   darkGreen: "\x1b[32m",

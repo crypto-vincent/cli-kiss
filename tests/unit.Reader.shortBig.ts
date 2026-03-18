@@ -1,8 +1,8 @@
 import { expect, it } from "@jest/globals";
-import { ReaderTokenizer } from "../src";
+import { ReaderArgs } from "../src";
 
 it("run", async () => {
-  const stream = new ReaderTokenizer([
+  const stream = new ReaderArgs([
     "positional-0",
     "-aasof-normal",
     "-bbsof-positive=true",

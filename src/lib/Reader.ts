@@ -2,7 +2,7 @@ export type ReaderPositionals = {
   consumePositional(): string | undefined;
 };
 
-export class ReaderTokenizer {
+export class ReaderArgs {
   #parsedArgs: Array<string>;
   #parsedIndex: number;
   #parsedDouble: boolean;

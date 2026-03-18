@@ -1,9 +1,9 @@
-import { ReaderTokenizer } from "./Reader";
+import { ReaderArgs } from "./Reader";
 import { Type, typeDecode } from "./Type";
 
 export type Option<Value> = {
   generateUsage(): OptionUsage;
-  prepareConsumer(readerTokenizer: ReaderTokenizer): OptionConsumer<Value>;
+  prepareConsumer(readerArgs: ReaderArgs): OptionConsumer<Value>;
 };
 
 export type OptionUsage = {
@@ -17,9 +17,9 @@ export type OptionUsage = {
 export type OptionConsumer<Value> = () => Value;
 
 export function optionFlag(definition: {
-  description?: string;
   long: Lowercase<string>;
   short?: string;
+  description?: string;
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   default?: () => boolean;
 }): Option<boolean> {
@@ -32,7 +32,7 @@ export function optionFlag(definition: {
         label: undefined,
       };
     },
-    prepareConsumer(readerTokenizer: ReaderTokenizer) {
+    prepareConsumer(readerArgs: ReaderArgs) {
       const key = definition.short
         ? `-${definition.short}, --${definition.long}`
         : `--${definition.long}`;
@@ -44,9 +44,9 @@ export function optionFlag(definition: {
       if (definition.aliases?.shorts) {
         shorts.push(...definition.aliases?.shorts);
       }
-      readerTokenizer.registerFlag({ key, longs, shorts });
+      readerArgs.registerFlag({ key, longs, shorts });
       return () => {
-        const value = readerTokenizer.consumeFlag(key);
+        const value = readerArgs.consumeFlag(key);
         if (value === undefined) {
           return definition.default ? definition.default() : false;
         }
@@ -56,15 +56,13 @@ export function optionFlag(definition: {
   };
 }
 
-// TODO - option with comma-separated values, e.g. --names=alice,bob,charlie
-
 export function optionRepeatable<Value>(definition: {
-  description?: string;
-  type: Type<Value>;
   long: Lowercase<string>;
   short?: string;
+  description?: string;
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   label?: Uppercase<string>;
+  type: Type<Value>;
 }): Option<Array<Value>> {
   const label = definition.label ?? definition.type.label;
   return {
@@ -77,7 +75,7 @@ export function optionRepeatable<Value>(definition: {
         label: `<${label}>` as Uppercase<string>,
       };
     },
-    prepareConsumer(readerTokenizer: ReaderTokenizer) {
+    prepareConsumer(readerArgs: ReaderArgs) {
       const key = definition.short
         ? `-${definition.short}, --${definition.long}`
         : `--${definition.long}`;
@@ -89,9 +87,9 @@ export function optionRepeatable<Value>(definition: {
       if (definition.aliases?.shorts) {
         shorts.push(...definition.aliases?.shorts);
       }
-      readerTokenizer.registerOption({ key, longs, shorts });
+      readerArgs.registerOption({ key, longs, shorts });
       return () => {
-        return readerTokenizer
+        return readerArgs
           .consumeOption(key)
           .map((value) =>
             typeDecode(definition.type, value, `${key}: ${label}`),
@@ -102,12 +100,12 @@ export function optionRepeatable<Value>(definition: {
 }
 
 export function optionSingleValue<Value>(definition: {
-  description?: string;
-  type: Type<Value>;
   long: Lowercase<string>;
   short?: string;
+  description?: string;
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   label?: Uppercase<string>;
+  type: Type<Value>;
   default: () => Value;
 }): Option<Value> {
   const label = definition.label ?? definition.type.label;
@@ -120,7 +118,7 @@ export function optionSingleValue<Value>(definition: {
         label: `<${label}>` as Uppercase<string>,
       };
     },
-    prepareConsumer(readerTokenizer: ReaderTokenizer) {
+    prepareConsumer(readerArgs: ReaderArgs) {
       const key = definition.short
         ? `-${definition.short}, --${definition.long}`
         : `--${definition.long}`;
@@ -132,9 +130,9 @@ export function optionSingleValue<Value>(definition: {
       if (definition.aliases?.shorts) {
         shorts.push(...definition.aliases?.shorts);
       }
-      readerTokenizer.registerOption({ key, longs, shorts });
+      readerArgs.registerOption({ key, longs, shorts });
       return () => {
-        const values = readerTokenizer.consumeOption(key);
+        const values = readerArgs.consumeOption(key);
         if (values.length > 1) {
           throw new Error(
             `Multiple values provided for option: ${key}, expected only one. Found: ${values.map((v) => `"${v}"`).join(", ")}`,

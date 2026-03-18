@@ -1,5 +1,5 @@
-import { Command, CommandInterpreter } from "./Command";
-import { ReaderTokenizer } from "./Reader";
+import { Command, CommandInterpreterFactory } from "./Command";
+import { ReaderArgs } from "./Reader";
 import {
   typoInferProcessSupport,
   typoPrintableString,
@@ -25,16 +25,16 @@ export async function runAndExit<Context>(
     onError?: ((error: unknown) => void) | undefined;
   },
 ): Promise<never> {
-  const readerTokenizer = new ReaderTokenizer(cliArgs);
+  const readerArgs = new ReaderArgs(cliArgs);
   if (application?.buildVersion) {
-    readerTokenizer.registerFlag({
+    readerArgs.registerFlag({
       key: "version",
       shorts: [],
       longs: ["version"],
     });
   }
   if (application?.usageOnHelp ?? true) {
-    readerTokenizer.registerFlag({
+    readerArgs.registerFlag({
       key: "help",
       shorts: [],
       longs: ["help"],
@@ -42,15 +42,15 @@ export async function runAndExit<Context>(
   }
   /*
   // TODO - handle completions ?
-  readerTokenizer.registerFlag({
+  readerArgs.registerFlag({
     key: "completion",
     shorts: [],
     longs: ["completion"],
   });
   */
-  const commandInterpreter = command.buildInterpreter(readerTokenizer);
+  const interpreterFactory = command.createInterpreterFactory(readerArgs);
   if (application?.buildVersion) {
-    if (readerTokenizer.consumeFlag("version")) {
+    if (readerArgs.consumeFlag("version")) {
       (application?.onLogStdOut ?? console.log)(
         [cliName, application.buildVersion].join(" "),
       );
@@ -58,20 +58,29 @@ export async function runAndExit<Context>(
     }
   }
   if (application?.usageOnHelp ?? true) {
-    if (readerTokenizer.consumeFlag("help")) {
+    if (readerArgs.consumeFlag("help")) {
       (application?.onLogStdOut ?? console.log)(
-        computeUsageString(cliName, commandInterpreter, application?.useColors),
+        computeUsageString(cliName, interpreterFactory, application?.useColors),
       );
       return (application?.onExit ?? process.exit)(0);
     }
   }
   try {
-    await commandInterpreter.execute(context);
-    return (application?.onExit ?? process.exit)(0);
+    const interpreterInstance = interpreterFactory.createInterpreterInstance();
+    try {
+      // TODO - special errors ???
+      await interpreterInstance.executeWithContext(context);
+      return (application?.onExit ?? process.exit)(0);
+    } catch (error) {
+      if (application?.onError) {
+        application.onError(error);
+      }
+      return (application?.onExit ?? process.exit)(1);
+    }
   } catch (error) {
     if (application?.usageOnError ?? true) {
       (application?.onLogStdErr ?? console.error)(
-        computeUsageString(cliName, commandInterpreter, application?.useColors),
+        computeUsageString(cliName, interpreterFactory, application?.useColors),
       );
     }
     if (application?.onError) {
@@ -98,12 +107,12 @@ export async function runAndExit<Context>(
 
 function computeUsageString<Context, Result>(
   cliName: Lowercase<string>,
-  commandInterpreter: CommandInterpreter<Context, Result>,
+  commandInterpreter: CommandInterpreterFactory<Context, Result>,
   useColors: boolean | undefined,
 ) {
   return usageToPrintableLines({
     cliName,
-    commandUsage: commandInterpreter.computeUsage(),
+    commandUsage: commandInterpreter.generateUsage(),
     typoSupport: chooseTypoSupport(useColors),
   }).join("\n");
 }

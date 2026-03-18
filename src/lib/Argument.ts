@@ -8,20 +8,20 @@ export type Argument<Value> = {
 
 export type ArgumentUsage = {
   description: string | undefined;
-  label: string;
+  label: Uppercase<string>;
 };
 
 export function argumentRequired<Value>(definition: {
   description?: string;
-  type: Type<Value>;
   label?: Uppercase<string>;
+  type: Type<Value>;
 }): Argument<Value> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
       return {
         description: definition.description,
-        label: `<${label}>`,
+        label: `<${label}>` as Uppercase<string>,
       };
     },
     consumeValue(readerPositionals: ReaderPositionals) {
@@ -36,8 +36,8 @@ export function argumentRequired<Value>(definition: {
 
 export function argumentOptional<Value>(definition: {
   description?: string;
-  type: Type<Value>;
   label?: Uppercase<string>;
+  type: Type<Value>;
   default: () => Value;
 }): Argument<Value> {
   const label = definition.label ?? definition.type.label;
@@ -45,7 +45,7 @@ export function argumentOptional<Value>(definition: {
     generateUsage() {
       return {
         description: definition.description,
-        label: `[${label}]`,
+        label: `[${label}]` as Uppercase<string>,
       };
     },
     consumeValue(readerPositionals: ReaderPositionals) {
@@ -59,21 +59,20 @@ export function argumentOptional<Value>(definition: {
 }
 
 export function argumentVariadics<Value>(definition: {
-  description?: string;
-  type: Type<Value>;
-  label?: Uppercase<string>;
   endDelimiter?: string;
+  description?: string;
+  label?: Uppercase<string>;
+  type: Type<Value>;
 }): Argument<Array<Value>> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
       return {
         description: definition.description,
-        label:
-          `[${label}...]` +
+        label: (`[${label}]...` +
           (definition.endDelimiter
-            ? ` (end with ${definition.endDelimiter})`
-            : ""),
+            ? `["${definition.endDelimiter}"]`
+            : "")) as Uppercase<string>,
       };
     },
     consumeValue(readerPositionals: ReaderPositionals) {

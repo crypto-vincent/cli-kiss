@@ -10,7 +10,7 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  ReaderTokenizer,
+  ReaderArgs,
   typeCommaList,
   typeNumber,
   typeString,
@@ -143,7 +143,8 @@ async function executeInterpreted<Context, Result>(
   context: Context,
   command: Command<Context, Result>,
 ) {
-  const readerTokenizer = new ReaderTokenizer(args);
-  const commandInterpreter = command.buildInterpreter(readerTokenizer);
-  return await commandInterpreter.execute(context);
+  const readerArgs = new ReaderArgs(args);
+  const interpreterFactory = command.createInterpreterFactory(readerArgs);
+  const interpreterInstance = interpreterFactory.createInterpreterInstance();
+  return await interpreterInstance.executeWithContext(context);
 }

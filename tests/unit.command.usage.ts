@@ -10,7 +10,7 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  ReaderTokenizer,
+  ReaderArgs,
   typeCommaList,
   typeCommaTuple,
   typeNumber,
@@ -160,6 +160,7 @@ it("run", async () => {
   ]);
 
   const usage2 = await getUsage(["50", "51", "sub1", "final"], cmd);
+  // console.log(usage2.join("\n"));
   expect(usage2).toStrictEqual([
     "{Subcommand 1 description}+",
     "{Subcommand 1 details. Second line of subcommand 1 details.}@brightBlack",
@@ -199,14 +200,14 @@ it("run", async () => {
     "{Subcommand 2 description}+",
     "{Subcommand 2 details. Second line of subcommand 2 details.}@brightBlack",
     "",
-    "{Usage:}@brightMagenta+ {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub2}@brightCyan+ {<POS-NUMBER>}@brightBlue {[OPT-POS]}@brightBlue {[VARIADIC...]}@brightBlue",
+    "{Usage:}@brightMagenta+ {my-cli}@brightCyan+ {<POS-1>}@brightBlue {<POS-2>}@brightBlue {sub2}@brightCyan+ {<POS-NUMBER>}@brightBlue {[OPT-POS]}@brightBlue {[VARIADIC]...}@brightBlue",
     "",
     "{Arguments:}@brightGreen+",
     "{  }{<POS-1>}@brightBlue      {  }{First positional argument}",
     "{  }{<POS-2>}@brightBlue      {  }{Second positional argument}",
     "{  }{<POS-NUMBER>}@brightBlue {  }{Positional number argument}",
     "{  }{[OPT-POS]}@brightBlue    {  }{Optional positional argument}",
-    "{  }{[VARIADIC...]}@brightBlue{  }{Variadic positional arguments}",
+    "{  }{[VARIADIC]...}@brightBlue{  }{Variadic positional arguments}",
     "",
     "{Options:}@brightGreen+",
     "{  }{-b}@brightCyan+{, }{--boolean-flag}@brightCyan+                              {  }{Root boolean-flag description}",
@@ -221,18 +222,19 @@ async function getUsage<Context, Result>(
   args: Array<string>,
   command: Command<Context, Result>,
 ) {
-  const readerTokenizer = new ReaderTokenizer(args);
-  const commandInterpreter = command.buildInterpreter(readerTokenizer);
+  const readerArgs = new ReaderArgs(args);
+  const interpreterFactory = command.createInterpreterFactory(readerArgs);
   /*
   try {
-    console.log(await commandInterpreter.execute({} as Context));
+    const interpreterInstance = interpreterFactory.createInterpreterInstance();
+    console.log(await interpreterInstance.executeWithContext({} as Context));
   } catch (error) {
     console.error("Error during execution:", error);
   }
-    */
+  */
   return usageToPrintableLines({
     cliName: "my-cli",
-    commandUsage: commandInterpreter.computeUsage(),
+    commandUsage: interpreterFactory.generateUsage(),
     typoSupport: "mock",
   });
 }

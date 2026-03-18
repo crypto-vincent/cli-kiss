@@ -1,13 +1,22 @@
 import { ArgumentUsage } from "./Argument";
 import { Execution } from "./Execution";
 import { OptionUsage } from "./Option";
-import { ReaderTokenizer } from "./Reader";
+import { ReaderArgs } from "./Reader";
 
 export type Command<Context, Result> = {
   getDescription(): string | undefined;
-  buildInterpreter(
-    readerTokenizer: ReaderTokenizer,
-  ): CommandInterpreter<Context, Result>;
+  createInterpreterFactory(
+    readerArgs: ReaderArgs,
+  ): CommandInterpreterFactory<Context, Result>;
+};
+
+export type CommandInterpreterFactory<Context, Result> = {
+  generateUsage(): CommandUsage;
+  createInterpreterInstance(): CommandInterpreterInstance<Context, Result>;
+};
+
+export type CommandInterpreterInstance<Context, Result> = {
+  executeWithContext(context: Context): Promise<Result>;
 };
 
 export type CommandMetadata = {
@@ -16,15 +25,9 @@ export type CommandMetadata = {
   // TODO - printable examples ?
 };
 
-export type CommandInterpreter<Context, Result> = {
-  computeUsage(): CommandUsage;
-  execute(context: Context): Promise<Result>;
-};
-
 export type CommandUsage = {
+  metadata: CommandMetadata;
   breadcrumbs: Array<CommandUsageBreadcrumb>;
-  description: string;
-  details: string | undefined;
   options: Array<OptionUsage>;
   arguments: Array<ArgumentUsage>;
   subcommands: Array<{ name: string; description: string | undefined }>;
@@ -40,37 +43,42 @@ export function command<Context, Result>(
     getDescription() {
       return metadata.description;
     },
-    buildInterpreter(readerTokenizer: ReaderTokenizer) {
-      function computeUsage(): CommandUsage {
-        const executionUsage = execution.computeUsage();
+    createInterpreterFactory(readerArgs: ReaderArgs) {
+      function generateUsage(): CommandUsage {
+        const executionUsage = execution.generateUsage();
         return {
+          metadata,
           breadcrumbs: executionUsage.arguments.map((argument) =>
             breadcrumbArgument(argument.label),
           ),
-          description: metadata.description,
-          details: metadata.details,
           options: executionUsage.options,
           arguments: executionUsage.arguments,
           subcommands: [],
         };
       }
       try {
-        const executionResolver = execution.createResolver(readerTokenizer);
-        const lastPositional = readerTokenizer.consumePositional();
-        if (lastPositional !== undefined) {
-          throw Error(`Unexpected argument: "${lastPositional}"`);
-        }
-        const executionCallback = executionResolver();
+        const executionInterpreterFactory =
+          execution.createInterpreterFactory(readerArgs);
         return {
-          computeUsage,
-          async execute(context: Context) {
-            return await executionCallback(context);
+          generateUsage,
+          createInterpreterInstance() {
+            const lastPositional = readerArgs.consumePositional();
+            if (lastPositional !== undefined) {
+              throw Error(`Unexpected argument: "${lastPositional}"`);
+            }
+            const executionInterpreterInstance =
+              executionInterpreterFactory.createInterpreterInstance();
+            return {
+              async executeWithContext(context: Context) {
+                return executionInterpreterInstance.executeWithContext(context);
+              },
+            };
           },
         };
       } catch (error) {
         return {
-          computeUsage,
-          async execute(_context: Context) {
+          generateUsage,
+          createInterpreterInstance() {
             throw error;
           },
         };
@@ -88,32 +96,32 @@ export function commandWithSubcommands<Context, Payload, Result>(
     getDescription() {
       return metadata.description;
     },
-    buildInterpreter(readerTokenizer: ReaderTokenizer) {
+    createInterpreterFactory(readerArgs: ReaderArgs) {
       try {
-        const executionResolver = execution.createResolver(readerTokenizer);
-        const subcommandName = readerTokenizer.consumePositional();
+        const executionInterpreterFactory =
+          execution.createInterpreterFactory(readerArgs);
+        const subcommandName = readerArgs.consumePositional();
         if (subcommandName === undefined) {
-          throw new Error("Missing required SUBCOMMAND argument");
+          throw new Error("Missing required argument: SUBCOMMAND");
         }
         const subcommandInput =
           subcommands[subcommandName as Lowercase<string>];
         if (subcommandInput === undefined) {
-          throw new Error(`Unknown subcommand name: "${subcommandName}"`);
+          throw new Error(`Invalid SUBCOMMAND: "${subcommandName}"`);
         }
-        const subcommandInterpreter =
-          subcommandInput.buildInterpreter(readerTokenizer);
-        const executionCallback = executionResolver();
+        const subcommandInterpreterFactory =
+          subcommandInput.createInterpreterFactory(readerArgs);
         return {
-          computeUsage() {
-            const executionUsage = execution.computeUsage();
-            const subcommandUsage = subcommandInterpreter.computeUsage();
+          generateUsage() {
+            const executionUsage = execution.generateUsage();
+            const subcommandUsage =
+              subcommandInterpreterFactory.generateUsage();
             return {
+              metadata: subcommandUsage.metadata,
               breadcrumbs: executionUsage.arguments
                 .map((argument) => breadcrumbArgument(argument.label))
                 .concat([breadcrumbCommand(subcommandName)])
                 .concat(subcommandUsage.breadcrumbs),
-              description: subcommandUsage.description,
-              details: subcommandUsage.details,
               options: executionUsage.options.concat(subcommandUsage.options),
               arguments: executionUsage.arguments.concat(
                 subcommandUsage.arguments,
@@ -121,21 +129,34 @@ export function commandWithSubcommands<Context, Payload, Result>(
               subcommands: subcommandUsage.subcommands,
             };
           },
-          async execute(context: Context) {
-            const payload = await executionCallback(context);
-            return await subcommandInterpreter.execute(payload);
+          createInterpreterInstance() {
+            // TODO - unit tests to enforce ordering here
+            const subcommandInterpreterInstance =
+              subcommandInterpreterFactory.createInterpreterInstance();
+            const executionInterpreterInstance =
+              executionInterpreterFactory.createInterpreterInstance();
+            return {
+              async executeWithContext(context: Context) {
+                const payload =
+                  await executionInterpreterInstance.executeWithContext(
+                    context,
+                  );
+                return await subcommandInterpreterInstance.executeWithContext(
+                  payload,
+                );
+              },
+            };
           },
         };
       } catch (error) {
         return {
-          computeUsage() {
-            const executionUsage = execution.computeUsage();
+          generateUsage() {
+            const executionUsage = execution.generateUsage();
             return {
+              metadata,
               breadcrumbs: executionUsage.arguments
                 .map((argument) => breadcrumbArgument(argument.label))
                 .concat([breadcrumbCommand("<SUBCOMMAND>")]),
-              description: metadata.description,
-              details: metadata.details,
               options: executionUsage.options,
               arguments: executionUsage.arguments,
               subcommands: Object.entries(subcommands).map(
@@ -146,7 +167,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
               ),
             };
           },
-          async execute(_context: Context) {
+          createInterpreterInstance() {
             throw error;
           },
         };
