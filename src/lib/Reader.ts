@@ -59,14 +59,14 @@ export class ReaderArgs {
         const shortSlice = short.slice(0, i);
         if (this.#keyByShort.has(shortSlice)) {
           throw new Error(
-            `Option -${short} can overlap with a shorter option: -${shortSlice}`,
+            `Option -${short} overlap with shorter option: -${shortSlice}`,
           );
         }
       }
       for (const shortOther of this.#keyByShort.keys()) {
         if (shortOther.startsWith(short)) {
           throw new Error(
-            `Option -${short} can overlap with a longer option: -${shortOther}`,
+            `Option -${short} overlap with longer option: -${shortOther}`,
           );
         }
       }
@@ -146,7 +146,7 @@ export class ReaderArgs {
       }
       throw new TypoError(
         new TypoText(
-          new TypoString(`Unknown option `),
+          new TypoString(`Unknown option: `),
           new TypoString(`-${arg.slice(shortIndexStart)}`, typoStyleConstants),
         ),
       );
@@ -169,7 +169,7 @@ export class ReaderArgs {
     }
     throw new TypoError(
       new TypoText(
-        new TypoString(`Unknown option `),
+        new TypoString(`Unknown option: `),
         new TypoString(constant, typoStyleConstants),
       ),
     );
@@ -202,18 +202,18 @@ export class ReaderArgs {
     if (arg === null) {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Option `),
+          new TypoString(`Option parsing: `),
           new TypoString(constant, typoStyleConstants),
-          new TypoString(` requires a value but none was provided`),
+          new TypoString(`: requires a value, but got end of input`),
         ),
       );
     }
     if (this.#parsedDouble) {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Option `),
+          new TypoString(`Option parsing: `),
           new TypoString(constant, typoStyleConstants),
-          new TypoString(` requires a value before "--"`),
+          new TypoString(`: requires a value before "--"`),
         ),
       );
     }
@@ -221,9 +221,9 @@ export class ReaderArgs {
     if (arg.startsWith("-")) {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Option `),
+          new TypoString(`Option parsing: `),
           new TypoString(constant, typoStyleConstants),
-          new TypoString(` requires a value, but got: "${arg}"`),
+          new TypoString(`: requires a value, but got: "${arg}"`),
         ),
       );
     }

@@ -21,7 +21,10 @@ const rootCommand = commandWithSubcommands<string, any, any>(
   operation(
     {
       options: {
-        booleanFlag: optionFlag({ long: "boolean-flag", default: () => false }),
+        booleanFlag: optionFlag({
+          long: "boolean-flag",
+          default: () => false,
+        }),
         stringOption: optionSingleValue({
           long: "string-option",
           type: typeString,

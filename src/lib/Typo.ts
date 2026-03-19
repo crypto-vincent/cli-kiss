@@ -56,8 +56,17 @@ export class TypoString {
 
 export class TypoText {
   #typoStrings: Array<TypoString>;
-  constructor(...typoStrings: Array<TypoString>) {
-    this.#typoStrings = typoStrings;
+  constructor(...typoParts: Array<TypoText | TypoString | string>) {
+    this.#typoStrings = [];
+    for (const typoPart of typoParts) {
+      if (typoPart instanceof TypoText) {
+        this.pushText(typoPart);
+      } else if (typoPart instanceof TypoString) {
+        this.pushString(typoPart);
+      } else if (typeof typoPart === "string") {
+        this.pushString(new TypoString(typoPart));
+      }
+    }
   }
   pushString(typoString: TypoString) {
     this.#typoStrings.push(typoString);

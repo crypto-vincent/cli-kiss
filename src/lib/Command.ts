@@ -60,9 +60,9 @@ export function command<Context, Result>(
       }
       try {
         const operationRunner = operation.createRunnerFromArgs(readerArgs);
-        const lastPositional = readerArgs.consumePositional();
-        if (lastPositional !== undefined) {
-          throw Error(`Unexpected positional: "${lastPositional}"`);
+        const endPositional = readerArgs.consumePositional();
+        if (endPositional !== undefined) {
+          throw Error(`Unexpected argument: "${endPositional}"`);
         }
         return {
           generateUsage,
@@ -98,7 +98,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandName === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`Missing required argument `),
+              new TypoString(`Missing required positional argument: `),
               new TypoString(`SUBCOMMAND`, typoStyleConstants),
             ),
           );
@@ -108,7 +108,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandInput === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`Invalid value for `),
+              new TypoString(`Invalid value for positional argument: `),
               new TypoString(`SUBCOMMAND`, typoStyleConstants),
               new TypoString(`: "${subcommandName}"`),
             ),

@@ -74,19 +74,19 @@ it("run", async () => {
   await testCase(
     [],
     [],
-    [rootUsage, "Error: Missing required positional REQUIRED1"],
+    [rootUsage, "Error: Missing required positional argument: REQUIRED1"],
     1,
   );
   await testCase(
     ["required1"],
     [],
-    [rootUsage, "Error: Missing required argument SUBCOMMAND"],
+    [rootUsage, "Error: Missing required positional argument: SUBCOMMAND"],
     1,
   );
   await testCase(
     ["required1", "subcommand"],
     [],
-    [subcommandUsage, "Error: Missing required positional REQUIRED2"],
+    [subcommandUsage, "Error: Missing required positional argument: REQUIRED2"],
     1,
   );
   await testCase(
@@ -102,7 +102,7 @@ it("run", async () => {
   await testCase(
     ["required1", "subcommand", "required2", "--nope"],
     [],
-    [subcommandUsage, "Error: Unknown option --nope"],
+    [subcommandUsage, "Error: Unknown option: --nope"],
     1,
   );
   await testCase(
@@ -110,7 +110,7 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      "Error: Option --url requires a value but none was provided",
+      "Error: Option parsing: --url: requires a value, but got end of input",
     ],
     1,
   );
@@ -124,13 +124,13 @@ it("run", async () => {
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
-    [rootUsage, `Error: Unknown option --url`],
+    [rootUsage, `Error: Unknown option: --url`],
     1,
   );
   await testCase(
     ["required1", "subcommand", "--url", "https://example.com"],
     [],
-    [subcommandUsage, "Error: Missing required positional REQUIRED2"],
+    [subcommandUsage, "Error: Missing required positional argument: REQUIRED2"],
     1,
   );
   await testCase(
@@ -143,13 +143,16 @@ it("run", async () => {
   await testCase(
     ["--invalid", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, `Error: Unknown option --invalid`],
+    [rootUsage, `Error: Unknown option: --invalid`],
     1,
   );
   await testCase(
     ["--flag", "--flag", "required1", "subcommand", "required2"],
     [],
-    [subcommandUsage, "Error: Option --flag should not be set multiple-times"],
+    [
+      subcommandUsage,
+      "Error: Option value for: --flag: must not be set multiple times",
+    ],
     1,
   );
   await testCase(
@@ -196,7 +199,7 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      "Error: Option --single-value should not be set multiple-times",
+      "Error: Option value for: --single-value: must not be set multiple times",
     ],
     1,
   );

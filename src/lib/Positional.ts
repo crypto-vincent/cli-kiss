@@ -30,12 +30,16 @@ export function positionalRequired<Value>(definition: {
       if (positional === undefined) {
         throw new TypoError(
           new TypoText(
-            new TypoString(`Missing required positional `),
-            new TypoString(`${label}`, typoStyleUserInput),
+            new TypoString(`Missing required positional argument: `),
+            new TypoString(label, typoStyleUserInput),
           ),
         );
       }
-      return typeDecode(definition.type, positional, label);
+      return typeDecode(
+        definition.type,
+        positional,
+        () => new TypoText(new TypoString(label, typoStyleUserInput)),
+      );
     },
   };
 }
@@ -60,12 +64,20 @@ export function positionalOptional<Value>(definition: {
         try {
           return definition.default();
         } catch (error) {
-          throw new Error(
-            `Error computing default value for positional ${label}: ${error instanceof Error ? error.message : String(error)}`,
+          throw new TypoError(
+            new TypoText(
+              new TypoString(`Failed to compute default value for: `),
+              new TypoString(label, typoStyleUserInput),
+            ),
+            error,
           );
         }
       }
-      return typeDecode(definition.type, positional, label);
+      return typeDecode(
+        definition.type,
+        positional,
+        () => new TypoText(new TypoString(label, typoStyleUserInput)),
+      );
     },
   };
 }
@@ -97,7 +109,13 @@ export function positionalVariadics<Value>(definition: {
         ) {
           break;
         }
-        positionals.push(typeDecode(definition.type, positional, label));
+        positionals.push(
+          typeDecode(
+            definition.type,
+            positional,
+            () => new TypoText(new TypoString(label, typoStyleUserInput)),
+          ),
+        );
       }
       return positionals;
     },

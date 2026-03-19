@@ -1,6 +1,12 @@
 import { ReaderArgs as ReaderOptions } from "./Reader";
 import { Type, typeBoolean, typeDecode } from "./Type";
-import { TypoError, TypoString, typoStyleConstants, TypoText } from "./Typo";
+import {
+  TypoError,
+  TypoString,
+  typoStyleConstants,
+  typoStyleUserInput,
+  TypoText,
+} from "./Typo";
 
 export type Option<Value> = {
   generateUsage(): OptionUsage;
@@ -46,26 +52,36 @@ export function optionFlag(definition: {
           if (optionValues.length > 1) {
             throw new TypoError(
               new TypoText(
-                new TypoString(`Option `),
+                new TypoString(`Option value for: `),
                 new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(` should not be set multiple-times`),
+                new TypoString(`: must not be set multiple times`),
               ),
             );
           }
           const optionValue = optionValues[0];
           if (optionValue === undefined) {
+            // TODO - scoped error util
             try {
               return definition.default ? definition.default() : false;
             } catch (error) {
-              throw new Error(
-                `Error computing default value for flag ${key}: ${error instanceof Error ? error.message : String(error)}`,
+              throw new TypoError(
+                new TypoText(
+                  new TypoString(`Failed to compute default value for: `),
+                  new TypoString(`--${definition.long}`, typoStyleConstants),
+                ),
+                error,
               );
             }
           }
           return typeDecode(
             typeBoolean,
             optionValue,
-            `--${definition.long}: ${typeBoolean.label}`,
+            () =>
+              new TypoText(
+                new TypoString(`--${definition.long}`, typoStyleConstants),
+                new TypoString(`: `),
+                new TypoString(typeBoolean.label, typoStyleUserInput),
+              ),
           );
         },
       };
@@ -103,9 +119,9 @@ export function optionSingleValue<Value>(definition: {
           if (optionValues.length > 1) {
             throw new TypoError(
               new TypoText(
-                new TypoString(`Option `),
+                new TypoString(`Option value for: `),
                 new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(` should not be set multiple-times`),
+                new TypoString(`: must not be set multiple times`),
               ),
             );
           }
@@ -114,15 +130,24 @@ export function optionSingleValue<Value>(definition: {
             try {
               return definition.default();
             } catch (error) {
-              throw new Error(
-                `Error computing default value for option ${key}: ${error instanceof Error ? error.message : String(error)}`,
+              throw new TypoError(
+                new TypoText(
+                  new TypoString(`Failed to compute default value for: `),
+                  new TypoString(`--${definition.long}`, typoStyleConstants),
+                ),
+                error,
               );
             }
           }
           return typeDecode(
             definition.type,
             optionValue,
-            `--${definition.long}: ${label}`,
+            () =>
+              new TypoText(
+                new TypoString(`--${definition.long}`, typoStyleConstants),
+                new TypoString(`: `),
+                new TypoString(label, typoStyleUserInput),
+              ),
           );
         },
       };
@@ -162,7 +187,12 @@ export function optionRepeatable<Value>(definition: {
               typeDecode(
                 definition.type,
                 value,
-                `--${definition.long}: ${label}`,
+                () =>
+                  new TypoText(
+                    new TypoString(`--${definition.long}`, typoStyleConstants),
+                    new TypoString(`: `),
+                    new TypoString(label, typoStyleUserInput),
+                  ),
               ),
             );
         },

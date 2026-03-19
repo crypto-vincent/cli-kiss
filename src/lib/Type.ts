@@ -1,3 +1,5 @@
+import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
+
 export type Type<Value> = {
   // TODO - maybe include an optional hint ??
   label: Uppercase<string>; // TODO - is there a better way to enforce uppercase labels?
@@ -67,7 +69,13 @@ export function typeMapped<Before, After>(
   return {
     label: after.label,
     decoder: (value: string) => {
-      return after.decoder(typeDecode(before, value, `from ${before.label}`));
+      return after.decoder(
+        typeDecode(
+          before,
+          value,
+          () => new TypoText(new TypoString(before.label, typoStyleUserInput)),
+        ),
+      );
     },
   };
 }
@@ -80,7 +88,11 @@ export function typeOneOf<Value>(
   return {
     label: type.label,
     decoder(value: string) {
-      const decoded = typeDecode(type, value, `from ${type.label}`);
+      const decoded = typeDecode(
+        type,
+        value,
+        () => new TypoText(new TypoString(type.label, typoStyleUserInput)),
+      );
       if (valuesSet.has(decoded)) {
         return decoded;
       }
@@ -91,9 +103,7 @@ export function typeOneOf<Value>(
 }
 
 export function typeTuple<const Elements extends Array<any>>(
-  elementTypes: {
-    [K in keyof Elements]: Type<Elements[K]>;
-  },
+  elementTypes: { [K in keyof Elements]: Type<Elements[K]> },
   separator: string = ",",
 ): Type<Elements> {
   return {
@@ -109,7 +119,11 @@ export function typeTuple<const Elements extends Array<any>>(
         typeDecode(
           elementTypes[index]!,
           part,
-          `[${index}].${elementTypes[index]!.label}`,
+          () =>
+            new TypoText(
+              new TypoString(elementTypes[index]!.label, typoStyleUserInput),
+              new TypoString(` at position ${index}`),
+            ),
         ),
       ) as Elements;
     },
@@ -127,7 +141,15 @@ export function typeList<Value>(
       return value
         .split(separator)
         .map((part, index) =>
-          typeDecode(elementType, part, `[${index}].${elementType.label}`),
+          typeDecode(
+            elementType,
+            part,
+            () =>
+              new TypoText(
+                new TypoString(elementType.label, typoStyleUserInput),
+                new TypoString(` at position ${index}`),
+              ),
+          ),
         );
     },
   };
@@ -136,13 +158,11 @@ export function typeList<Value>(
 export function typeDecode<Value>(
   type: Type<Value>,
   value: string,
-  context: string,
+  context: () => TypoText,
 ): Value {
   try {
     return type.decoder(value);
   } catch (error) {
-    throw new Error(
-      `${context}: ${error instanceof Error ? error.message : String(error)}`,
-    );
+    throw new TypoError(context(), error);
   }
 }
