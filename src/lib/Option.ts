@@ -1,5 +1,6 @@
 import { ReaderArgs as ReaderOptions } from "./Reader";
 import { Type, typeBoolean, typeDecode } from "./Type";
+import { TypoError, TypoString, typoStyleConstants, TypoText } from "./Typo";
 
 export type Option<Value> = {
   generateUsage(): OptionUsage;
@@ -43,7 +44,13 @@ export function optionFlag(definition: {
         getValue() {
           const optionValues = readerOptions.getOptionValues(key);
           if (optionValues.length > 1) {
-            throw new Error(`Flag ${key} should not be set multiple-times`);
+            throw new TypoError(
+              new TypoText(
+                new TypoString(`Option `),
+                new TypoString(`--${definition.long}`, typoStyleConstants),
+                new TypoString(` should not be set multiple-times`),
+              ),
+            );
           }
           const optionValue = optionValues[0];
           if (optionValue === undefined) {
@@ -55,7 +62,11 @@ export function optionFlag(definition: {
               );
             }
           }
-          return typeBoolean.decoder(optionValue);
+          return typeDecode(
+            typeBoolean,
+            optionValue,
+            `--${definition.long}: ${typeBoolean.label}`,
+          );
         },
       };
     },
@@ -90,7 +101,13 @@ export function optionSingleValue<Value>(definition: {
         getValue() {
           const optionValues = readerOptions.getOptionValues(key);
           if (optionValues.length > 1) {
-            throw new Error(`Option ${key} should not be set multiple-times`);
+            throw new TypoError(
+              new TypoText(
+                new TypoString(`Option `),
+                new TypoString(`--${definition.long}`, typoStyleConstants),
+                new TypoString(` should not be set multiple-times`),
+              ),
+            );
           }
           const optionValue = optionValues[0];
           if (optionValue === undefined) {
@@ -102,7 +119,11 @@ export function optionSingleValue<Value>(definition: {
               );
             }
           }
-          return typeDecode(definition.type, optionValue, `${key}: ${label}`);
+          return typeDecode(
+            definition.type,
+            optionValue,
+            `--${definition.long}: ${label}`,
+          );
         },
       };
     },
@@ -138,7 +159,11 @@ export function optionRepeatable<Value>(definition: {
           return readerOptions
             .getOptionValues(key)
             .map((value) =>
-              typeDecode(definition.type, value, `${key}: ${label}`),
+              typeDecode(
+                definition.type,
+                value,
+                `--${definition.long}: ${label}`,
+              ),
             );
         },
       };

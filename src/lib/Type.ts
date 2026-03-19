@@ -7,14 +7,15 @@ export type Type<Value> = {
 export const typeBoolean: Type<boolean> = {
   label: "BOOLEAN",
   decoder(value: string) {
-    if (value === "true" || value === "yes") {
+    const lowerValue = value.toLowerCase();
+    if (lowerValue === "true" || lowerValue === "yes") {
       return true;
     }
-    if (value === "false" || value === "no") {
+    if (lowerValue === "false" || lowerValue === "no") {
       return false;
     }
     throw new Error(
-      `Invalid boolean: ${value} (expected: "true"|"false"|"yes"|"no")`,
+      `Invalid value: "${value}" (expected: "true"|"false"|"yes"|"no")`,
     );
   },
 };
@@ -24,7 +25,9 @@ export const typeDate: Type<Date> = {
   decoder(value: string) {
     const timestamp = Date.parse(value);
     if (isNaN(timestamp)) {
-      throw new Error(`Invalid date: ${value} (expected: ISO_8601 format)`);
+      throw new Error(
+        `Invalid value: "${value}" (expected: ISO_8601 date format)`,
+      );
     }
     return new Date(timestamp);
   },
@@ -105,7 +108,7 @@ export function typeCommaTuple<
       if (parts.length !== elementTypes.length) {
         throw new Error(
           // TODO - colored errors ?
-          `Invalid tuple value: "${value}" (expected: ${elementTypes.length} comma-separated parts)`,
+          `Invalid value: "${value}" (expected: ${elementTypes.length} comma-separated parts)`,
         );
       }
       return parts.map((part, index) =>

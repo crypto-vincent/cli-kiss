@@ -30,7 +30,7 @@ export function positionalRequired<Value>(definition: {
       if (positional === undefined) {
         throw new TypoError(
           new TypoText(
-            new TypoString(`Missing required positional: `),
+            new TypoString(`Missing required positional `),
             new TypoString(`${label}`, typoStyleUserInput),
           ),
         );

@@ -18,41 +18,38 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-0");
 
-  const kfne = stream.registerOption({
+  const kSofNormal = stream.registerOption({
     shorts: ["sof-normal"],
     longs: [],
     valued: false,
   });
-  const kfpo = stream.registerOption({
+  const kSofPositive = stream.registerOption({
     longs: [],
     shorts: ["sof-positive"],
     valued: false,
   });
-  const kfne = stream.registerOption({
+  const kSofNegative = stream.registerOption({
     longs: [],
     shorts: ["sof-negative"],
     valued: false,
   });
-  const kfue = stream.registerOption({
+  const kSofUnset = stream.registerOption({
     longs: [],
     shorts: ["sof-unset"],
     valued: false,
   });
 
-  stream.registerOption({
-    key: "aa",
+  const kAa = stream.registerOption({
     longs: [],
     shorts: ["aa"],
     valued: false,
   });
-  stream.registerOption({
-    key: "bb",
+  const kBb = stream.registerOption({
     longs: [],
     shorts: ["bb"],
     valued: false,
   });
-  stream.registerOption({
-    key: "cc",
+  const kCc = stream.registerOption({
     longs: [],
     shorts: ["cc"],
     valued: false,
@@ -60,39 +57,33 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-1");
 
-  stream.registerOption({
-    key: "sov-split",
+  const kSovSplit = stream.registerOption({
     longs: [],
     shorts: ["sov-split"],
     valued: true,
   });
-  stream.registerOption({
-    key: "sov-join",
+  const kSovJoin = stream.registerOption({
     longs: [],
     shorts: ["sov-join"],
     valued: true,
   });
-  stream.registerOption({
-    key: "sov-unset",
+  const kSovUnset = stream.registerOption({
     longs: [],
     shorts: ["sov-unset"],
     valued: true,
   });
 
-  stream.registerOption({
-    key: "dd",
+  const kDd = stream.registerOption({
     longs: [],
     shorts: ["dd"],
     valued: false,
   });
-  stream.registerOption({
-    key: "ee",
+  const kEe = stream.registerOption({
     longs: [],
     shorts: ["ee"],
     valued: false,
   });
-  stream.registerOption({
-    key: "ff",
+  const kFf = stream.registerOption({
     longs: [],
     shorts: ["ff"],
     valued: false,
@@ -100,20 +91,20 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-2");
 
-  expect(stream.getOptionValues("sof-normal")).toStrictEqual(true);
-  expect(stream.getOptionValues("sof-positive")).toStrictEqual(true);
-  expect(stream.getOptionValues("sof-negative")).toStrictEqual(false);
-  expect(stream.getOptionValues("sof-unset")).toStrictEqual(undefined);
+  expect(stream.getOptionValues(kSofNormal)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kSofPositive)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kSofNegative)).toStrictEqual(["false"]);
+  expect(stream.getOptionValues(kSofUnset)).toStrictEqual([]);
 
-  expect(stream.getOptionValues("aa")).toStrictEqual(true);
-  expect(stream.getOptionValues("bb")).toStrictEqual(true);
-  expect(stream.getOptionValues("cc")).toStrictEqual(true);
+  expect(stream.getOptionValues(kAa)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kBb)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kCc)).toStrictEqual(["true"]);
 
-  expect(stream.getOptionValues("sov-unset")).toStrictEqual([]);
-  expect(stream.getOptionValues("sov-split")).toStrictEqual(["1.1", "1.2"]);
-  expect(stream.getOptionValues("sov-join")).toStrictEqual(["2"]);
+  expect(stream.getOptionValues(kSovUnset)).toStrictEqual([]);
+  expect(stream.getOptionValues(kSovSplit)).toStrictEqual(["1.1", "1.2"]);
+  expect(stream.getOptionValues(kSovJoin)).toStrictEqual(["2"]);
 
-  expect(stream.getOptionValues("dd")).toStrictEqual(true);
-  expect(stream.getOptionValues("ee")).toStrictEqual(true);
-  expect(stream.getOptionValues("ff")).toStrictEqual(true);
+  expect(stream.getOptionValues(kDd)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kEe)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kFf)).toStrictEqual(["true"]);
 });

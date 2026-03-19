@@ -34,22 +34,22 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-0");
 
-  const kfno = stream.registerOption({
+  const kFlagNormal = stream.registerOption({
     longs: ["flag-normal"],
     shorts: [],
     valued: false,
   });
-  const kfpo = stream.registerOption({
+  const kFlagPositive = stream.registerOption({
     longs: ["flag-positive"],
     shorts: [],
     valued: false,
   });
-  const kfne = stream.registerOption({
+  const kFlagNegative = stream.registerOption({
     longs: ["flag-negative"],
     shorts: [],
     valued: false,
   });
-  const kfun = stream.registerOption({
+  const kFlagUnset = stream.registerOption({
     longs: ["flag-unset"],
     shorts: [],
     valued: false,
@@ -57,74 +57,74 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-1");
 
-  const kos = stream.registerOption({
+  const kOptionSplit = stream.registerOption({
     longs: ["option-split"],
     shorts: [],
     valued: true,
   });
-  const koj = stream.registerOption({
+  const kOptionJoin = stream.registerOption({
     longs: ["option-join"],
     shorts: [],
     valued: true,
   });
-  const kou = stream.registerOption({
+  const kOptionUnset = stream.registerOption({
     longs: ["option-unset"],
     shorts: [],
     valued: true,
   });
 
-  const kfsa = stream.registerOption({
+  const kA = stream.registerOption({
     longs: [],
     shorts: ["a"],
     valued: false,
   });
-  const kfsb = stream.registerOption({
+  const kB = stream.registerOption({
     longs: [],
     shorts: ["b"],
-    valued: false,
+    valued: true,
   });
 
-  const kfsc = stream.registerOption({
+  const kC = stream.registerOption({
     longs: [],
     shorts: ["c"],
     valued: false,
   });
-  const kfsd = stream.registerOption({
+  const kD = stream.registerOption({
     longs: [],
     shorts: ["d"],
-    valued: false,
+    valued: true,
   });
 
-  const kfse = stream.registerOption({
+  const kE = stream.registerOption({
     longs: [],
     shorts: ["e"],
     valued: false,
   });
-  const kfsf = stream.registerOption({
+  const kF = stream.registerOption({
     longs: [],
     shorts: ["f"],
-    valued: false,
+    valued: true,
   });
 
   expect(stream.consumePositional()).toStrictEqual("positional-2");
 
-  const kfsg = stream.registerOption({
+  const kG = stream.registerOption({
     longs: [],
     shorts: ["g"],
     valued: false,
   });
-  const kfsh = stream.registerOption({
+  const kH = stream.registerOption({
     longs: [],
     shorts: ["h"],
     valued: false,
   });
 
-  const kfsi = stream.registerOption({
+  const kI = stream.registerOption({
     longs: [],
     shorts: ["i"],
     valued: false,
   });
-  const kfsj = stream.registerOption({
+  const kJ = stream.registerOption({
     longs: [],
     shorts: ["j"],
     valued: false,
@@ -138,27 +138,27 @@ it("run", async () => {
   expect(stream.consumePositional()).toStrictEqual("positional-4");
   expect(stream.consumePositional()).toStrictEqual(undefined);
 
-  expect(stream.getOptionValues(kfno)).toStrictEqual(true);
-  expect(stream.getOptionValues(kfpo)).toStrictEqual(true);
-  expect(stream.getOptionValues(kfne)).toStrictEqual(false);
-  expect(stream.getOptionValues(kfun)).toStrictEqual(undefined);
+  expect(stream.getOptionValues(kFlagNormal)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kFlagPositive)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kFlagNegative)).toStrictEqual(["false"]);
+  expect(stream.getOptionValues(kFlagUnset)).toStrictEqual([]);
 
-  expect(stream.getOptionValues(kou)).toStrictEqual([]);
-  expect(stream.getOptionValues(kos)).toStrictEqual(["1.1", "1.2"]);
-  expect(stream.getOptionValues(koj)).toStrictEqual(["2"]);
+  expect(stream.getOptionValues(kOptionUnset)).toStrictEqual([]);
+  expect(stream.getOptionValues(kOptionSplit)).toStrictEqual(["1.1", "1.2"]);
+  expect(stream.getOptionValues(kOptionJoin)).toStrictEqual(["2"]);
 
-  expect(stream.getOptionValues(kfsa)).toStrictEqual(true);
-  expect(stream.getOptionValues(kfsb)).toStrictEqual(["3.1", "3.2"]);
+  expect(stream.getOptionValues(kA)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kB)).toStrictEqual(["3.1", "3.2"]);
 
-  expect(stream.getOptionValues(kfsc)).toStrictEqual(true);
-  expect(stream.getOptionValues(kfsd)).toStrictEqual(["4.1", "4.2"]);
+  expect(stream.getOptionValues(kC)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kD)).toStrictEqual(["4.1", "4.2"]);
 
-  expect(stream.getOptionValues(kfse)).toStrictEqual(true);
-  expect(stream.getOptionValues(kfsf)).toStrictEqual(["5.1", "5.2"]);
+  expect(stream.getOptionValues(kE)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kF)).toStrictEqual(["5.1", "5.2"]);
 
-  expect(stream.getOptionValues(kfsg)).toStrictEqual(true);
-  expect(stream.getOptionValues(kfsh)).toStrictEqual(false);
+  expect(stream.getOptionValues(kG)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kH)).toStrictEqual(["FALSE"]);
 
-  expect(stream.getOptionValues(kfsi)).toStrictEqual(true);
-  expect(stream.getOptionValues(kfsj)).toStrictEqual(true);
+  expect(stream.getOptionValues(kI)).toStrictEqual(["true"]);
+  expect(stream.getOptionValues(kJ)).toStrictEqual(["TRUE"]);
 });

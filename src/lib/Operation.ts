@@ -47,10 +47,10 @@ export function operation<
       return { options: optionsUsage, positionals: positionalsUsage };
     },
     createRunnerFromArgs(readerArgs: ReaderArgs) {
-      const optionsReaders: any = {};
+      const optionsGetters: any = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
-        optionsReaders[optionKey] = optionInput.createGetter(readerArgs);
+        optionsGetters[optionKey] = optionInput.createGetter(readerArgs);
       }
       const positionalsValues: any = [];
       for (const positionalInput of inputs.positionals) {
@@ -59,8 +59,8 @@ export function operation<
       return {
         executeWithContext(context: Context) {
           const optionsValues: any = {};
-          for (const optionKey in optionsReaders) {
-            optionsValues[optionKey] = optionsReaders[optionKey]!.readValue();
+          for (const optionKey in optionsGetters) {
+            optionsValues[optionKey] = optionsGetters[optionKey]!.getValue();
           }
           return handler(context, {
             options: optionsValues,

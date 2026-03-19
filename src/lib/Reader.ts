@@ -58,41 +58,29 @@ export class ReaderArgs {
       for (let i = 0; i < short.length; i++) {
         const shortSlice = short.slice(0, i);
         if (this.#keyByShort.has(shortSlice)) {
-          throw new TypoError(
-            new TypoText(
-              new TypoString(`Option `),
-              new TypoString(`-${shortSlice}`, typoStyleConstants),
-              new TypoString(` can overlap with a shorter option: `),
-              new TypoString(`-${short}`, typoStyleConstants),
-            ),
+          throw new Error(
+            `Option -${short} can overlap with a shorter option: -${shortSlice}`,
           );
         }
       }
       for (const shortOther of this.#keyByShort.keys()) {
         if (shortOther.startsWith(short)) {
-          throw new TypoError(
-            new TypoText(
-              new TypoString(`Option `),
-              new TypoString(`-${short}`, typoStyleConstants),
-              new TypoString(` can overlap with a longer option: `),
-              new TypoString(`-${shortOther}`, typoStyleConstants),
-            ),
+          throw new Error(
+            `Option -${short} can overlap with a longer option: -${shortOther}`,
           );
         }
       }
       this.#keyByShort.set(short, key);
     }
-    if (this.#valuedByKey.has(key)) {
-      throw new Error(`Option already registered: ${key}`);
-    }
     this.#valuedByKey.set(key, definition.valued);
+    this.#resultByKey.set(key, new Array<string>());
     return key;
   }
 
   getOptionValues(key: ReaderOptionKey): Array<string> {
     const optionResult = this.#resultByKey.get(key);
     if (optionResult === undefined) {
-      return new Array<string>();
+      throw new Error(`Unregistered option: ${key}`);
     }
     return optionResult;
   }
@@ -158,7 +146,7 @@ export class ReaderArgs {
       }
       throw new TypoError(
         new TypoText(
-          new TypoString(`Unknown option: `),
+          new TypoString(`Unknown option `),
           new TypoString(`-${arg.slice(shortIndexStart)}`, typoStyleConstants),
         ),
       );
@@ -181,7 +169,7 @@ export class ReaderArgs {
     }
     throw new TypoError(
       new TypoText(
-        new TypoString(`Unknown flag or option: `),
+        new TypoString(`Unknown option `),
         new TypoString(constant, typoStyleConstants),
       ),
     );
@@ -204,7 +192,7 @@ export class ReaderArgs {
         return true;
       }
       this.#acknowledgeOption(key, "true");
-      return false;
+      return rest === "";
     }
     return null;
   }
