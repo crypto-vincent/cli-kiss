@@ -1,15 +1,11 @@
-import { Command, CommandInterpreterFactory } from "./Command";
+import { Command, CommandRunner } from "./Command";
 import { ReaderArgs } from "./Reader";
-import {
-  typoInferProcessSupport,
-  typoPrintableString,
-  TypoSupport,
-} from "./Typo";
-import { usageToPrintableLines } from "./Usage";
+import { TypoSupport } from "./Typo";
+import { usageToStyledLines } from "./Usage";
 
-export async function runAndExit<Context>(
+export async function runAsCliAndExit<Context>(
   cliName: Lowercase<string>,
-  cliArgs: Array<string>,
+  cliArgs: ReadonlyArray<string>,
   context: Context,
   command: Command<Context, void>,
   application?: {
@@ -49,7 +45,13 @@ export async function runAndExit<Context>(
     longs: ["completion"],
   });
   */
-  const interpreterFactory = command.createInterpreterFactory(readerArgs);
+  const commandRunner = command.createRunnerFromArgs(readerArgs);
+  while (true) {
+    const positional = readerArgs.consumePositional();
+    if (positional === undefined) {
+      break;
+    }
+  }
   const onLogStdOut = application?.onLogStdOut ?? console.log;
   const onExit = application?.onExit ?? process.exit;
   if (buildVersion) {
@@ -61,13 +63,12 @@ export async function runAndExit<Context>(
   if (usageOnHelp) {
     if (readerArgs.readFlag("help")) {
       const typoSupport = chooseTypoSupport(application?.useColors);
-      onLogStdOut(computeUsageString(cliName, interpreterFactory, typoSupport));
+      onLogStdOut(computeUsageString(cliName, commandRunner, typoSupport));
       return onExit(0);
     }
   }
   try {
-    const interpreterInstance = interpreterFactory.createInterpreterInstance();
-    await interpreterInstance.executeWithContext(context);
+    await commandRunner.executeWithContext(context);
     return onExit(0);
   } catch (error) {
     if (application?.onError) {
@@ -76,45 +77,29 @@ export async function runAndExit<Context>(
       const onLogStdErr = application?.onLogStdErr ?? console.error;
       const typoSupport = chooseTypoSupport(application?.useColors);
       if (application?.usageOnError ?? true) {
-        onLogStdErr(
-          computeUsageString(cliName, interpreterFactory, typoSupport),
-        );
+        onLogStdErr(computeUsageString(cliName, commandRunner, typoSupport));
       }
-      onLogStdErr(computeErrorString(error, typoSupport));
+      onLogStdErr(typoSupport.computeStyledErrorMessage(error));
     }
     return onExit(1);
   }
 }
 
-function computeErrorString(error: unknown, typoSupport: TypoSupport) {
-  return [
-    typoPrintableString(typoSupport, {
-      value: "Error:",
-      fgColor: "darkRed",
-      bold: true,
-    }),
-    typoPrintableString(typoSupport, {
-      value: error instanceof Error ? error.message : String(error),
-      bold: true,
-    }),
-  ].join(" ");
-}
-
 function computeUsageString<Context, Result>(
   cliName: Lowercase<string>,
-  commandInterpreter: CommandInterpreterFactory<Context, Result>,
+  commandRunner: CommandRunner<Context, Result>,
   typoSupport: TypoSupport,
 ) {
-  return usageToPrintableLines({
+  return usageToStyledLines({
     cliName,
-    commandUsage: commandInterpreter.generateUsage(),
+    commandUsage: commandRunner.generateUsage(),
     typoSupport,
   }).join("\n");
 }
 
 function chooseTypoSupport(useColors?: boolean): TypoSupport {
   if (useColors === undefined) {
-    return typoInferProcessSupport();
+    return TypoSupport.inferFromProcess();
   }
-  return useColors ? "tty" : "none";
+  return useColors ? TypoSupport.tty() : TypoSupport.none();
 }

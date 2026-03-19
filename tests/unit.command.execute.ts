@@ -1,8 +1,5 @@
 import { expect, it } from "@jest/globals";
 import {
-  argumentOptional,
-  argumentRequired,
-  argumentVariadics,
   Command,
   command,
   commandWithSubcommands,
@@ -10,6 +7,9 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
+  parameterOptional,
+  parameterRequired,
+  parameterVariadics,
   ReaderArgs,
   typeCommaList,
   typeNumber,
@@ -32,9 +32,9 @@ const rootCommand = commandWithSubcommands<string, any, any>(
           type: typeCommaList(typeNumber),
         }),
       },
-      arguments: [
-        argumentRequired({ type: typeNumber }),
-        argumentRequired({ type: typeNumber }),
+      parameters: [
+        parameterRequired({ type: typeNumber }),
+        parameterRequired({ type: typeNumber }),
       ],
     },
     async (context, inputs) => {
@@ -47,7 +47,7 @@ const rootCommand = commandWithSubcommands<string, any, any>(
       execution(
         {
           options: {},
-          arguments: [argumentRequired({ type: typeString })],
+          parameters: [parameterRequired({ type: typeString })],
         },
         async (context, inputs) => {
           return { at: "sub1", context, inputs };
@@ -59,10 +59,10 @@ const rootCommand = commandWithSubcommands<string, any, any>(
       execution(
         {
           options: {},
-          arguments: [
-            argumentRequired({ type: typeNumber }),
-            argumentOptional({ type: typeString, default: () => "42" }),
-            argumentVariadics({ type: typeString }),
+          parameters: [
+            parameterRequired({ type: typeNumber }),
+            parameterOptional({ type: typeString, default: () => "42" }),
+            parameterVariadics({ type: typeString }),
           ],
         },
         async (context, inputs) => {
@@ -88,13 +88,13 @@ it("run", async () => {
           stringOption: undefined,
           numberOption: [],
         },
-        arguments: [50, 51],
+        parameters: [50, 51],
       },
       at: "root",
     },
     inputs: {
       options: {},
-      arguments: ["final"],
+      parameters: ["final"],
     },
     at: "sub1",
   });
@@ -126,25 +126,24 @@ it("run", async () => {
           stringOption: "hello",
           numberOption: [[123.1, 123.2], [123.3]],
         },
-        arguments: [40, 41],
+        parameters: [40, 41],
       },
       at: "root",
     },
     inputs: {
       options: {},
-      arguments: [88.88, "a,b", ["final"]],
+      parameters: [88.88, "a,b", ["final"]],
     },
     at: "sub2",
   });
 });
 
 async function executeInterpreted<Context, Result>(
-  args: Array<string>,
+  parameters: Array<string>,
   context: Context,
   command: Command<Context, Result>,
 ) {
-  const readerArgs = new ReaderArgs(args);
-  const interpreterFactory = command.createInterpreterFactory(readerArgs);
-  const interpreterInstance = interpreterFactory.createInterpreterInstance();
-  return await interpreterInstance.executeWithContext(context);
+  const readerArgs = new ReaderArgs(parameters);
+  const commandRunner = command.createRunnerFromArgs(readerArgs);
+  return await commandRunner.executeWithContext(context);
 }

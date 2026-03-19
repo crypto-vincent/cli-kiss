@@ -1,15 +1,15 @@
 import { it } from "@jest/globals";
 import {
-  argumentOptional,
-  argumentRequired,
-  argumentVariadics,
   command,
   commandWithSubcommands,
   execution,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  runAndExit,
+  parameterOptional,
+  parameterRequired,
+  parameterVariadics,
+  runAsCliAndExit,
   typeNumber,
   typeOneOf,
   typeString,
@@ -22,8 +22,8 @@ it("run", async () => {
     "",
     "Usage: my-cli <REQUIRED1> <SUBCOMMAND>",
     "",
-    "Arguments:",
-    "  <REQUIRED1>  Required1 argument description",
+    "Parameters:",
+    "  <REQUIRED1>  Required1 parameter description",
     "",
     "Subcommands:",
     "  subcommand  Subcommand Description",
@@ -39,11 +39,11 @@ it("run", async () => {
     "",
     "Usage: my-cli <REQUIRED1> subcommand <REQUIRED2> [OPTIONAL] [VARIADICS]...",
     "",
-    "Arguments:",
-    "  <REQUIRED1>     Required1 argument description",
-    "  <REQUIRED2>     Required2 argument description",
-    "  [OPTIONAL]      Optional argument description",
-    "  [VARIADICS]...  Variadics argument description",
+    "Parameters:",
+    "  <REQUIRED1>     Required1 parameter description",
+    "  <REQUIRED2>     Required2 parameter description",
+    "  [OPTIONAL]      Optional parameter description",
+    "  [VARIADICS]...  Variadics parameter description",
     "",
     "Options:",
     "  --flag[=no]              Option flag description",
@@ -53,36 +53,40 @@ it("run", async () => {
     "",
   ].join("\n");
 
-  await testCase(["--version"], ["my-cli 1.0.0"], [], 0);
-  await testCase(["--help"], [rootUsage], [], 0);
   await testCase(["required1", "subcommand", "required2"], [], [], 0);
+  await testCase(["--version"], ["my-cli 1.0.0"], [], 0);
 
-  // TODO - how to make this work ?
-  /*
+  await testCase(["--help"], [rootUsage], [], 0);
+  await testCase(["required1", "--help"], [rootUsage], [], 0);
   await testCase(
-    ["required1", "subcommand", "dada", "--help"],
+    ["required1", "subcommand", "--help"],
     [subcommandUsage],
     [],
     0,
   );
-  */
+  await testCase(
+    ["required1", "subcommand", "required2", "--help"],
+    [subcommandUsage],
+    [],
+    0,
+  );
 
   await testCase(
     [],
     [],
-    [rootUsage, "Error: Missing required argument: REQUIRED1"],
+    [rootUsage, "Error: Missing required parameter: REQUIRED1"],
     1,
   );
   await testCase(
     ["required1"],
     [],
-    [rootUsage, "Error: Missing required argument: SUBCOMMAND"],
+    [rootUsage, "Error: Missing required parameter: SUBCOMMAND"],
     1,
   );
   await testCase(
     ["required1", "subcommand"],
     [],
-    [subcommandUsage, "Error: Missing required argument: REQUIRED2"],
+    [subcommandUsage, "Error: Missing required parameter: REQUIRED2"],
     1,
   );
   await testCase(
@@ -126,7 +130,7 @@ it("run", async () => {
   await testCase(
     ["required1", "subcommand", "--url", "https://example.com"],
     [],
-    [subcommandUsage, "Error: Missing required argument: REQUIRED2"],
+    [subcommandUsage, "Error: Missing required parameter: REQUIRED2"],
     1,
   );
   await testCase(
@@ -234,11 +238,11 @@ async function testCase(
             default: () => 42,
           }),
         },
-        arguments: [
-          argumentRequired({
+        parameters: [
+          parameterRequired({
             type: typeString,
             label: "REQUIRED1",
-            description: "Required1 argument description",
+            description: "Required1 parameter description",
           }),
         ],
       },
@@ -258,22 +262,22 @@ async function testCase(
                 type: typeUrl,
               }),
             },
-            arguments: [
-              argumentRequired({
+            parameters: [
+              parameterRequired({
                 type: typeOneOf(typeString, ["required2", "required2-bis"]),
                 label: "REQUIRED2",
-                description: "Required2 argument description",
+                description: "Required2 parameter description",
               }),
-              argumentOptional({
+              parameterOptional({
                 label: "OPTIONAL",
                 type: typeString,
-                description: "Optional argument description",
+                description: "Optional parameter description",
                 default: () => "world !",
               }),
-              argumentVariadics({
+              parameterVariadics({
                 label: "VARIADICS",
                 type: typeString,
-                description: "Variadics argument description",
+                description: "Variadics parameter description",
               }),
             ],
           },
@@ -291,7 +295,7 @@ async function testCase(
     null as unknown as void,
   ]);
   const onExit = makeMocked<number, never>([null as never]);
-  await runAndExit("my-cli", args, null, cmd, {
+  await runAsCliAndExit("my-cli", args, null, cmd, {
     buildVersion: "1.0.0",
     onExit: onExit.call,
     onLogStdOut: onLogStdOut.call,

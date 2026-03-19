@@ -1,4 +1,3 @@
-export type TypoSupport = "none" | "tty" | "mock";
 export type TypoColor =
   | "darkBlack"
   | "darkRed"
@@ -17,8 +16,7 @@ export type TypoColor =
   | "brightCyan"
   | "brightWhite";
 
-export type TypoText = {
-  value: string;
+export type TypoStyle = {
   fgColor?: TypoColor;
   bgColor?: TypoColor;
   dim?: boolean;
@@ -28,67 +26,205 @@ export type TypoText = {
   strikethrough?: boolean;
 };
 
-export function typoPrintableString(
-  typoSupport: TypoSupport,
-  typoText: TypoText,
-): string {
-  if (typoSupport === "none") {
-    return typoText.value;
+export class TypoString {
+  #value: string;
+  #typoStyle: TypoStyle;
+  constructor(value: string, typoStyle: TypoStyle = {}) {
+    this.#value = value;
+    this.#typoStyle = typoStyle;
   }
-  if (typoSupport === "tty") {
-    const fgColorCode = typoText.fgColor
-      ? ttyCodeFgColors[typoText.fgColor]
-      : "";
-    const bgColorCode = typoText.bgColor
-      ? ttyCodeBgColors[typoText.bgColor]
-      : "";
-    const boldCode = typoText.bold ? ttyCodeBold : "";
-    const dimCode = typoText.dim ? ttyCodeDim : "";
-    const italicCode = typoText.italic ? ttyCodeItalic : "";
-    const underlineCode = typoText.underline ? ttyCodeUnderline : "";
-    const strikethroughCode = typoText.strikethrough
-      ? ttyCodeStrikethrough
-      : "";
-    return `${fgColorCode}${bgColorCode}${boldCode}${dimCode}${italicCode}${underlineCode}${strikethroughCode}${typoText.value}${ttyCodeReset}`;
+  getRawString(): string {
+    return this.#value;
   }
-  if (typoSupport === "mock") {
-    const fgColorPart = typoText.fgColor
-      ? `{${typoText.value}}@${typoText.fgColor}`
-      : typoText.value;
-    const bgColorPart = typoText.bgColor
-      ? `{${fgColorPart}}#${typoText.bgColor}`
-      : fgColorPart;
-    const boldPart = typoText.bold ? `{${bgColorPart}}+` : bgColorPart;
-    const dimPart = typoText.dim ? `{${boldPart}}-` : boldPart;
-    const italicPart = typoText.italic ? `{${dimPart}}*` : dimPart;
-    const underlinePart = typoText.underline ? `{${italicPart}}_` : italicPart;
-    const strikethroughPart = typoText.strikethrough
-      ? `{${underlinePart}}~`
-      : underlinePart;
-    return strikethroughPart;
+  computeStyledString(typoSupport: TypoSupport): string {
+    return typoSupport.computeStyledString(this.#value, this.#typoStyle);
   }
-  throw new Error(`Unknown typo support: ${typoSupport}`);
 }
 
-export function typoInferProcessSupport(): TypoSupport {
-  if (!process) {
-    return "none";
+export class TypoText {
+  #typoStrings: Array<TypoString>;
+  constructor(...typoStrings: Array<TypoString>) {
+    this.#typoStrings = typoStrings;
   }
-  if (process.env) {
-    if (process.env["FORCE_COLOR"] === "0") {
-      return "none";
-    }
-    if (process.env["FORCE_COLOR"]) {
-      return "tty";
-    }
-    if ("NO_COLOR" in process.env) {
-      return "none";
+  pushString(typoString: TypoString) {
+    this.#typoStrings.push(typoString);
+  }
+  pushText(typoText: TypoText) {
+    for (const typoString of typoText.#typoStrings) {
+      this.#typoStrings.push(typoString);
     }
   }
-  if (!process.stdout || !process.stdout.isTTY) {
-    return "none";
+  computeStyledString(typoSupport: TypoSupport): string {
+    return this.#typoStrings
+      .map((t) => t.computeStyledString(typoSupport))
+      .join("");
   }
-  return "tty";
+  computeRawString(): string {
+    return this.#typoStrings.map((t) => t.getRawString()).join("");
+  }
+  computeRawLength(): number {
+    let length = 0;
+    for (const typoString of this.#typoStrings) {
+      length += typoString.getRawString().length;
+    }
+    return length;
+  }
+}
+
+export class TypoGrid {
+  #typoRows: Array<Array<TypoText>>;
+  constructor() {
+    this.#typoRows = [];
+  }
+  pushRow(cells: Array<TypoText>) {
+    this.#typoRows.push(cells);
+  }
+  computeStyledGrid(typoSupport: TypoSupport): Array<Array<string>> {
+    const widths = new Array<number>();
+    const printableGrid = new Array<Array<string>>();
+    for (const typoGridRow of this.#typoRows) {
+      for (
+        let typoGridColumnIndex = 0;
+        typoGridColumnIndex < typoGridRow.length;
+        typoGridColumnIndex++
+      ) {
+        const typoGridCell = typoGridRow[typoGridColumnIndex]!;
+        const width = typoGridCell.computeRawLength();
+        if (
+          widths[typoGridColumnIndex] === undefined ||
+          width > widths[typoGridColumnIndex]!
+        ) {
+          widths[typoGridColumnIndex] = width;
+        }
+      }
+    }
+    for (const typoGridRow of this.#typoRows) {
+      const printableGridRow = new Array<string>();
+      for (
+        let typoGridColumnIndex = 0;
+        typoGridColumnIndex < typoGridRow.length;
+        typoGridColumnIndex++
+      ) {
+        const typoGridCell = typoGridRow[typoGridColumnIndex]!;
+        const printableGridCell = typoGridCell.computeStyledString(typoSupport);
+        printableGridRow.push(printableGridCell);
+        if (typoGridColumnIndex < typoGridRow.length - 1) {
+          const width = typoGridCell.computeRawLength();
+          const padding = " ".repeat(widths[typoGridColumnIndex]! - width);
+          printableGridRow.push(padding);
+        }
+      }
+      printableGrid.push(printableGridRow);
+    }
+    return printableGrid;
+  }
+}
+
+export class TypoError extends Error {
+  #typoText: TypoText;
+  constructor(typoText: TypoText, source?: unknown) {
+    if (source instanceof Error) {
+      typoText.pushString(new TypoString(`: ${source.message}`));
+    } else if (source instanceof TypoError) {
+      typoText.pushString(new TypoString(": "));
+      typoText.pushText(source.#typoText);
+    } else if (source !== undefined) {
+      typoText.pushString(new TypoString(`: ${String(source)}`));
+    }
+    super(typoText.computeRawString());
+    this.#typoText = typoText;
+  }
+  computeStyledString(typoSupport: TypoSupport): string {
+    return this.#typoText.computeStyledString(typoSupport);
+  }
+}
+
+export class TypoSupport {
+  #kind: "none" | "tty" | "mock";
+  private constructor(kind: "none" | "tty" | "mock") {
+    this.#kind = kind;
+  }
+  static none(): TypoSupport {
+    return new TypoSupport("none");
+  }
+  static tty(): TypoSupport {
+    return new TypoSupport("tty");
+  }
+  static mock(): TypoSupport {
+    return new TypoSupport("mock");
+  }
+  static inferFromProcess(): TypoSupport {
+    if (!process) {
+      return TypoSupport.none();
+    }
+    if (process.env) {
+      if (process.env["FORCE_COLOR"] === "0") {
+        return TypoSupport.none();
+      }
+      if (process.env["FORCE_COLOR"]) {
+        return TypoSupport.tty();
+      }
+      if ("NO_COLOR" in process.env) {
+        return TypoSupport.none();
+      }
+    }
+    if (!process.stdout || !process.stdout.isTTY) {
+      return TypoSupport.none();
+    }
+    return TypoSupport.tty();
+  }
+  computeStyledString(value: string, typoStyle: TypoStyle): string {
+    if (this.#kind === "none") {
+      return value;
+    }
+    if (this.#kind === "tty") {
+      const fgColorCode = typoStyle.fgColor
+        ? ttyCodeFgColors[typoStyle.fgColor]
+        : "";
+      const bgColorCode = typoStyle.bgColor
+        ? ttyCodeBgColors[typoStyle.bgColor]
+        : "";
+      const boldCode = typoStyle.bold ? ttyCodeBold : "";
+      const dimCode = typoStyle.dim ? ttyCodeDim : "";
+      const italicCode = typoStyle.italic ? ttyCodeItalic : "";
+      const underlineCode = typoStyle.underline ? ttyCodeUnderline : "";
+      const strikethroughCode = typoStyle.strikethrough
+        ? ttyCodeStrikethrough
+        : "";
+      return `${fgColorCode}${bgColorCode}${boldCode}${dimCode}${italicCode}${underlineCode}${strikethroughCode}${value}${ttyCodeReset}`;
+    }
+    if (this.#kind === "mock") {
+      const fgColorPart = typoStyle.fgColor
+        ? `{${value}}@${typoStyle.fgColor}`
+        : value;
+      const bgColorPart = typoStyle.bgColor
+        ? `{${fgColorPart}}#${typoStyle.bgColor}`
+        : fgColorPart;
+      const boldPart = typoStyle.bold ? `{${bgColorPart}}+` : bgColorPart;
+      const dimPart = typoStyle.dim ? `{${boldPart}}-` : boldPart;
+      const italicPart = typoStyle.italic ? `{${dimPart}}*` : dimPart;
+      const underlinePart = typoStyle.underline
+        ? `{${italicPart}}_`
+        : italicPart;
+      const strikethroughPart = typoStyle.strikethrough
+        ? `{${underlinePart}}~`
+        : underlinePart;
+      return strikethroughPart;
+    }
+    throw new Error(`Unknown TypoSupport kind: ${this.#kind}`);
+  }
+  computeStyledErrorMessage(error: unknown): string {
+    if (error instanceof TypoError) {
+      return error.computeStyledString(this);
+    }
+    return [
+      this.computeStyledString("Error:", {
+        fgColor: "darkRed",
+        bold: true,
+      }),
+      error instanceof Error ? error.message : String(error),
+    ].join(" ");
+  }
 }
 
 const ttyCodeReset = "\x1b[0m";

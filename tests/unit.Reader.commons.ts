@@ -26,8 +26,8 @@ it("run", async () => {
     "-f5.2",
     "positional-3",
     "--",
-    "--not-a-flag",
-    "-mn",
+    "--not-a-flag(positional)",
+    "-mn(positional)",
     "--",
     "positional-4",
   ]);
@@ -92,8 +92,8 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-3");
 
-  expect(stream.consumePositional()).toStrictEqual("--not-a-flag");
-  expect(stream.consumePositional()).toStrictEqual("-mn");
+  expect(stream.consumePositional()).toStrictEqual("--not-a-flag(positional)");
+  expect(stream.consumePositional()).toStrictEqual("-mn(positional)");
   expect(stream.consumePositional()).toStrictEqual("--");
   expect(stream.consumePositional()).toStrictEqual("positional-4");
   expect(stream.consumePositional()).toStrictEqual(undefined);

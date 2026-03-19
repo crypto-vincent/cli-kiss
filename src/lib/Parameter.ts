@@ -1,21 +1,21 @@
 import { ReaderPositionals } from "./Reader";
 import { Type, typeDecode } from "./Type";
 
-export type Argument<Value> = {
-  generateUsage(): ArgumentUsage;
-  consumeValue(readerPositionals: ReaderPositionals): Value;
+export type Parameter<Value> = {
+  generateUsage(): ParameterUsage;
+  consumePositionals(readerPositionals: ReaderPositionals): Value;
 };
 
-export type ArgumentUsage = {
+export type ParameterUsage = {
   description: string | undefined;
   label: Uppercase<string>;
 };
 
-export function argumentRequired<Value>(definition: {
+export function parameterRequired<Value>(definition: {
   description?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
-}): Argument<Value> {
+}): Parameter<Value> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
@@ -24,22 +24,22 @@ export function argumentRequired<Value>(definition: {
         label: `<${label}>` as Uppercase<string>,
       };
     },
-    consumeValue(readerPositionals: ReaderPositionals) {
-      const positional = readerPositionals.consumePositional();
+    consumePositionals(readerArgs: ReaderPositionals) {
+      const positional = readerArgs.consumePositional();
       if (positional === undefined) {
-        throw new Error(`Missing required argument: ${label}`);
+        throw new Error(`Missing required parameter: ${label}`);
       }
       return typeDecode(definition.type, positional, label);
     },
   };
 }
 
-export function argumentOptional<Value>(definition: {
+export function parameterOptional<Value>(definition: {
   description?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
   default: () => Value;
-}): Argument<Value> {
+}): Parameter<Value> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
@@ -48,14 +48,14 @@ export function argumentOptional<Value>(definition: {
         label: `[${label}]` as Uppercase<string>,
       };
     },
-    consumeValue(readerPositionals: ReaderPositionals) {
-      const positional = readerPositionals.consumePositional();
+    consumePositionals(readerArgs: ReaderPositionals) {
+      const positional = readerArgs.consumePositional();
       if (positional === undefined) {
         try {
           return definition.default();
         } catch (error) {
           throw new Error(
-            `Error computing default value for argument ${label}: ${error instanceof Error ? error.message : String(error)}`,
+            `Error computing default value for parameter ${label}: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
       }
@@ -64,12 +64,12 @@ export function argumentOptional<Value>(definition: {
   };
 }
 
-export function argumentVariadics<Value>(definition: {
+export function parameterVariadics<Value>(definition: {
   endDelimiter?: string;
   description?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
-}): Argument<Array<Value>> {
+}): Parameter<Array<Value>> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
@@ -81,19 +81,19 @@ export function argumentVariadics<Value>(definition: {
             : "")) as Uppercase<string>,
       };
     },
-    consumeValue(readerPositionals: ReaderPositionals) {
-      const values: Array<Value> = [];
+    consumePositionals(readerArgs: ReaderPositionals) {
+      const parameter: Array<Value> = [];
       while (true) {
-        const positional = readerPositionals.consumePositional();
+        const positional = readerArgs.consumePositional();
         if (
           positional === undefined ||
           positional === definition.endDelimiter
         ) {
           break;
         }
-        values.push(typeDecode(definition.type, positional, label));
+        parameter.push(typeDecode(definition.type, positional, label));
       }
-      return values;
+      return parameter;
     },
   };
 }

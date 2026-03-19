@@ -1,8 +1,7 @@
 import { CommandUsage } from "./Command";
-import { GridCell, GridRow, gridToPrintableLines } from "./Grid";
-import { TypoSupport, TypoText, typoPrintableString } from "./Typo";
+import { TypoGrid, TypoString, TypoSupport, TypoText } from "./Typo";
 
-export function usageToPrintableLines(params: {
+export function usageToStyledLines(params: {
   cliName: Lowercase<string>;
   commandUsage: CommandUsage;
   typoSupport: TypoSupport;
@@ -13,36 +12,32 @@ export function usageToPrintableLines(params: {
 
   // TODO - description stacking for subcommands ?
   lines.push(
-    typoPrintableString(
+    textOverview(commandUsage.metadata.description).computeStyledString(
       typoSupport,
-      textOverview(commandUsage.metadata.description),
     ),
   );
   if (commandUsage.metadata.details) {
     lines.push(
-      typoPrintableString(
+      textSubtleInfo(commandUsage.metadata.details).computeStyledString(
         typoSupport,
-        textSubtleInfo(commandUsage.metadata.details),
       ),
     );
   }
 
   lines.push("");
   const breadcrumbs = [
-    typoPrintableString(typoSupport, textUsageTitle("Usage:")),
-    typoPrintableString(typoSupport, textConstants(cliName)),
+    textUsageTitle("Usage:").computeStyledString(typoSupport),
+    textConstants(cliName).computeStyledString(typoSupport),
   ].concat(
     commandUsage.breadcrumbs.map((breadcrumb) => {
-      if ("argument" in breadcrumb) {
-        return typoPrintableString(
+      if ("parameter" in breadcrumb) {
+        return textUserInput(breadcrumb.parameter).computeStyledString(
           typoSupport,
-          textUserInput(breadcrumb.argument),
         );
       }
       if ("command" in breadcrumb) {
-        return typoPrintableString(
+        return textConstants(breadcrumb.command).computeStyledString(
           typoSupport,
-          textConstants(breadcrumb.command),
         );
       }
       throw new Error(`Unknown breadcrumb: ${JSON.stringify(breadcrumb)}`);
@@ -50,110 +45,122 @@ export function usageToPrintableLines(params: {
   );
   lines.push(breadcrumbs.join(" "));
 
-  if (commandUsage.arguments.length > 0) {
+  if (commandUsage.parameters.length > 0) {
     lines.push("");
-    lines.push(typoPrintableString(typoSupport, textBlockTitle("Arguments:")));
-    const grid = new Array<GridRow>();
-    for (const argumentUsage of commandUsage.arguments) {
-      const gridRow = new Array<GridCell>();
-      gridRow.push([textDelimiter()]);
-      gridRow.push([textUserInput(argumentUsage.label)]);
-      if (argumentUsage.description) {
-        gridRow.push([textDelimiter()]);
-        gridRow.push([textUsefulInfo(argumentUsage.description)]);
+    lines.push(textBlockTitle("Parameters:").computeStyledString(typoSupport));
+    const typoGrid = new TypoGrid();
+    for (const parameterUsage of commandUsage.parameters) {
+      const typoGridRow = new Array<TypoText>();
+      typoGridRow.push(new TypoText(textDelimiter()));
+      typoGridRow.push(new TypoText(textUserInput(parameterUsage.label)));
+      if (parameterUsage.description) {
+        typoGridRow.push(new TypoText(textDelimiter()));
+        typoGridRow.push(
+          new TypoText(textUsefulInfo(parameterUsage.description)),
+        );
       }
-      grid.push(gridRow);
+      typoGrid.pushRow(typoGridRow);
     }
-    lines.push(...gridToPrintableLines(grid, typoSupport));
+    lines.push(
+      ...typoGrid.computeStyledGrid(typoSupport).map((row) => row.join("")),
+    );
   }
 
   if (commandUsage.subcommands.length > 0) {
     lines.push("");
-    lines.push(
-      typoPrintableString(typoSupport, textBlockTitle("Subcommands:")),
-    );
-    const grid = new Array<GridRow>();
+    lines.push(textBlockTitle("Subcommands:").computeStyledString(typoSupport));
+    const typoGrid = new TypoGrid();
     for (const subcommand of commandUsage.subcommands) {
-      const gridRow = new Array<GridCell>();
-      gridRow.push([textDelimiter()]);
-      gridRow.push([textConstants(subcommand.name)]);
+      const typoGridRow = new Array<TypoText>();
+      typoGridRow.push(new TypoText(textDelimiter()));
+      typoGridRow.push(new TypoText(textConstants(subcommand.name)));
       if (subcommand.description) {
-        gridRow.push([textDelimiter()]);
-        gridRow.push([textUsefulInfo(subcommand.description)]);
+        typoGridRow.push(new TypoText(textDelimiter()));
+        typoGridRow.push(new TypoText(textUsefulInfo(subcommand.description)));
       }
-      grid.push(gridRow);
+      typoGrid.pushRow(typoGridRow);
     }
-    lines.push(...gridToPrintableLines(grid, typoSupport));
+    lines.push(
+      ...typoGrid.computeStyledGrid(typoSupport).map((row) => row.join("")),
+    );
   }
 
   if (commandUsage.options.length > 0) {
     lines.push("");
-    lines.push(typoPrintableString(typoSupport, textBlockTitle("Options:")));
-    const grid = new Array<GridRow>();
+    lines.push(textBlockTitle("Options:").computeStyledString(typoSupport));
+    const typoGrid = new TypoGrid();
     for (const optionUsage of commandUsage.options) {
-      const gridRow = new Array<GridCell>();
-      gridRow.push([textDelimiter()]);
+      const typoGridRow = new Array<TypoText>();
+      typoGridRow.push(new TypoText(textDelimiter()));
       if (optionUsage.short) {
-        gridRow.push([
-          textConstants(`-${optionUsage.short}`),
-          textDelimiter(", "),
-        ]);
+        typoGridRow.push(
+          new TypoText(
+            textConstants(`-${optionUsage.short}`),
+            textDelimiter(", "),
+          ),
+        );
       } else {
-        gridRow.push([]);
+        typoGridRow.push(new TypoText());
       }
       if (optionUsage.label) {
-        gridRow.push([
-          textConstants(`--${optionUsage.long}`),
-          textDelimiter(" "),
-          textUserInput(optionUsage.label),
-        ]);
+        typoGridRow.push(
+          new TypoText(
+            textConstants(`--${optionUsage.long}`),
+            textDelimiter(" "),
+            textUserInput(optionUsage.label),
+          ),
+        );
       } else {
-        gridRow.push([
-          textConstants(`--${optionUsage.long}`),
-          textSubtleInfo("[=no]"),
-        ]);
+        typoGridRow.push(
+          new TypoText(
+            textConstants(`--${optionUsage.long}`),
+            textSubtleInfo("[=no]"),
+          ),
+        );
       }
       if (optionUsage.description) {
-        gridRow.push([textDelimiter()]);
-        gridRow.push([textUsefulInfo(optionUsage.description)]);
+        typoGridRow.push(new TypoText(textDelimiter()));
+        typoGridRow.push(new TypoText(textUsefulInfo(optionUsage.description)));
       }
-      grid.push(gridRow);
+      typoGrid.pushRow(typoGridRow);
     }
-    lines.push(...gridToPrintableLines(grid, typoSupport));
+    lines.push(
+      ...typoGrid.computeStyledGrid(typoSupport).map((row) => row.join("")),
+    );
   }
 
   lines.push("");
   return lines;
 }
 
-function textOverview(value: string): TypoText {
-  return { value, bold: true };
+function textOverview(value: string): TypoString {
+  return new TypoString(value, { bold: true });
 }
 
-function textUsefulInfo(value: string): TypoText {
-  return { value };
+function textUsefulInfo(value: string): TypoString {
+  return new TypoString(value);
 }
 
-function textSubtleInfo(value: string): TypoText {
-  return { value, italic: true, dim: true };
+function textSubtleInfo(value: string): TypoString {
+  return new TypoString(value, { italic: true, dim: true });
 }
 
-function textUsageTitle(value: string): TypoText {
-  return { value, fgColor: "darkMagenta", bold: true };
+function textUsageTitle(value: string): TypoString {
+  return new TypoString(value, { fgColor: "darkMagenta", bold: true });
 }
 
-function textBlockTitle(value: string): TypoText {
-  return { value, fgColor: "darkGreen", bold: true };
+function textBlockTitle(value: string): TypoString {
+  return new TypoString(value, { fgColor: "darkGreen", bold: true });
 }
 
-function textConstants(value: string): TypoText {
-  return { value, fgColor: "darkCyan", bold: true };
+function textConstants(value: string): TypoString {
+  return new TypoString(value, { fgColor: "darkCyan", bold: true });
 }
 
-function textUserInput(value: string): TypoText {
-  return { value, fgColor: "darkBlue", bold: true };
+function textUserInput(value: string): TypoString {
+  return new TypoString(value, { fgColor: "darkBlue", bold: true });
 }
 
-function textDelimiter(value?: string): TypoText {
-  return { value: value ?? "  " };
+function textDelimiter(value?: string): TypoString {
+  return new TypoString(value ?? "  ");
 }

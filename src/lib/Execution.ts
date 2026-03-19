@@ -1,44 +1,34 @@
-import { Argument, ArgumentUsage } from "./Argument";
 import { Option, OptionUsage } from "./Option";
+import { Parameter, ParameterUsage } from "./Parameter";
 import { ReaderArgs } from "./Reader";
 
-export type Execution<Context, Result> = {
+export type Execution<Input, Output> = {
   generateUsage(): ExecutionUsage;
-  createInterpreterFactory(
-    readerArgs: ReaderArgs,
-  ): ExecutionInterpreterFactory<Context, Result>;
+  createRunnerFromArgs(readerArgs: ReaderArgs): ExecutionRunner<Input, Output>;
 };
 
-export type ExecutionInterpreterFactory<Context, Result> = {
-  // TODO - could extract arguments and options parsed for usage printing maybe?
-  createInterpreterInstance(): ExecutionInterpreterInstance<Context, Result>;
-};
-
-export type ExecutionInterpreterInstance<Context, Result> = {
-  executeWithContext(context: Context): Promise<Result>;
+export type ExecutionRunner<Input, Output> = {
+  executeWithContext(input: Input): Promise<Output>;
 };
 
 export type ExecutionUsage = {
   options: Array<OptionUsage>;
-  arguments: Array<ArgumentUsage>;
+  parameters: Array<ParameterUsage>;
 };
 
 export function execution<
   Context,
   Result,
   Options extends { [option: string]: any },
-  const Arguments extends Array<any>,
+  const Parameters extends Array<any>,
 >(
   inputs: {
     options: { [K in keyof Options]: Option<Options[K]> };
-    arguments: { [K in keyof Arguments]: Argument<Arguments[K]> };
+    parameters: { [K in keyof Parameters]: Parameter<Parameters[K]> };
   },
   handler: (
     context: Context,
-    inputs: {
-      options: Options;
-      arguments: Arguments;
-    },
+    inputs: { options: Options; parameters: Parameters },
   ) => Promise<Result>,
 ): Execution<Context, Result> {
   return {
@@ -50,36 +40,32 @@ export function execution<
           optionsUsage.push(optionInput.generateUsage());
         }
       }
-      const argumentsUsage = new Array<ArgumentUsage>();
-      for (const argumentInput of inputs.arguments) {
-        argumentsUsage.push(argumentInput.generateUsage());
+      const parametersUsage = new Array<ParameterUsage>();
+      for (const parameterInput of inputs.parameters) {
+        parametersUsage.push(parameterInput.generateUsage());
       }
-      return { options: optionsUsage, arguments: argumentsUsage };
+      return { options: optionsUsage, parameters: parametersUsage };
     },
-    createInterpreterFactory(readerArgs: ReaderArgs) {
+    createRunnerFromArgs(readerArgs: ReaderArgs) {
       const optionsReaders: any = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
         optionsReaders[optionKey] = optionInput.createReader(readerArgs);
       }
-      const argumentsValues: any = [];
-      for (const argumentInput of inputs.arguments) {
-        argumentsValues.push(argumentInput.consumeValue(readerArgs));
+      const parametersValues: any = [];
+      for (const parameterInput of inputs.parameters) {
+        parametersValues.push(parameterInput.consumePositionals(readerArgs));
       }
       return {
-        createInterpreterInstance() {
+        executeWithContext(context: Context) {
           const optionsValues: any = {};
           for (const optionKey in optionsReaders) {
             optionsValues[optionKey] = optionsReaders[optionKey]!.readValue();
           }
-          return {
-            executeWithContext(context: Context) {
-              return handler(context, {
-                options: optionsValues,
-                arguments: argumentsValues,
-              });
-            },
-          };
+          return handler(context, {
+            options: optionsValues,
+            parameters: parametersValues,
+          });
         },
       };
     },

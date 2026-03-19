@@ -47,8 +47,8 @@ export function optionFlag(definition: {
       readerArgs.registerFlag({ key, longs, shorts });
       return {
         readValue() {
-          const value = readerArgs.readFlag(key);
-          if (value === undefined) {
+          const optionValue = readerArgs.readFlag(key);
+          if (optionValue === undefined) {
             try {
               return definition.default ? definition.default() : false;
             } catch (error) {
@@ -57,7 +57,7 @@ export function optionFlag(definition: {
               );
             }
           }
-          return value;
+          return optionValue;
         },
       };
     },
@@ -139,14 +139,15 @@ export function optionSingleValue<Value>(definition: {
       readerArgs.registerOption({ key, longs, shorts });
       return {
         readValue() {
-          const values = readerArgs.readOption(key);
-          if (values.length > 1) {
+          const optionValues = readerArgs.readOption(key);
+          if (optionValues.length > 1) {
+            const valuesDesc = optionValues.map((v) => `"${v}"`).join(", ");
             throw new Error(
-              `Multiple values provided for option: ${key}, expected only one. Found: ${values.map((v) => `"${v}"`).join(", ")}`,
+              `Multiple values provided for option: ${key}, expected only one. Found: ${valuesDesc}`,
             );
           }
-          const firstValue = values[0];
-          if (firstValue === undefined) {
+          const optionValue = optionValues[0];
+          if (optionValue === undefined) {
             try {
               return definition.default();
             } catch (error) {
@@ -155,7 +156,7 @@ export function optionSingleValue<Value>(definition: {
               );
             }
           }
-          return typeDecode(definition.type, firstValue, `${key}: ${label}`);
+          return typeDecode(definition.type, optionValue, `${key}: ${label}`);
         },
       };
     },

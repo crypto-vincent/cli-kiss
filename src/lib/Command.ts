@@ -1,21 +1,15 @@
-import { ArgumentUsage } from "./Argument";
 import { Execution } from "./Execution";
 import { OptionUsage } from "./Option";
+import { ParameterUsage } from "./Parameter";
 import { ReaderArgs } from "./Reader";
 
 export type Command<Context, Result> = {
   getDescription(): string | undefined;
-  createInterpreterFactory(
-    readerArgs: ReaderArgs,
-  ): CommandInterpreterFactory<Context, Result>;
+  createRunnerFromArgs(readerArgs: ReaderArgs): CommandRunner<Context, Result>;
 };
 
-export type CommandInterpreterFactory<Context, Result> = {
+export type CommandRunner<Context, Result> = {
   generateUsage(): CommandUsage;
-  createInterpreterInstance(): CommandInterpreterInstance<Context, Result>;
-};
-
-export type CommandInterpreterInstance<Context, Result> = {
   executeWithContext(context: Context): Promise<Result>;
 };
 
@@ -29,11 +23,13 @@ export type CommandUsage = {
   metadata: CommandMetadata;
   breadcrumbs: Array<CommandUsageBreadcrumb>;
   options: Array<OptionUsage>;
-  arguments: Array<ArgumentUsage>;
+  parameters: Array<ParameterUsage>;
   subcommands: Array<{ name: string; description: string | undefined }>;
 };
 
-export type CommandUsageBreadcrumb = { argument: string } | { command: string };
+export type CommandUsageBreadcrumb =
+  | { parameter: string }
+  | { command: string };
 
 export function command<Context, Result>(
   metadata: CommandMetadata,
@@ -43,42 +39,35 @@ export function command<Context, Result>(
     getDescription() {
       return metadata.description;
     },
-    createInterpreterFactory(readerArgs: ReaderArgs) {
+    createRunnerFromArgs(readerArgs: ReaderArgs) {
       function generateUsage(): CommandUsage {
         const executionUsage = execution.generateUsage();
         return {
           metadata,
-          breadcrumbs: executionUsage.arguments.map((argument) =>
-            breadcrumbArgument(argument.label),
+          breadcrumbs: executionUsage.parameters.map((parameter) =>
+            breadcrumbParameter(parameter.label),
           ),
           options: executionUsage.options,
-          arguments: executionUsage.arguments,
+          parameters: executionUsage.parameters,
           subcommands: [],
         };
       }
       try {
-        const executionInterpreterFactory =
-          execution.createInterpreterFactory(readerArgs);
+        const executionRunner = execution.createRunnerFromArgs(readerArgs);
+        const lastPositional = readerArgs.consumePositional();
+        if (lastPositional !== undefined) {
+          throw Error(`Unexpected parameter: "${lastPositional}"`);
+        }
         return {
           generateUsage,
-          createInterpreterInstance() {
-            const lastPositional = readerArgs.consumePositional();
-            if (lastPositional !== undefined) {
-              throw Error(`Unexpected argument: "${lastPositional}"`);
-            }
-            const executionInterpreterInstance =
-              executionInterpreterFactory.createInterpreterInstance();
-            return {
-              async executeWithContext(context: Context) {
-                return executionInterpreterInstance.executeWithContext(context);
-              },
-            };
+          async executeWithContext(context: Context) {
+            return executionRunner.executeWithContext(context);
           },
         };
       } catch (error) {
         return {
           generateUsage,
-          createInterpreterInstance() {
+          async executeWithContext() {
             throw error;
           },
         };
@@ -96,56 +85,41 @@ export function commandWithSubcommands<Context, Payload, Result>(
     getDescription() {
       return metadata.description;
     },
-    createInterpreterFactory(readerArgs: ReaderArgs) {
+    createRunnerFromArgs(readerArgs: ReaderArgs) {
       try {
-        const executionInterpreterFactory =
-          execution.createInterpreterFactory(readerArgs);
+        const executionRunner = execution.createRunnerFromArgs(readerArgs);
         const subcommandName = readerArgs.consumePositional();
         if (subcommandName === undefined) {
-          throw new Error("Missing required argument: SUBCOMMAND");
+          throw new Error("Missing required parameter: SUBCOMMAND");
         }
         const subcommandInput =
           subcommands[subcommandName as Lowercase<string>];
         if (subcommandInput === undefined) {
           throw new Error(`Invalid SUBCOMMAND: "${subcommandName}"`);
         }
-        const subcommandInterpreterFactory =
-          subcommandInput.createInterpreterFactory(readerArgs);
+        const subcommandRunner =
+          subcommandInput.createRunnerFromArgs(readerArgs);
         return {
           generateUsage() {
             const executionUsage = execution.generateUsage();
-            const subcommandUsage =
-              subcommandInterpreterFactory.generateUsage();
+            const subcommandUsage = subcommandRunner.generateUsage();
             return {
               metadata: subcommandUsage.metadata,
-              breadcrumbs: executionUsage.arguments
-                .map((argument) => breadcrumbArgument(argument.label))
+              breadcrumbs: executionUsage.parameters
+                .map((parameter) => breadcrumbParameter(parameter.label))
                 .concat([breadcrumbCommand(subcommandName)])
                 .concat(subcommandUsage.breadcrumbs),
               options: executionUsage.options.concat(subcommandUsage.options),
-              arguments: executionUsage.arguments.concat(
-                subcommandUsage.arguments,
+              parameters: executionUsage.parameters.concat(
+                subcommandUsage.parameters,
               ),
               subcommands: subcommandUsage.subcommands,
             };
           },
-          createInterpreterInstance() {
-            // TODO - unit tests to enforce ordering here
-            const subcommandInterpreterInstance =
-              subcommandInterpreterFactory.createInterpreterInstance();
-            const executionInterpreterInstance =
-              executionInterpreterFactory.createInterpreterInstance();
-            return {
-              async executeWithContext(context: Context) {
-                const payload =
-                  await executionInterpreterInstance.executeWithContext(
-                    context,
-                  );
-                return await subcommandInterpreterInstance.executeWithContext(
-                  payload,
-                );
-              },
-            };
+          async executeWithContext(context: Context) {
+            return await subcommandRunner.executeWithContext(
+              await executionRunner.executeWithContext(context),
+            );
           },
         };
       } catch (error) {
@@ -154,11 +128,11 @@ export function commandWithSubcommands<Context, Payload, Result>(
             const executionUsage = execution.generateUsage();
             return {
               metadata,
-              breadcrumbs: executionUsage.arguments
-                .map((argument) => breadcrumbArgument(argument.label))
+              breadcrumbs: executionUsage.parameters
+                .map((parameter) => breadcrumbParameter(parameter.label))
                 .concat([breadcrumbCommand("<SUBCOMMAND>")]),
               options: executionUsage.options,
-              arguments: executionUsage.arguments,
+              parameters: executionUsage.parameters,
               subcommands: Object.entries(subcommands).map(
                 ([name, subcommand]) => ({
                   name,
@@ -167,7 +141,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
               ),
             };
           },
-          createInterpreterInstance() {
+          async executeWithContext() {
             throw error;
           },
         };
@@ -185,50 +159,37 @@ export function commandChained<Context, Payload, Result>(
     getDescription() {
       return metadata.description;
     },
-    createInterpreterFactory(readerArgs: ReaderArgs) {
-      const executionInterpreterFactory =
-        execution.createInterpreterFactory(readerArgs);
-      const nextCommandInterpreterFactory =
-        nextCommand.createInterpreterFactory(readerArgs);
+    createRunnerFromArgs(readerArgs: ReaderArgs) {
+      const executionRunner = execution.createRunnerFromArgs(readerArgs);
+      const nextCommandRunner = nextCommand.createRunnerFromArgs(readerArgs);
       return {
         generateUsage() {
           const executionUsage = execution.generateUsage();
-          const nextCommandUsage =
-            nextCommandInterpreterFactory.generateUsage();
+          const nextCommandUsage = nextCommandRunner.generateUsage();
           return {
             metadata: nextCommandUsage.metadata,
-            breadcrumbs: executionUsage.arguments
-              .map((argument) => breadcrumbArgument(argument.label))
+            breadcrumbs: executionUsage.parameters
+              .map((parameter) => breadcrumbParameter(parameter.label))
               .concat(nextCommandUsage.breadcrumbs),
             options: executionUsage.options.concat(nextCommandUsage.options),
-            arguments: executionUsage.arguments.concat(
-              nextCommandUsage.arguments,
+            parameters: executionUsage.parameters.concat(
+              nextCommandUsage.parameters,
             ),
             subcommands: nextCommandUsage.subcommands,
           };
         },
-        createInterpreterInstance() {
-          const nextCommandInterpreterInstance =
-            nextCommandInterpreterFactory.createInterpreterInstance();
-          const executionInterpreterInstance =
-            executionInterpreterFactory.createInterpreterInstance();
-          return {
-            async executeWithContext(context: Context) {
-              const payload =
-                await executionInterpreterInstance.executeWithContext(context);
-              return await nextCommandInterpreterInstance.executeWithContext(
-                payload,
-              );
-            },
-          };
+        async executeWithContext(context: Context) {
+          return await nextCommandRunner.executeWithContext(
+            await executionRunner.executeWithContext(context),
+          );
         },
       };
     },
   };
 }
 
-function breadcrumbArgument(value: string): CommandUsageBreadcrumb {
-  return { argument: value };
+function breadcrumbParameter(value: string): CommandUsageBreadcrumb {
+  return { parameter: value };
 }
 
 function breadcrumbCommand(value: string): CommandUsageBreadcrumb {

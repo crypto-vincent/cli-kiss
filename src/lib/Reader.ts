@@ -1,71 +1,79 @@
+export type ReaderFlags = {
+  readFlag(key: string): boolean | undefined;
+};
+
+export type ReaderOptionals = {
+  readOption(key: string): Array<string>;
+};
+
 export type ReaderPositionals = {
   consumePositional(): string | undefined;
 };
 
 export class ReaderArgs {
-  #parsedArgs: Array<string>;
+  #args: ReadonlyArray<string>;
+
   #parsedIndex: number;
   #parsedDouble: boolean;
 
-  #flagKeyByShort: Map<string, string>;
   #flagKeyByLong: Map<string, string>;
+  #flagKeyByShort: Map<string, string>;
   #flagInfoByKey: Map<string, {}>;
   #flagResultByKey: Map<string, boolean>;
 
-  #optionKeyByShort: Map<string, string>;
   #optionKeyByLong: Map<string, string>;
+  #optionKeyByShort: Map<string, string>;
   #optionInfoByKey: Map<string, {}>; // TODO - what dis for
   #optionResultByKey: Map<string, Array<string>>;
 
-  constructor(args: Array<string>) {
-    this.#parsedArgs = args;
+  constructor(args: ReadonlyArray<string>) {
+    this.#args = args;
+
     this.#parsedIndex = 0;
     this.#parsedDouble = false;
 
     // TODO - this seems like a good candidate for abstraction
-    this.#flagKeyByShort = new Map();
     this.#flagKeyByLong = new Map();
+    this.#flagKeyByShort = new Map();
     this.#flagInfoByKey = new Map();
     this.#flagResultByKey = new Map();
 
-    this.#optionKeyByShort = new Map();
     this.#optionKeyByLong = new Map();
+    this.#optionKeyByShort = new Map();
     this.#optionInfoByKey = new Map();
     this.#optionResultByKey = new Map();
   }
 
   registerFlag(definition: {
     key: string;
-    shorts: Array<string>;
     longs: Array<string>;
+    shorts: Array<string>;
   }) {
-    this.#ensureUniqueKey(definition.key);
-    this.#flagInfoByKey.set(definition.key, {});
-    for (const short of definition.shorts) {
-      this.#ensureUniqueName(short);
-      this.#flagKeyByShort.set(short, definition.key);
-    }
     for (const long of definition.longs) {
-      this.#ensureUniqueName(long);
+      this.#ensureUniqueLong(long);
       this.#flagKeyByLong.set(long, definition.key);
     }
+    for (const short of definition.shorts) {
+      this.#ensureUniqueShort(short);
+      this.#flagKeyByShort.set(short, definition.key);
+    }
+    this.#flagInfoByKey.set(definition.key, {});
   }
 
   registerOption(definition: {
     key: string;
-    shorts: Array<string>;
     longs: Array<string>;
+    shorts: Array<string>;
   }) {
-    this.#ensureUniqueKey(definition.key);
-    this.#optionInfoByKey.set(definition.key, {});
-    for (const short of definition.shorts) {
-      this.#ensureUniqueName(short);
-      this.#optionKeyByShort.set(short, definition.key);
-    }
     for (const long of definition.longs) {
-      this.#ensureUniqueName(long);
+      this.#ensureUniqueLong(long);
       this.#optionKeyByLong.set(long, definition.key);
     }
+    for (const short of definition.shorts) {
+      this.#ensureUniqueShort(short);
+      this.#optionKeyByShort.set(short, definition.key);
+    }
+    this.#optionInfoByKey.set(definition.key, {});
   }
 
   readFlag(key: string): boolean | undefined {
@@ -73,11 +81,11 @@ export class ReaderArgs {
     if (flagInfo === undefined) {
       throw new Error(`Flag not registered: ${key}`);
     }
-    const result = this.#flagResultByKey.get(key);
-    if (result === undefined) {
+    const flagResult = this.#flagResultByKey.get(key);
+    if (flagResult === undefined) {
       return undefined;
     }
-    return result;
+    return flagResult;
   }
 
   readOption(key: string): Array<string> {
@@ -85,11 +93,11 @@ export class ReaderArgs {
     if (optionInfo === undefined) {
       throw new Error(`Option not registered: ${key}`);
     }
-    const result = this.#optionResultByKey.get(key);
-    if (result === undefined) {
+    const optionResult = this.#optionResultByKey.get(key);
+    if (optionResult === undefined) {
       return new Array<string>();
     }
-    return result;
+    return optionResult;
   }
 
   consumePositional(): string | undefined {
@@ -98,15 +106,14 @@ export class ReaderArgs {
       if (arg === null) {
         return undefined;
       }
-      const positional = this.#parseAsPositional(arg);
-      if (positional !== null) {
-        return positional;
+      if (this.#processedAsPositional(arg)) {
+        return arg;
       }
     }
   }
 
   #consumeArg(): string | null {
-    const arg = this.#parsedArgs[this.#parsedIndex];
+    const arg = this.#args[this.#parsedIndex];
     if (arg === undefined) {
       return null;
     }
@@ -120,24 +127,9 @@ export class ReaderArgs {
     return arg;
   }
 
-  #consumeOptionValue(key: string) {
-    const arg = this.#consumeArg();
-    if (arg === null) {
-      throw new Error(`Option ${key} requires a value but none was provided`);
-    }
+  #processedAsPositional(arg: string): boolean {
     if (this.#parsedDouble) {
-      throw new Error(`Option ${key} requires a value before "--"`);
-    }
-    // TODO - is that weird, could a valid value start with dash ?
-    if (arg.startsWith("-")) {
-      throw new Error(`Option ${key} requires a value, got: "${arg}"`);
-    }
-    return arg;
-  }
-
-  #parseAsPositional(arg: string): string | null {
-    if (this.#parsedDouble) {
-      return arg;
+      return true;
     }
     if (arg.startsWith("--")) {
       const valueIndexStart = arg.indexOf("=");
@@ -149,27 +141,28 @@ export class ReaderArgs {
           arg.slice(valueIndexStart + 1),
         );
       }
-      return null;
+      return false;
     }
     if (arg.startsWith("-")) {
       let shortIndexStart = 1;
       let shortIndexEnd = 2;
       while (shortIndexEnd <= arg.length) {
-        const short = arg.slice(shortIndexStart, shortIndexEnd);
-        const rest = arg.slice(shortIndexEnd);
-        const result = this.#tryConsumeOptionShort(short, rest);
+        const result = this.#tryConsumeOptionShort(
+          arg.slice(shortIndexStart, shortIndexEnd),
+          arg.slice(shortIndexEnd),
+        );
         if (result === true) {
-          return null;
+          return false;
         }
         if (result === false) {
           shortIndexStart = shortIndexEnd;
         }
         shortIndexEnd++;
       }
-      const leftover = arg.slice(shortIndexStart);
-      throw new Error(`Unknown flag or option: -${leftover}`);
+      const leftovers = arg.slice(shortIndexStart);
+      throw new Error(`Unknown flag or option: -${leftovers}`);
     }
-    return arg;
+    return true;
   }
 
   #consumeOptionLong(long: string, direct: string | null): void {
@@ -230,6 +223,21 @@ export class ReaderArgs {
     return null;
   }
 
+  #consumeOptionValue(key: string) {
+    const parameter = this.#consumeArg();
+    if (parameter === null) {
+      throw new Error(`Option ${key} requires a value but none was provided`);
+    }
+    if (this.#parsedDouble) {
+      throw new Error(`Option ${key} requires a value before "--"`);
+    }
+    // TODO - is that weird, could a valid value start with dash ?
+    if (parameter.startsWith("-")) {
+      throw new Error(`Option ${key} requires a value, got: "${parameter}"`);
+    }
+    return parameter;
+  }
+
   #acknowledgeFlag(key: string, value: boolean) {
     if (this.#flagResultByKey.has(key)) {
       throw new Error(`Flag already set: ${key}`);
@@ -243,28 +251,38 @@ export class ReaderArgs {
     this.#optionResultByKey.set(key, values);
   }
 
-  #ensureUniqueKey(key: string) {
-    if (this.#flagInfoByKey.has(key)) {
-      throw new Error(`Flag already registered: ${key}`);
+  #ensureUniqueLong(long: string) {
+    const flagKey = this.#flagKeyByLong.get(long);
+    if (flagKey !== undefined) {
+      throw new Error(`Flag already registered: --${long}`);
     }
-    if (this.#optionInfoByKey.has(key)) {
-      throw new Error(`Option already registered: ${key}`);
+    const optionKey = this.#optionKeyByLong.get(long);
+    if (optionKey !== undefined) {
+      throw new Error(`Option already registered: --${long}`);
     }
   }
 
-  #ensureUniqueName(nameShortOrLong: string) {
-    // TODO - short flag overlap might be annoying here
-    if (this.#flagKeyByShort.has(nameShortOrLong)) {
-      throw new Error(`Flag already registered: -${nameShortOrLong}`);
+  #ensureUniqueShort(short: string) {
+    for (let i = 0; i < short.length; i++) {
+      const shortSlice = short.slice(0, i);
+      const flagKey = this.#flagKeyByShort.get(shortSlice);
+      if (flagKey !== undefined) {
+        throw new Error(`Flag -${shortSlice} can overlap with -${short}`);
+      }
+      const optionKey = this.#optionKeyByShort.get(shortSlice);
+      if (optionKey !== undefined) {
+        throw new Error(`Option -${shortSlice} can overlap with -${short}`);
+      }
     }
-    if (this.#flagKeyByLong.has(nameShortOrLong)) {
-      throw new Error(`Flag already registered: --${nameShortOrLong}`);
+    for (const [flagShort] of this.#flagKeyByShort) {
+      if (flagShort.startsWith(short)) {
+        throw new Error(`Flag ${flagShort} can overlap with -${short}`);
+      }
     }
-    if (this.#optionKeyByShort.has(nameShortOrLong)) {
-      throw new Error(`Option already registered: -${nameShortOrLong}`);
-    }
-    if (this.#optionKeyByLong.has(nameShortOrLong)) {
-      throw new Error(`Option already registered: --${nameShortOrLong}`);
+    for (const [optionShort] of this.#optionKeyByShort) {
+      if (optionShort.startsWith(short)) {
+        throw new Error(`Option -${optionShort} can overlap with -${short}`);
+      }
     }
   }
 }

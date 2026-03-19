@@ -1,8 +1,5 @@
 import { it } from "@jest/globals";
 import {
-  argumentOptional,
-  argumentRequired,
-  argumentVariadics,
   Command,
   command,
   commandWithSubcommands,
@@ -10,13 +7,17 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
+  parameterOptional,
+  parameterRequired,
+  parameterVariadics,
   ReaderArgs,
   typeCommaList,
   typeCommaTuple,
   typeNumber,
   typeString,
+  TypoSupport,
+  usageToStyledLines,
 } from "../src";
-import { usageToPrintableLines } from "../src/lib/Usage";
 
 const cmd = commandWithSubcommands<string, any, any>(
   {
@@ -48,15 +49,15 @@ const cmd = commandWithSubcommands<string, any, any>(
           description: "Root complex-option description",
         }),
       },
-      arguments: [
-        argumentRequired({
+      parameters: [
+        parameterRequired({
           label: "POS-1",
-          description: "First positional argument",
+          description: "Required parameter number 1",
           type: typeNumber,
         }),
-        argumentRequired({
+        parameterRequired({
           label: "POS-2",
-          description: "Second positional argument",
+          description: "Required parameter number 2",
           type: typeNumber,
         }),
       ],
@@ -77,10 +78,10 @@ const cmd = commandWithSubcommands<string, any, any>(
       execution(
         {
           options: {},
-          arguments: [
-            argumentRequired({
+          parameters: [
+            parameterRequired({
               label: "POS-STRING",
-              description: "Positional string argument",
+              description: "Required parameter string",
               type: typeString,
             }),
           ],
@@ -108,21 +109,21 @@ const cmd = commandWithSubcommands<string, any, any>(
               description: "Dudu option description",
             }),
           },
-          arguments: [
-            argumentRequired({
+          parameters: [
+            parameterRequired({
               label: "POS-NUMBER",
-              description: "Positional number argument",
+              description: "Required parameter number",
               type: typeNumber,
             }),
-            argumentOptional({
+            parameterOptional({
               label: "OPT-POS",
-              description: "Optional positional argument",
+              description: "Optional parameter string",
               type: typeString,
               default: () => "42",
             }),
-            argumentVariadics({
+            parameterVariadics({
               label: "VARIADIC",
-              description: "Variadic positional arguments",
+              description: "Variadic parameters strings",
               type: typeString,
             }),
           ],
@@ -144,7 +145,7 @@ it("run", async () => {
   console.log(usage1.join("\n"));
   console.log(usage2.join("\n"));
   console.log(usage3.join("\n"));
-  */
+   */
 
   expect(usage1).toStrictEqual([
     "{Root command description}+",
@@ -152,9 +153,9 @@ it("run", async () => {
     "",
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{<SUBCOMMAND>}@darkCyan}+",
     "",
-    "{{Arguments:}@darkGreen}+",
-    "  {{<POS-1>}@darkBlue}+  First positional argument",
-    "  {{<POS-2>}@darkBlue}+  Second positional argument",
+    "{{Parameters:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+  Required parameter number 1",
+    "  {{<POS-2>}@darkBlue}+  Required parameter number 2",
     "",
     "{{Subcommands:}@darkGreen}+",
     "  {{sub1}@darkCyan}+  Subcommand 1 description",
@@ -172,10 +173,10 @@ it("run", async () => {
     "",
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub1}@darkCyan}+ {{<POS-STRING>}@darkBlue}+",
     "",
-    "{{Arguments:}@darkGreen}+",
-    "  {{<POS-1>}@darkBlue}+       First positional argument",
-    "  {{<POS-2>}@darkBlue}+       Second positional argument",
-    "  {{<POS-STRING>}@darkBlue}+  Positional string argument",
+    "{{Parameters:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+       Required parameter number 1",
+    "  {{<POS-2>}@darkBlue}+       Required parameter number 2",
+    "  {{<POS-STRING>}@darkBlue}+  Required parameter string",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
@@ -189,12 +190,12 @@ it("run", async () => {
     "",
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub2}@darkCyan}+ {{<POS-NUMBER>}@darkBlue}+ {{[OPT-POS]}@darkBlue}+ {{[VARIADIC]...}@darkBlue}+",
     "",
-    "{{Arguments:}@darkGreen}+",
-    "  {{<POS-1>}@darkBlue}+        First positional argument",
-    "  {{<POS-2>}@darkBlue}+        Second positional argument",
-    "  {{<POS-NUMBER>}@darkBlue}+   Positional number argument",
-    "  {{[OPT-POS]}@darkBlue}+      Optional positional argument",
-    "  {{[VARIADIC]...}@darkBlue}+  Variadic positional arguments",
+    "{{Parameters:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+        Required parameter number 1",
+    "  {{<POS-2>}@darkBlue}+        Required parameter number 2",
+    "  {{<POS-NUMBER>}@darkBlue}+   Required parameter number",
+    "  {{[OPT-POS]}@darkBlue}+      Optional parameter string",
+    "  {{[VARIADIC]...}@darkBlue}+  Variadic parameters strings",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
@@ -210,7 +211,7 @@ async function getUsage<Context, Result>(
   command: Command<Context, Result>,
 ) {
   const readerArgs = new ReaderArgs(args);
-  const interpreterFactory = command.createInterpreterFactory(readerArgs);
+  const commandRunner = command.createRunnerFromArgs(readerArgs);
   /*
   try {
     const interpreterInstance = interpreterFactory.createInterpreterInstance();
@@ -219,9 +220,9 @@ async function getUsage<Context, Result>(
     console.error("Error during execution:", error);
   }
   */
-  return usageToPrintableLines({
+  return usageToStyledLines({
     cliName: "my-cli",
-    commandUsage: interpreterFactory.generateUsage(),
-    typoSupport: "mock",
+    commandUsage: commandRunner.generateUsage(),
+    typoSupport: TypoSupport.mock(),
   });
 }
