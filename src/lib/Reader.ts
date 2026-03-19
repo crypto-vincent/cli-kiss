@@ -231,8 +231,6 @@ export class ReaderArgs {
   }
 
   #acknowledgeOption(key: ReaderOptionKey, value: string) {
-    const values = this.#resultByKey.get(key) ?? new Array<string>();
-    values.push(value);
-    this.#resultByKey.set(key, values);
+    this.getOptionValues(key).push(value);
   }
 }

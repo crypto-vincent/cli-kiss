@@ -90,11 +90,11 @@ it("run", async () => {
     1,
   );
   await testCase(
-    ["required1", "subcommand", "required2-invalid"],
+    ["required1", "subcommand", "invalid"],
     [],
     [
       subcommandUsage,
-      'Error: REQUIRED2: Invalid value: "required2-invalid" (expected: "required2"|"required2-bis")',
+      'Error: REQUIRED2: Unexpected value: "invalid" (expected: "required2"|"required2-bis")',
     ],
     1,
   );
@@ -155,10 +155,7 @@ it("run", async () => {
   await testCase(
     ["--flag=42", "required1", "subcommand", "required2"],
     [],
-    [
-      subcommandUsage,
-      'Error: --flag: BOOLEAN: Invalid value: "42" (expected: "true"|"false"|"yes"|"no")',
-    ],
+    [subcommandUsage, 'Error: --flag: BOOLEAN: Invalid value: "42"'],
     1,
   );
   await testCase(
@@ -208,7 +205,7 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: NUMBER: Invalid value: "44" (expected: "42"|"43")',
+      'Error: --single-value: NUMBER: Unexpected value: "44" (expected: "42"|"43")',
     ],
     1,
   );

@@ -11,7 +11,7 @@ import {
   positionalRequired,
   positionalVariadics,
   ReaderArgs,
-  typeCommaList,
+  typeList,
   typeNumber,
   typeString,
 } from "../src";
@@ -29,7 +29,7 @@ const rootCommand = commandWithSubcommands<string, any, any>(
         }),
         numberOption: optionRepeatable({
           long: "number-option",
-          type: typeCommaList(typeNumber),
+          type: typeList(typeNumber),
         }),
       },
       positionals: [

@@ -14,9 +14,7 @@ export const typeBoolean: Type<boolean> = {
     if (lowerValue === "false" || lowerValue === "no") {
       return false;
     }
-    throw new Error(
-      `Invalid value: "${value}" (expected: "true"|"false"|"yes"|"no")`,
-    );
+    throw new Error(`Invalid value: "${value}"`);
   },
 };
 
@@ -25,9 +23,7 @@ export const typeDate: Type<Date> = {
   decoder(value: string) {
     const timestamp = Date.parse(value);
     if (isNaN(timestamp)) {
-      throw new Error(
-        `Invalid value: "${value}" (expected: ISO_8601 date format)`,
-      );
+      throw new Error(`Invalid ISO_8601 value: "${value}"`);
     }
     return new Date(timestamp);
   },
@@ -89,27 +85,25 @@ export function typeOneOf<Value>(
         return decoded;
       }
       const valuesDesc = values.map((v) => `"${v}"`).join("|");
-      throw new Error(`Invalid value: "${value}" (expected: ${valuesDesc})`);
+      throw new Error(`Unexpected value: "${value}" (expected: ${valuesDesc})`);
     },
   };
 }
 
-export function typeCommaTuple<
-  const Elements extends Array<any>,
->(elementTypes: {
-  [K in keyof Elements]: Type<Elements[K]>;
-}): Type<Elements> {
+export function typeTuple<const Elements extends Array<any>>(
+  elementTypes: {
+    [K in keyof Elements]: Type<Elements[K]>;
+  },
+  separator: string = ",",
+): Type<Elements> {
   return {
     label: elementTypes
       .map((elementType) => elementType.label)
-      .join(",") as Uppercase<string>,
+      .join(separator) as Uppercase<string>,
     decoder(value: string) {
-      const parts = value.split(",", elementTypes.length);
+      const parts = value.split(separator, elementTypes.length);
       if (parts.length !== elementTypes.length) {
-        throw new Error(
-          // TODO - colored errors ?
-          `Invalid value: "${value}" (expected: ${elementTypes.length} comma-separated parts)`,
-        );
+        throw new Error(`Invalid tuple parts: ${JSON.stringify(parts)}`);
       }
       return parts.map((part, index) =>
         typeDecode(
@@ -122,15 +116,16 @@ export function typeCommaTuple<
   };
 }
 
-export function typeCommaList<Value>(
+export function typeList<Value>(
   elementType: Type<Value>,
+  separator: string = ",",
 ): Type<Array<Value>> {
   return {
     label:
-      `${elementType.label}[,${elementType.label}]...` as Uppercase<string>,
+      `${elementType.label}[${separator}${elementType.label}]...` as Uppercase<string>,
     decoder(value: string) {
       return value
-        .split(",")
+        .split(separator)
         .map((part, index) =>
           typeDecode(elementType, part, `[${index}].${elementType.label}`),
         );

@@ -11,10 +11,10 @@ import {
   positionalRequired,
   positionalVariadics,
   ReaderArgs,
-  typeCommaList,
-  typeCommaTuple,
+  typeList,
   typeNumber,
   typeString,
+  typeTuple,
   TypoSupport,
   usageToStyledLines,
 } from "../src";
@@ -45,7 +45,7 @@ const cmd = commandWithSubcommands<string, any, any>(
         }),
         complexOption: optionRepeatable({
           long: "complex-option",
-          type: typeCommaTuple([typeNumber, typeCommaList(typeString)]),
+          type: typeTuple([typeNumber, typeList(typeString)]),
           description: "Root complex-option description",
         }),
       },
