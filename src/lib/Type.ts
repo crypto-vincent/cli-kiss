@@ -1,4 +1,5 @@
 export type Type<Value> = {
+  // TODO - maybe include an optional hint ??
   label: Uppercase<string>; // TODO - is there a better way to enforce uppercase labels?
   decoder(value: string): Value;
 };
@@ -55,6 +56,39 @@ export const typeBigInt: Type<bigint> = {
   },
 };
 
+export function typeMapped<Before, After>(
+  before: Type<Before>,
+  after: {
+    label: Uppercase<string>;
+    decoder: (value: Before) => After;
+  },
+): Type<After> {
+  return {
+    label: after.label,
+    decoder: (value: string) => {
+      return after.decoder(typeDecode(before, value, `from ${before.label}`));
+    },
+  };
+}
+
+export function typeOneOf<Value>(
+  type: Type<Value>,
+  values: Array<Value>,
+): Type<Value> {
+  const valuesSet = new Set(values);
+  return {
+    label: type.label,
+    decoder(value: string) {
+      const decoded = typeDecode(type, value, `from ${type.label}`);
+      if (valuesSet.has(decoded)) {
+        return decoded;
+      }
+      const valuesDesc = values.map((v) => `"${v}"`).join("|");
+      throw new Error(`Invalid value: "${value}" (expected: ${valuesDesc})`);
+    },
+  };
+}
+
 export function typeCommaTuple<
   const Elements extends Array<any>,
 >(elementTypes: {
@@ -69,7 +103,7 @@ export function typeCommaTuple<
       if (parts.length !== elementTypes.length) {
         throw new Error(
           // TODO - colored errors ?
-          `Invalid tuple value: "${value}", expected ${elementTypes.length} comma-separated parts`,
+          `Invalid tuple value: "${value}" (expected: ${elementTypes.length} comma-separated parts)`,
         );
       }
       return parts.map((part, index) =>
@@ -108,9 +142,7 @@ export function typeDecode<Value>(
     return type.decoder(value);
   } catch (error) {
     throw new Error(
-      `Failed to decode value "${value}" for ${context}: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      `${context}: ${error instanceof Error ? error.message : String(error)}`,
     );
   }
 }

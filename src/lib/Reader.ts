@@ -253,7 +253,6 @@ export class ReaderArgs {
   }
 
   #ensureUniqueName(nameShortOrLong: string) {
-    // TODO - overall better error handling
     // TODO - short flag overlap might be annoying here
     if (this.#flagKeyByShort.has(nameShortOrLong)) {
       throw new Error(`Flag already registered: -${nameShortOrLong}`);

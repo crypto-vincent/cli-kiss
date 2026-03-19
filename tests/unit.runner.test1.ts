@@ -10,6 +10,8 @@ import {
   optionRepeatable,
   optionSingleValue,
   runAndExit,
+  typeNumber,
+  typeOneOf,
   typeString,
   typeUrl,
 } from "../src";
@@ -29,7 +31,7 @@ it("run", async () => {
     "Options:",
     "  --flag[=no]              Option flag description",
     "  --repeatable <STRING>    Option repeatable description",
-    "  --single-value <STRING>  Option single value description",
+    "  --single-value <NUMBER>  Option single value description",
     "",
   ].join("\n");
   const subcommandUsage = [
@@ -46,15 +48,24 @@ it("run", async () => {
     "Options:",
     "  --flag[=no]              Option flag description",
     "  --repeatable <STRING>    Option repeatable description",
-    "  --single-value <STRING>  Option single value description",
+    "  --single-value <NUMBER>  Option single value description",
     "  --url <URL>              Option url description",
     "",
   ].join("\n");
 
-  // TODO - this should work! but it doesnt!
-  // await testCase(["--version"], ["my-cli 1.0.0"], [], 0);
-  // await testCase(["--help"], [rootUsage], [], 0);
+  await testCase(["--version"], ["my-cli 1.0.0"], [], 0);
+  await testCase(["--help"], [rootUsage], [], 0);
   await testCase(["required1", "subcommand", "required2"], [], [], 0);
+
+  // TODO - how to make this work ?
+  /*
+  await testCase(
+    ["required1", "subcommand", "dada", "--help"],
+    [subcommandUsage],
+    [],
+    0,
+  );
+  */
 
   await testCase(
     [],
@@ -72,6 +83,15 @@ it("run", async () => {
     ["required1", "subcommand"],
     [],
     [subcommandUsage, "Error: Missing required argument: REQUIRED2"],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2-invalid"],
+    [],
+    [
+      subcommandUsage,
+      'Error: REQUIRED2: Invalid value: "required2-invalid" (expected: "required2"|"required2-bis")',
+    ],
     1,
   );
 
@@ -93,10 +113,7 @@ it("run", async () => {
   await testCase(
     ["required1", "subcommand", "required2", "--url", "not-a-url"],
     [],
-    [
-      subcommandUsage,
-      'Error: Failed to decode value "not-a-url" for --url: URL: TypeError: Invalid URL',
-    ],
+    [subcommandUsage, "Error: --url: URL: TypeError: Invalid URL"],
     1,
   );
 
@@ -179,6 +196,15 @@ it("run", async () => {
     ],
     1,
   );
+  await testCase(
+    ["required1", "subcommand", "required2", "--single-value=44"],
+    [],
+    [
+      subcommandUsage,
+      'Error: --single-value: NUMBER: Invalid value: "44" (expected: "42"|"43")',
+    ],
+    1,
+  );
 });
 
 async function testCase(
@@ -203,9 +229,9 @@ async function testCase(
           }),
           optionSingleValue: optionSingleValue({
             long: "single-value",
-            type: typeString,
+            type: typeOneOf(typeNumber, [42, 43]),
             description: "Option single value description",
-            default: () => "hello ?",
+            default: () => 42,
           }),
         },
         arguments: [
@@ -234,7 +260,7 @@ async function testCase(
             },
             arguments: [
               argumentRequired({
-                type: typeString,
+                type: typeOneOf(typeString, ["required2", "required2-bis"]),
                 label: "REQUIRED2",
                 description: "Required2 argument description",
               }),

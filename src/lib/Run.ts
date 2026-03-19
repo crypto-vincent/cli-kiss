@@ -50,25 +50,23 @@ export async function runAndExit<Context>(
   });
   */
   const interpreterFactory = command.createInterpreterFactory(readerArgs);
+  const onLogStdOut = application?.onLogStdOut ?? console.log;
   const onExit = application?.onExit ?? process.exit;
+  if (buildVersion) {
+    if (readerArgs.readFlag("version")) {
+      onLogStdOut([cliName, buildVersion].join(" "));
+      return onExit(0);
+    }
+  }
+  if (usageOnHelp) {
+    if (readerArgs.readFlag("help")) {
+      const typoSupport = chooseTypoSupport(application?.useColors);
+      onLogStdOut(computeUsageString(cliName, interpreterFactory, typoSupport));
+      return onExit(0);
+    }
+  }
   try {
     const interpreterInstance = interpreterFactory.createInterpreterInstance();
-    const onLogStdOut = application?.onLogStdOut ?? console.log;
-    if (buildVersion) {
-      if (readerArgs.readFlag("version")) {
-        onLogStdOut([cliName, buildVersion].join(" "));
-        return onExit(0);
-      }
-    }
-    if (usageOnHelp) {
-      if (readerArgs.readFlag("help")) {
-        const typoSupport = chooseTypoSupport(application?.useColors);
-        onLogStdOut(
-          computeUsageString(cliName, interpreterFactory, typoSupport),
-        );
-        return onExit(0);
-      }
-    }
     await interpreterInstance.executeWithContext(context);
     return onExit(0);
   } catch (error) {
