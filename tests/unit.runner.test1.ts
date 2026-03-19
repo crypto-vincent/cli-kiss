@@ -18,10 +18,10 @@ it("run", async () => {
   const rootUsage = [
     "Root Description",
     "",
-    "Usage: my-cli <REQUIRED> <SUBCOMMAND>",
+    "Usage: my-cli <REQUIRED1> <SUBCOMMAND>",
     "",
     "Arguments:",
-    "  <REQUIRED>  Required argument description",
+    "  <REQUIRED1>  Required1 argument description",
     "",
     "Subcommands:",
     "  subcommand  Subcommand Description",
@@ -35,10 +35,11 @@ it("run", async () => {
   const subcommandUsage = [
     "Subcommand Description",
     "",
-    "Usage: my-cli <REQUIRED> subcommand [OPTIONAL] [VARIADICS]...",
+    "Usage: my-cli <REQUIRED1> subcommand <REQUIRED2> [OPTIONAL] [VARIADICS]...",
     "",
     "Arguments:",
-    "  <REQUIRED>      Required argument description",
+    "  <REQUIRED1>     Required1 argument description",
+    "  <REQUIRED2>     Required2 argument description",
     "  [OPTIONAL]      Optional argument description",
     "  [VARIADICS]...  Variadics argument description",
     "",
@@ -50,53 +51,38 @@ it("run", async () => {
     "",
   ].join("\n");
 
-  await testCase(
-    [],
-    [],
-    [rootUsage, "Error: Missing required argument: REQUIRED"],
-    1,
-  );
-  await testCase(
-    ["required"],
-    [],
-    [rootUsage, "Error: Missing required argument: SUBCOMMAND"],
-    1,
-  );
-  await testCase(["required", "subcommand"], [], [], 0);
-
   // TODO - this should work! but it doesnt!
   // await testCase(["--version"], ["my-cli 1.0.0"], [], 0);
   // await testCase(["--help"], [rootUsage], [], 0);
-  // await testCase(["required", "--help"], [rootUsage], [], 0);
+  await testCase(["required1", "subcommand", "required2"], [], [], 0);
 
   await testCase(
-    ["required", "subcommand", "--help"],
-    [subcommandUsage],
     [],
-    0,
+    [],
+    [rootUsage, "Error: Missing required argument: REQUIRED1"],
+    1,
   );
-
   await testCase(
-    ["required"],
+    ["required1"],
     [],
     [rootUsage, "Error: Missing required argument: SUBCOMMAND"],
     1,
   );
   await testCase(
-    ["required", "subcommand", "--nope"],
+    ["required1", "subcommand"],
+    [],
+    [subcommandUsage, "Error: Missing required argument: REQUIRED2"],
+    1,
+  );
+
+  await testCase(
+    ["required1", "subcommand", "required2", "--nope"],
     [],
     [subcommandUsage, "Error: Unknown flag or option: --nope"],
     1,
   );
   await testCase(
-    ["--invalid-flag"],
-    [],
-    [rootUsage, `Error: Unknown flag or option: --invalid-flag`],
-    1,
-  );
-
-  await testCase(
-    ["required", "subcommand", "--url"],
+    ["required1", "subcommand", "required2", "--url"],
     [],
     [
       subcommandUsage,
@@ -105,11 +91,91 @@ it("run", async () => {
     1,
   );
   await testCase(
-    ["required", "subcommand", "--url", "not-a-url"],
+    ["required1", "subcommand", "required2", "--url", "not-a-url"],
     [],
     [
       subcommandUsage,
       'Error: Failed to decode value "not-a-url" for --url: URL: TypeError: Invalid URL',
+    ],
+    1,
+  );
+
+  await testCase(
+    ["required1", "--url", "https://example.com"],
+    [],
+    [rootUsage, `Error: Unknown flag or option: --url`],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "--url", "https://example.com"],
+    [],
+    [subcommandUsage, "Error: Missing required argument: REQUIRED2"],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--url", "https://example.com"],
+    [],
+    [],
+    0,
+  );
+
+  await testCase(
+    ["--invalid", "required1", "subcommand", "required2"],
+    [],
+    [rootUsage, `Error: Unknown flag or option: --invalid`],
+    1,
+  );
+  await testCase(
+    ["--flag", "--flag", "required1", "subcommand", "required2"],
+    [],
+    [rootUsage, "Error: Flag already set: --flag"],
+    1,
+  );
+  await testCase(
+    ["--flag=42", "required1", "subcommand", "required2"],
+    [],
+    [rootUsage, 'Error: Invalid value for flag: --flag: "42"'],
+    1,
+  );
+  await testCase(
+    ["--flag=no", "required1", "subcommand", "required2"],
+    [],
+    [],
+    0,
+  );
+  await testCase(
+    ["--flag=yes", "required1", "subcommand", "required2"],
+    [],
+    [],
+    0,
+  );
+
+  await testCase(
+    [
+      "required1",
+      "subcommand",
+      "required2",
+      "--repeatable=42",
+      "--repeatable",
+      "43",
+    ],
+    [],
+    [],
+    0,
+  );
+  await testCase(
+    [
+      "required1",
+      "subcommand",
+      "required2",
+      "--single-value=42",
+      "--single-value",
+      "43",
+    ],
+    [],
+    [
+      subcommandUsage,
+      'Error: Multiple values provided for option: --single-value, expected only one. Found: "42", "43"',
     ],
     1,
   );
@@ -145,8 +211,8 @@ async function testCase(
         arguments: [
           argumentRequired({
             type: typeString,
-            label: "REQUIRED",
-            description: "Required argument description",
+            label: "REQUIRED1",
+            description: "Required1 argument description",
           }),
         ],
       },
@@ -167,6 +233,11 @@ async function testCase(
               }),
             },
             arguments: [
+              argumentRequired({
+                type: typeString,
+                label: "REQUIRED2",
+                description: "Required2 argument description",
+              }),
               argumentOptional({
                 label: "OPTIONAL",
                 type: typeString,

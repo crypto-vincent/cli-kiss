@@ -180,9 +180,7 @@ export class ReaderArgs {
         if (value !== undefined) {
           return this.#acknowledgeFlag(flagKey, value);
         }
-        throw new Error(
-          `Invalid value for flag: --${long}: "${direct}" (expected: ${booleanExpected})`,
-        );
+        throw new Error(`Invalid value for flag: --${long}: "${direct}"`);
       }
       return this.#acknowledgeFlag(flagKey, true);
     }
@@ -208,9 +206,7 @@ export class ReaderArgs {
           this.#acknowledgeFlag(flagKey, value);
           return true;
         }
-        throw new Error(
-          `Invalid value for flag: -${short}: "${rest}" (expected: ${booleanExpected})`,
-        );
+        throw new Error(`Invalid value for flag: -${short}: "${rest}"`);
       }
       this.#acknowledgeFlag(flagKey, true);
       return rest === "";
@@ -274,7 +270,6 @@ export class ReaderArgs {
   }
 }
 
-const booleanExpected = `"yes"|"no"`;
 const booleanValues = new Map<string, boolean>([
   ["true", true],
   ["false", false],

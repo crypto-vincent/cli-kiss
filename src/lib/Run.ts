@@ -7,8 +7,6 @@ import {
 } from "./Typo";
 import { usageToPrintableLines } from "./Usage";
 
-// TODO - add unit tests for this
-
 export async function runAndExit<Context>(
   cliName: Lowercase<string>,
   cliArgs: Array<string>,
