@@ -23,18 +23,18 @@ export async function runAsCliAndExit<Context>(
   const readerArgs = new ReaderArgs(cliArgs);
   const buildVersion = application?.buildVersion;
   if (buildVersion) {
-    readerArgs.registerFlag({
-      key: "version",
+    readerArgs.registerOption({
       shorts: [],
       longs: ["version"],
+      valued: false,
     });
   }
   const usageOnHelp = application?.usageOnHelp ?? true;
   if (usageOnHelp) {
-    readerArgs.registerFlag({
-      key: "help",
+    readerArgs.registerOption({
       shorts: [],
       longs: ["help"],
+      valued: false,
     });
   }
   /*
@@ -55,13 +55,13 @@ export async function runAsCliAndExit<Context>(
   const onLogStdOut = application?.onLogStdOut ?? console.log;
   const onExit = application?.onExit ?? process.exit;
   if (buildVersion) {
-    if (readerArgs.readFlag("version")) {
+    if (readerArgs.getOptionValues("--version" as any).length > 0) {
       onLogStdOut([cliName, buildVersion].join(" "));
       return onExit(0);
     }
   }
   if (usageOnHelp) {
-    if (readerArgs.readFlag("help")) {
+    if (readerArgs.getOptionValues("--help" as any).length > 0) {
       const typoSupport = chooseTypoSupport(application?.useColors);
       onLogStdOut(computeUsageString(cliName, commandRunner, typoSupport));
       return onExit(0);

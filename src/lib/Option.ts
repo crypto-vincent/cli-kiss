@@ -1,9 +1,9 @@
-import { ReaderArgs } from "./Reader";
-import { Type, typeDecode } from "./Type";
+import { ReaderArgs as ReaderOptions } from "./Reader";
+import { Type, typeBoolean, typeDecode } from "./Type";
 
 export type Option<Value> = {
   generateUsage(): OptionUsage;
-  createReader(readerArgs: ReaderArgs): OptionReader<Value>;
+  createGetter(readerOptions: ReaderOptions): OptionGetter<Value>;
 };
 
 export type OptionUsage = {
@@ -14,8 +14,8 @@ export type OptionUsage = {
   // TODO - default value for usage ? but it can be dynamic, so maybe not
 };
 
-export type OptionReader<Value> = {
-  readValue(): Value;
+export type OptionGetter<Value> = {
+  getValue(): Value;
 };
 
 export function optionFlag(definition: {
@@ -34,20 +34,18 @@ export function optionFlag(definition: {
         label: undefined,
       };
     },
-    createReader(readerArgs: ReaderArgs) {
-      const key = computeKey(definition.long, definition.short);
-      const longs = [definition.long];
-      if (definition.aliases?.longs) {
-        longs.push(...definition.aliases?.longs);
-      }
-      const shorts = definition.short ? [definition.short] : [];
-      if (definition.aliases?.shorts) {
-        shorts.push(...definition.aliases?.shorts);
-      }
-      readerArgs.registerFlag({ key, longs, shorts });
+    createGetter(readerOptions: ReaderOptions) {
+      const key = registerOption(readerOptions, {
+        ...definition,
+        valued: false,
+      });
       return {
-        readValue() {
-          const optionValue = readerArgs.readFlag(key);
+        getValue() {
+          const optionValues = readerOptions.getOptionValues(key);
+          if (optionValues.length > 1) {
+            throw new Error(`Flag ${key} should not be set multiple-times`);
+          }
+          const optionValue = optionValues[0];
           if (optionValue === undefined) {
             try {
               return definition.default ? definition.default() : false;
@@ -57,50 +55,7 @@ export function optionFlag(definition: {
               );
             }
           }
-          return optionValue;
-        },
-      };
-    },
-  };
-}
-
-export function optionRepeatable<Value>(definition: {
-  long: Lowercase<string>;
-  short?: string;
-  description?: string;
-  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
-  label?: Uppercase<string>;
-  type: Type<Value>;
-}): Option<Array<Value>> {
-  const label = definition.label ?? definition.type.label;
-  return {
-    generateUsage() {
-      // TODO - showcase that it can be repeated ?
-      return {
-        description: definition.description,
-        long: definition.long,
-        short: definition.short,
-        label: `<${label}>` as Uppercase<string>,
-      };
-    },
-    createReader(readerArgs: ReaderArgs) {
-      const key = computeKey(definition.long, definition.short);
-      const longs = definition.long ? [definition.long] : [];
-      if (definition.aliases?.longs) {
-        longs.push(...definition.aliases?.longs);
-      }
-      const shorts = definition.short ? [definition.short] : [];
-      if (definition.aliases?.shorts) {
-        shorts.push(...definition.aliases?.shorts);
-      }
-      readerArgs.registerOption({ key, longs, shorts });
-      return {
-        readValue() {
-          return readerArgs
-            .readOption(key)
-            .map((value) =>
-              typeDecode(definition.type, value, `${key}: ${label}`),
-            );
+          return typeBoolean.decoder(optionValue);
         },
       };
     },
@@ -126,25 +81,16 @@ export function optionSingleValue<Value>(definition: {
         label: `<${label}>` as Uppercase<string>,
       };
     },
-    createReader(readerArgs: ReaderArgs) {
-      const key = computeKey(definition.long, definition.short);
-      const longs = [definition.long];
-      if (definition.aliases?.longs) {
-        longs.push(...definition.aliases?.longs);
-      }
-      const shorts = definition.short ? [definition.short] : [];
-      if (definition.aliases?.shorts) {
-        shorts.push(...definition.aliases?.shorts);
-      }
-      readerArgs.registerOption({ key, longs, shorts });
+    createGetter(readerOptions: ReaderOptions) {
+      const key = registerOption(readerOptions, {
+        ...definition,
+        valued: true,
+      });
       return {
-        readValue() {
-          const optionValues = readerArgs.readOption(key);
+        getValue() {
+          const optionValues = readerOptions.getOptionValues(key);
           if (optionValues.length > 1) {
-            const valuesDesc = optionValues.map((v) => `"${v}"`).join(", ");
-            throw new Error(
-              `Multiple values provided for option: ${key}, expected only one. Found: ${valuesDesc}`,
-            );
+            throw new Error(`Option ${key} should not be set multiple-times`);
           }
           const optionValue = optionValues[0];
           if (optionValue === undefined) {
@@ -163,6 +109,60 @@ export function optionSingleValue<Value>(definition: {
   };
 }
 
-function computeKey(long: Lowercase<string>, short?: string): string {
-  return short ? `-${short}, --${long}` : `--${long}`;
+export function optionRepeatable<Value>(definition: {
+  long: Lowercase<string>;
+  short?: string;
+  description?: string;
+  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
+  label?: Uppercase<string>;
+  type: Type<Value>;
+}): Option<Array<Value>> {
+  const label = definition.label ?? definition.type.label;
+  return {
+    generateUsage() {
+      // TODO - showcase that it can be repeated ?
+      return {
+        description: definition.description,
+        long: definition.long,
+        short: definition.short,
+        label: `<${label}>` as Uppercase<string>,
+      };
+    },
+    createGetter(readerOptions: ReaderOptions) {
+      const key = registerOption(readerOptions, {
+        ...definition,
+        valued: true,
+      });
+      return {
+        getValue() {
+          return readerOptions
+            .getOptionValues(key)
+            .map((value) =>
+              typeDecode(definition.type, value, `${key}: ${label}`),
+            );
+        },
+      };
+    },
+  };
+}
+
+function registerOption(
+  readerOptions: ReaderOptions,
+  definition: {
+    long: Lowercase<string>;
+    short?: string;
+    aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
+    valued: boolean;
+  },
+) {
+  const { long, short, aliases, valued } = definition;
+  const longs = long ? [long] : [];
+  if (aliases?.longs) {
+    longs.push(...aliases?.longs);
+  }
+  const shorts = short ? [short] : [];
+  if (aliases?.shorts) {
+    shorts.push(...aliases?.shorts);
+  }
+  return readerOptions.registerOption({ longs, shorts, valued });
 }

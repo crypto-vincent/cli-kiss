@@ -1,21 +1,22 @@
 import { ReaderPositionals } from "./Reader";
 import { Type, typeDecode } from "./Type";
+import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
 
-export type Parameter<Value> = {
-  generateUsage(): ParameterUsage;
+export type Positional<Value> = {
+  generateUsage(): PositionalUsage;
   consumePositionals(readerPositionals: ReaderPositionals): Value;
 };
 
-export type ParameterUsage = {
+export type PositionalUsage = {
   description: string | undefined;
   label: Uppercase<string>;
 };
 
-export function parameterRequired<Value>(definition: {
+export function positionalRequired<Value>(definition: {
   description?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
-}): Parameter<Value> {
+}): Positional<Value> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
@@ -24,22 +25,27 @@ export function parameterRequired<Value>(definition: {
         label: `<${label}>` as Uppercase<string>,
       };
     },
-    consumePositionals(readerArgs: ReaderPositionals) {
-      const positional = readerArgs.consumePositional();
+    consumePositionals(readerPositionals: ReaderPositionals) {
+      const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        throw new Error(`Missing required parameter: ${label}`);
+        throw new TypoError(
+          new TypoText(
+            new TypoString(`Missing required positional: `),
+            new TypoString(`${label}`, typoStyleUserInput),
+          ),
+        );
       }
       return typeDecode(definition.type, positional, label);
     },
   };
 }
 
-export function parameterOptional<Value>(definition: {
+export function positionalOptional<Value>(definition: {
   description?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
   default: () => Value;
-}): Parameter<Value> {
+}): Positional<Value> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
@@ -48,14 +54,14 @@ export function parameterOptional<Value>(definition: {
         label: `[${label}]` as Uppercase<string>,
       };
     },
-    consumePositionals(readerArgs: ReaderPositionals) {
-      const positional = readerArgs.consumePositional();
+    consumePositionals(readerPositionals: ReaderPositionals) {
+      const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
         try {
           return definition.default();
         } catch (error) {
           throw new Error(
-            `Error computing default value for parameter ${label}: ${error instanceof Error ? error.message : String(error)}`,
+            `Error computing default value for positional ${label}: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
       }
@@ -64,12 +70,12 @@ export function parameterOptional<Value>(definition: {
   };
 }
 
-export function parameterVariadics<Value>(definition: {
+export function positionalVariadics<Value>(definition: {
   endDelimiter?: string;
   description?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
-}): Parameter<Array<Value>> {
+}): Positional<Array<Value>> {
   const label = definition.label ?? definition.type.label;
   return {
     generateUsage() {
@@ -81,19 +87,19 @@ export function parameterVariadics<Value>(definition: {
             : "")) as Uppercase<string>,
       };
     },
-    consumePositionals(readerArgs: ReaderPositionals) {
-      const parameter: Array<Value> = [];
+    consumePositionals(readerPositionals: ReaderPositionals) {
+      const positionals: Array<Value> = [];
       while (true) {
-        const positional = readerArgs.consumePositional();
+        const positional = readerPositionals.consumePositional();
         if (
           positional === undefined ||
           positional === definition.endDelimiter
         ) {
           break;
         }
-        parameter.push(typeDecode(definition.type, positional, label));
+        positionals.push(typeDecode(definition.type, positional, label));
       }
-      return parameter;
+      return positionals;
     },
   };
 }

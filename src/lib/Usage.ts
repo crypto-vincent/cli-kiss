@@ -1,5 +1,12 @@
 import { CommandUsage } from "./Command";
-import { TypoGrid, TypoString, TypoSupport, TypoText } from "./Typo";
+import {
+  TypoGrid,
+  TypoString,
+  typoStyleConstants,
+  typoStyleUserInput,
+  TypoSupport,
+  TypoText,
+} from "./Typo";
 
 export function usageToStyledLines(params: {
   cliName: Lowercase<string>;
@@ -30,8 +37,8 @@ export function usageToStyledLines(params: {
     textConstants(cliName).computeStyledString(typoSupport),
   ].concat(
     commandUsage.breadcrumbs.map((breadcrumb) => {
-      if ("parameter" in breadcrumb) {
-        return textUserInput(breadcrumb.parameter).computeStyledString(
+      if ("positional" in breadcrumb) {
+        return textUserInput(breadcrumb.positional).computeStyledString(
           typoSupport,
         );
       }
@@ -45,18 +52,18 @@ export function usageToStyledLines(params: {
   );
   lines.push(breadcrumbs.join(" "));
 
-  if (commandUsage.parameters.length > 0) {
+  if (commandUsage.positionals.length > 0) {
     lines.push("");
-    lines.push(textBlockTitle("Parameters:").computeStyledString(typoSupport));
+    lines.push(textBlockTitle("Positionals:").computeStyledString(typoSupport));
     const typoGrid = new TypoGrid();
-    for (const parameterUsage of commandUsage.parameters) {
+    for (const positionalUsage of commandUsage.positionals) {
       const typoGridRow = new Array<TypoText>();
       typoGridRow.push(new TypoText(textDelimiter()));
-      typoGridRow.push(new TypoText(textUserInput(parameterUsage.label)));
-      if (parameterUsage.description) {
+      typoGridRow.push(new TypoText(textUserInput(positionalUsage.label)));
+      if (positionalUsage.description) {
         typoGridRow.push(new TypoText(textDelimiter()));
         typoGridRow.push(
-          new TypoText(textUsefulInfo(parameterUsage.description)),
+          new TypoText(textUsefulInfo(positionalUsage.description)),
         );
       }
       typoGrid.pushRow(typoGridRow);
@@ -154,11 +161,11 @@ function textBlockTitle(value: string): TypoString {
 }
 
 function textConstants(value: string): TypoString {
-  return new TypoString(value, { fgColor: "darkCyan", bold: true });
+  return new TypoString(value, typoStyleConstants);
 }
 
 function textUserInput(value: string): TypoString {
-  return new TypoString(value, { fgColor: "darkBlue", bold: true });
+  return new TypoString(value, typoStyleUserInput);
 }
 
 function textDelimiter(value?: string): TypoString {

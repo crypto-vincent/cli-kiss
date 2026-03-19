@@ -3,13 +3,13 @@ import {
   Command,
   command,
   commandWithSubcommands,
-  execution,
+  operation,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  parameterOptional,
-  parameterRequired,
-  parameterVariadics,
+  positionalOptional,
+  positionalRequired,
+  positionalVariadics,
   ReaderArgs,
   typeCommaList,
   typeNumber,
@@ -18,7 +18,7 @@ import {
 
 const rootCommand = commandWithSubcommands<string, any, any>(
   { description: "Root command description" },
-  execution(
+  operation(
     {
       options: {
         booleanFlag: optionFlag({ long: "boolean-flag", default: () => false }),
@@ -32,9 +32,9 @@ const rootCommand = commandWithSubcommands<string, any, any>(
           type: typeCommaList(typeNumber),
         }),
       },
-      parameters: [
-        parameterRequired({ type: typeNumber }),
-        parameterRequired({ type: typeNumber }),
+      positionals: [
+        positionalRequired({ type: typeNumber }),
+        positionalRequired({ type: typeNumber }),
       ],
     },
     async (context, inputs) => {
@@ -44,10 +44,10 @@ const rootCommand = commandWithSubcommands<string, any, any>(
   {
     sub1: command(
       { description: "Subcommand 1 description" },
-      execution(
+      operation(
         {
           options: {},
-          parameters: [parameterRequired({ type: typeString })],
+          positionals: [positionalRequired({ type: typeString })],
         },
         async (context, inputs) => {
           return { at: "sub1", context, inputs };
@@ -56,13 +56,13 @@ const rootCommand = commandWithSubcommands<string, any, any>(
     ),
     sub2: command(
       { description: "Subcommand 2 description" },
-      execution(
+      operation(
         {
           options: {},
-          parameters: [
-            parameterRequired({ type: typeNumber }),
-            parameterOptional({ type: typeString, default: () => "42" }),
-            parameterVariadics({ type: typeString }),
+          positionals: [
+            positionalRequired({ type: typeNumber }),
+            positionalOptional({ type: typeString, default: () => "42" }),
+            positionalVariadics({ type: typeString }),
           ],
         },
         async (context, inputs) => {
@@ -88,13 +88,13 @@ it("run", async () => {
           stringOption: undefined,
           numberOption: [],
         },
-        parameters: [50, 51],
+        positionals: [50, 51],
       },
       at: "root",
     },
     inputs: {
       options: {},
-      parameters: ["final"],
+      positionals: ["final"],
     },
     at: "sub1",
   });
@@ -126,24 +126,24 @@ it("run", async () => {
           stringOption: "hello",
           numberOption: [[123.1, 123.2], [123.3]],
         },
-        parameters: [40, 41],
+        positionals: [40, 41],
       },
       at: "root",
     },
     inputs: {
       options: {},
-      parameters: [88.88, "a,b", ["final"]],
+      positionals: [88.88, "a,b", ["final"]],
     },
     at: "sub2",
   });
 });
 
 async function executeInterpreted<Context, Result>(
-  parameters: Array<string>,
+  positionals: Array<string>,
   context: Context,
   command: Command<Context, Result>,
 ) {
-  const readerArgs = new ReaderArgs(parameters);
+  const readerArgs = new ReaderArgs(positionals);
   const commandRunner = command.createRunnerFromArgs(readerArgs);
   return await commandRunner.executeWithContext(context);
 }

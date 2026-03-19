@@ -14,26 +14,25 @@ it("run", async () => {
     "-fa2",
   ]);
 
-  readerArgs.registerOption({
-    key: "option",
+  const ko = readerArgs.registerOption({
     longs: ["option", "option-alias1", "option-alias2"],
     shorts: ["pts", "o"],
+    valued: true,
   });
-
-  readerArgs.registerFlag({
-    key: "flag1",
+  const kf1 = readerArgs.registerOption({
     longs: ["flag1", "flag-alias"],
     shorts: [],
+    valued: false,
   });
-  readerArgs.registerFlag({
-    key: "flag2",
+  const kf2 = readerArgs.registerOption({
     longs: ["flag2"],
     shorts: ["fa2"],
+    valued: false,
   });
 
   expect(readerArgs.consumePositional()).toStrictEqual(undefined);
 
-  expect(readerArgs.readOption("option")).toStrictEqual([
+  expect(readerArgs.getOptionValues(ko)).toStrictEqual([
     "1.1",
     "1.2",
     "1.3",
@@ -41,6 +40,6 @@ it("run", async () => {
     "1.5",
   ]);
 
-  expect(readerArgs.readFlag("flag1")).toStrictEqual(true);
-  expect(readerArgs.readFlag("flag2")).toStrictEqual(true);
+  expect(readerArgs.getOptionValues(kf1)).toStrictEqual(true);
+  expect(readerArgs.getOptionValues(kf2)).toStrictEqual(true);
 });

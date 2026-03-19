@@ -18,30 +18,45 @@ it("run", async () => {
 
   expect(stream.consumePositional()).toStrictEqual("positional-0");
 
-  stream.registerFlag({
-    key: "sof-normal",
+  const kfne = stream.registerOption({
     shorts: ["sof-normal"],
     longs: [],
+    valued: false,
   });
-  stream.registerFlag({
-    key: "sof-positive",
+  const kfpo = stream.registerOption({
     longs: [],
     shorts: ["sof-positive"],
+    valued: false,
   });
-  stream.registerFlag({
-    key: "sof-negative",
+  const kfne = stream.registerOption({
     longs: [],
     shorts: ["sof-negative"],
+    valued: false,
   });
-  stream.registerFlag({
-    key: "sof-unset",
+  const kfue = stream.registerOption({
     longs: [],
     shorts: ["sof-unset"],
+    valued: false,
   });
 
-  stream.registerFlag({ key: "aa", longs: [], shorts: ["aa"] });
-  stream.registerFlag({ key: "bb", longs: [], shorts: ["bb"] });
-  stream.registerFlag({ key: "cc", longs: [], shorts: ["cc"] });
+  stream.registerOption({
+    key: "aa",
+    longs: [],
+    shorts: ["aa"],
+    valued: false,
+  });
+  stream.registerOption({
+    key: "bb",
+    longs: [],
+    shorts: ["bb"],
+    valued: false,
+  });
+  stream.registerOption({
+    key: "cc",
+    longs: [],
+    shorts: ["cc"],
+    valued: false,
+  });
 
   expect(stream.consumePositional()).toStrictEqual("positional-1");
 
@@ -49,38 +64,56 @@ it("run", async () => {
     key: "sov-split",
     longs: [],
     shorts: ["sov-split"],
+    valued: true,
   });
   stream.registerOption({
     key: "sov-join",
     longs: [],
     shorts: ["sov-join"],
+    valued: true,
   });
   stream.registerOption({
     key: "sov-unset",
     longs: [],
     shorts: ["sov-unset"],
+    valued: true,
   });
 
-  stream.registerFlag({ key: "dd", longs: [], shorts: ["dd"] });
-  stream.registerFlag({ key: "ee", longs: [], shorts: ["ee"] });
-  stream.registerFlag({ key: "ff", longs: [], shorts: ["ff"] });
+  stream.registerOption({
+    key: "dd",
+    longs: [],
+    shorts: ["dd"],
+    valued: false,
+  });
+  stream.registerOption({
+    key: "ee",
+    longs: [],
+    shorts: ["ee"],
+    valued: false,
+  });
+  stream.registerOption({
+    key: "ff",
+    longs: [],
+    shorts: ["ff"],
+    valued: false,
+  });
 
   expect(stream.consumePositional()).toStrictEqual("positional-2");
 
-  expect(stream.readFlag("sof-normal")).toStrictEqual(true);
-  expect(stream.readFlag("sof-positive")).toStrictEqual(true);
-  expect(stream.readFlag("sof-negative")).toStrictEqual(false);
-  expect(stream.readFlag("sof-unset")).toStrictEqual(undefined);
+  expect(stream.getOptionValues("sof-normal")).toStrictEqual(true);
+  expect(stream.getOptionValues("sof-positive")).toStrictEqual(true);
+  expect(stream.getOptionValues("sof-negative")).toStrictEqual(false);
+  expect(stream.getOptionValues("sof-unset")).toStrictEqual(undefined);
 
-  expect(stream.readFlag("aa")).toStrictEqual(true);
-  expect(stream.readFlag("bb")).toStrictEqual(true);
-  expect(stream.readFlag("cc")).toStrictEqual(true);
+  expect(stream.getOptionValues("aa")).toStrictEqual(true);
+  expect(stream.getOptionValues("bb")).toStrictEqual(true);
+  expect(stream.getOptionValues("cc")).toStrictEqual(true);
 
-  expect(stream.readOption("sov-unset")).toStrictEqual([]);
-  expect(stream.readOption("sov-split")).toStrictEqual(["1.1", "1.2"]);
-  expect(stream.readOption("sov-join")).toStrictEqual(["2"]);
+  expect(stream.getOptionValues("sov-unset")).toStrictEqual([]);
+  expect(stream.getOptionValues("sov-split")).toStrictEqual(["1.1", "1.2"]);
+  expect(stream.getOptionValues("sov-join")).toStrictEqual(["2"]);
 
-  expect(stream.readFlag("dd")).toStrictEqual(true);
-  expect(stream.readFlag("ee")).toStrictEqual(true);
-  expect(stream.readFlag("ff")).toStrictEqual(true);
+  expect(stream.getOptionValues("dd")).toStrictEqual(true);
+  expect(stream.getOptionValues("ee")).toStrictEqual(true);
+  expect(stream.getOptionValues("ff")).toStrictEqual(true);
 });

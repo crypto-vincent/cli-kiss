@@ -7,13 +7,15 @@ export type Type<Value> = {
 export const typeBoolean: Type<boolean> = {
   label: "BOOLEAN",
   decoder(value: string) {
-    if (value === "true") {
+    if (value === "true" || value === "yes") {
       return true;
     }
-    if (value === "false") {
+    if (value === "false" || value === "no") {
       return false;
     }
-    throw new Error(`Invalid boolean: ${value} (expected: "true"|"false")`);
+    throw new Error(
+      `Invalid boolean: ${value} (expected: "true"|"false"|"yes"|"no")`,
+    );
   },
 };
 

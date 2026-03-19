@@ -3,13 +3,13 @@ import {
   Command,
   command,
   commandWithSubcommands,
-  execution,
+  operation,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  parameterOptional,
-  parameterRequired,
-  parameterVariadics,
+  positionalOptional,
+  positionalRequired,
+  positionalVariadics,
   ReaderArgs,
   typeCommaList,
   typeCommaTuple,
@@ -27,7 +27,7 @@ const cmd = commandWithSubcommands<string, any, any>(
       "Second line of root command details.",
     ].join(" "),
   },
-  execution(
+  operation(
     {
       options: {
         booleanFlag: optionFlag({
@@ -49,15 +49,15 @@ const cmd = commandWithSubcommands<string, any, any>(
           description: "Root complex-option description",
         }),
       },
-      parameters: [
-        parameterRequired({
+      positionals: [
+        positionalRequired({
           label: "POS-1",
-          description: "Required parameter number 1",
+          description: "Required positional number 1",
           type: typeNumber,
         }),
-        parameterRequired({
+        positionalRequired({
           label: "POS-2",
-          description: "Required parameter number 2",
+          description: "Required positional number 2",
           type: typeNumber,
         }),
       ],
@@ -75,13 +75,13 @@ const cmd = commandWithSubcommands<string, any, any>(
           "Second line of subcommand 1 details.",
         ].join(" "),
       },
-      execution(
+      operation(
         {
           options: {},
-          parameters: [
-            parameterRequired({
+          positionals: [
+            positionalRequired({
               label: "POS-STRING",
-              description: "Required parameter string",
+              description: "Required positional string",
               type: typeString,
             }),
           ],
@@ -99,7 +99,7 @@ const cmd = commandWithSubcommands<string, any, any>(
           "Second line of subcommand 2 details.",
         ].join(" "),
       },
-      execution(
+      operation(
         {
           options: {
             duduValue: optionSingleValue({
@@ -109,21 +109,21 @@ const cmd = commandWithSubcommands<string, any, any>(
               description: "Dudu option description",
             }),
           },
-          parameters: [
-            parameterRequired({
+          positionals: [
+            positionalRequired({
               label: "POS-NUMBER",
-              description: "Required parameter number",
+              description: "Required positional number",
               type: typeNumber,
             }),
-            parameterOptional({
+            positionalOptional({
               label: "OPT-POS",
-              description: "Optional parameter string",
+              description: "Optional positional string",
               type: typeString,
               default: () => "42",
             }),
-            parameterVariadics({
+            positionalVariadics({
               label: "VARIADIC",
-              description: "Variadic parameters strings",
+              description: "Variadic positionals strings",
               type: typeString,
             }),
           ],
@@ -153,9 +153,9 @@ it("run", async () => {
     "",
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{<SUBCOMMAND>}@darkCyan}+",
     "",
-    "{{Parameters:}@darkGreen}+",
-    "  {{<POS-1>}@darkBlue}+  Required parameter number 1",
-    "  {{<POS-2>}@darkBlue}+  Required parameter number 2",
+    "{{Positionals:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+  Required positional number 1",
+    "  {{<POS-2>}@darkBlue}+  Required positional number 2",
     "",
     "{{Subcommands:}@darkGreen}+",
     "  {{sub1}@darkCyan}+  Subcommand 1 description",
@@ -173,10 +173,10 @@ it("run", async () => {
     "",
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub1}@darkCyan}+ {{<POS-STRING>}@darkBlue}+",
     "",
-    "{{Parameters:}@darkGreen}+",
-    "  {{<POS-1>}@darkBlue}+       Required parameter number 1",
-    "  {{<POS-2>}@darkBlue}+       Required parameter number 2",
-    "  {{<POS-STRING>}@darkBlue}+  Required parameter string",
+    "{{Positionals:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+       Required positional number 1",
+    "  {{<POS-2>}@darkBlue}+       Required positional number 2",
+    "  {{<POS-STRING>}@darkBlue}+  Required positional string",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
@@ -190,12 +190,12 @@ it("run", async () => {
     "",
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub2}@darkCyan}+ {{<POS-NUMBER>}@darkBlue}+ {{[OPT-POS]}@darkBlue}+ {{[VARIADIC]...}@darkBlue}+",
     "",
-    "{{Parameters:}@darkGreen}+",
-    "  {{<POS-1>}@darkBlue}+        Required parameter number 1",
-    "  {{<POS-2>}@darkBlue}+        Required parameter number 2",
-    "  {{<POS-NUMBER>}@darkBlue}+   Required parameter number",
-    "  {{[OPT-POS]}@darkBlue}+      Optional parameter string",
-    "  {{[VARIADIC]...}@darkBlue}+  Variadic parameters strings",
+    "{{Positionals:}@darkGreen}+",
+    "  {{<POS-1>}@darkBlue}+        Required positional number 1",
+    "  {{<POS-2>}@darkBlue}+        Required positional number 2",
+    "  {{<POS-NUMBER>}@darkBlue}+   Required positional number",
+    "  {{[OPT-POS]}@darkBlue}+      Optional positional string",
+    "  {{[VARIADIC]...}@darkBlue}+  Variadic positionals strings",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",

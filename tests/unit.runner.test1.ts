@@ -2,13 +2,13 @@ import { it } from "@jest/globals";
 import {
   command,
   commandWithSubcommands,
-  execution,
+  operation,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  parameterOptional,
-  parameterRequired,
-  parameterVariadics,
+  positionalOptional,
+  positionalRequired,
+  positionalVariadics,
   runAsCliAndExit,
   typeNumber,
   typeOneOf,
@@ -22,8 +22,8 @@ it("run", async () => {
     "",
     "Usage: my-cli <REQUIRED1> <SUBCOMMAND>",
     "",
-    "Parameters:",
-    "  <REQUIRED1>  Required1 parameter description",
+    "Positionals:",
+    "  <REQUIRED1>  Required1 positional description",
     "",
     "Subcommands:",
     "  subcommand  Subcommand Description",
@@ -39,11 +39,11 @@ it("run", async () => {
     "",
     "Usage: my-cli <REQUIRED1> subcommand <REQUIRED2> [OPTIONAL] [VARIADICS]...",
     "",
-    "Parameters:",
-    "  <REQUIRED1>     Required1 parameter description",
-    "  <REQUIRED2>     Required2 parameter description",
-    "  [OPTIONAL]      Optional parameter description",
-    "  [VARIADICS]...  Variadics parameter description",
+    "Positionals:",
+    "  <REQUIRED1>     Required1 positional description",
+    "  <REQUIRED2>     Required2 positional description",
+    "  [OPTIONAL]      Optional positional description",
+    "  [VARIADICS]...  Variadics positional description",
     "",
     "Options:",
     "  --flag[=no]              Option flag description",
@@ -74,19 +74,19 @@ it("run", async () => {
   await testCase(
     [],
     [],
-    [rootUsage, "Error: Missing required parameter: REQUIRED1"],
+    [rootUsage, "Error: Missing required positional: REQUIRED1"],
     1,
   );
   await testCase(
     ["required1"],
     [],
-    [rootUsage, "Error: Missing required parameter: SUBCOMMAND"],
+    [rootUsage, "Error: Missing required positional: SUBCOMMAND"],
     1,
   );
   await testCase(
     ["required1", "subcommand"],
     [],
-    [subcommandUsage, "Error: Missing required parameter: REQUIRED2"],
+    [subcommandUsage, "Error: Missing required positional: REQUIRED2"],
     1,
   );
   await testCase(
@@ -130,7 +130,7 @@ it("run", async () => {
   await testCase(
     ["required1", "subcommand", "--url", "https://example.com"],
     [],
-    [subcommandUsage, "Error: Missing required parameter: REQUIRED2"],
+    [subcommandUsage, "Error: Missing required positional: REQUIRED2"],
     1,
   );
   await testCase(
@@ -149,7 +149,7 @@ it("run", async () => {
   await testCase(
     ["--flag", "--flag", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, "Error: Flag already set: --flag"],
+    [rootUsage, "Error: Flag set multiple times: --flag"],
     1,
   );
   await testCase(
@@ -219,7 +219,7 @@ async function testCase(
 ) {
   const cmd = commandWithSubcommands<null, null, void>(
     { description: "Root Description" },
-    execution(
+    operation(
       {
         options: {
           optionFlag: optionFlag({
@@ -238,11 +238,11 @@ async function testCase(
             default: () => 42,
           }),
         },
-        parameters: [
-          parameterRequired({
+        positionals: [
+          positionalRequired({
             type: typeString,
             label: "REQUIRED1",
-            description: "Required1 parameter description",
+            description: "Required1 positional description",
           }),
         ],
       },
@@ -253,7 +253,7 @@ async function testCase(
     {
       subcommand: command(
         { description: "Subcommand Description" },
-        execution(
+        operation(
           {
             options: {
               optionExtra: optionRepeatable({
@@ -262,22 +262,22 @@ async function testCase(
                 type: typeUrl,
               }),
             },
-            parameters: [
-              parameterRequired({
+            positionals: [
+              positionalRequired({
                 type: typeOneOf(typeString, ["required2", "required2-bis"]),
                 label: "REQUIRED2",
-                description: "Required2 parameter description",
+                description: "Required2 positional description",
               }),
-              parameterOptional({
+              positionalOptional({
                 label: "OPTIONAL",
                 type: typeString,
-                description: "Optional parameter description",
+                description: "Optional positional description",
                 default: () => "world !",
               }),
-              parameterVariadics({
+              positionalVariadics({
                 label: "VARIADICS",
                 type: typeString,
-                description: "Variadics parameter description",
+                description: "Variadics positional description",
               }),
             ],
           },

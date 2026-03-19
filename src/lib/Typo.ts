@@ -26,6 +26,19 @@ export type TypoStyle = {
   strikethrough?: boolean;
 };
 
+export const typoStyleConstants: TypoStyle = {
+  fgColor: "darkCyan",
+  bold: true,
+};
+export const typoStyleUserInput: TypoStyle = {
+  fgColor: "darkBlue",
+  bold: true,
+};
+export const typoStyleFailure: TypoStyle = {
+  fgColor: "darkRed",
+  bold: true,
+};
+
 export class TypoString {
   #value: string;
   #typoStyle: TypoStyle;
@@ -122,7 +135,9 @@ export class TypoGrid {
 
 export class TypoError extends Error {
   #typoText: TypoText;
-  constructor(typoText: TypoText, source?: unknown) {
+  constructor(currentTypoText: TypoText, source?: unknown) {
+    const typoText = new TypoText();
+    typoText.pushText(currentTypoText);
     if (source instanceof Error) {
       typoText.pushString(new TypoString(`: ${source.message}`));
     } else if (source instanceof TypoError) {
@@ -214,15 +229,13 @@ export class TypoSupport {
     throw new Error(`Unknown TypoSupport kind: ${this.#kind}`);
   }
   computeStyledErrorMessage(error: unknown): string {
-    if (error instanceof TypoError) {
-      return error.computeStyledString(this);
-    }
     return [
-      this.computeStyledString("Error:", {
-        fgColor: "darkRed",
-        bold: true,
-      }),
-      error instanceof Error ? error.message : String(error),
+      this.computeStyledString("Error:", typoStyleFailure),
+      error instanceof TypoError
+        ? error.computeStyledString(this)
+        : error instanceof Error
+          ? error.message
+          : String(error),
     ].join(" ");
   }
 }

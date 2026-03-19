@@ -1,7 +1,8 @@
-import { Execution } from "./Execution";
+import { Operation } from "./Operation";
 import { OptionUsage } from "./Option";
-import { ParameterUsage } from "./Parameter";
+import { PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
+import { TypoError, TypoString, typoStyleConstants, TypoText } from "./Typo";
 
 export type Command<Context, Result> = {
   getDescription(): string | undefined;
@@ -22,18 +23,23 @@ export type CommandMetadata = {
 export type CommandUsage = {
   metadata: CommandMetadata;
   breadcrumbs: Array<CommandUsageBreadcrumb>;
+  positionals: Array<PositionalUsage>;
+  subcommands: Array<CommandUsageSubcommand>;
   options: Array<OptionUsage>;
-  parameters: Array<ParameterUsage>;
-  subcommands: Array<{ name: string; description: string | undefined }>;
 };
 
 export type CommandUsageBreadcrumb =
-  | { parameter: string }
+  | { positional: string }
   | { command: string };
+
+export type CommandUsageSubcommand = {
+  name: string;
+  description: string | undefined;
+};
 
 export function command<Context, Result>(
   metadata: CommandMetadata,
-  execution: Execution<Context, Result>,
+  operation: Operation<Context, Result>,
 ): Command<Context, Result> {
   return {
     getDescription() {
@@ -41,27 +47,27 @@ export function command<Context, Result>(
     },
     createRunnerFromArgs(readerArgs: ReaderArgs) {
       function generateUsage(): CommandUsage {
-        const executionUsage = execution.generateUsage();
+        const operationUsage = operation.generateUsage();
         return {
           metadata,
-          breadcrumbs: executionUsage.parameters.map((parameter) =>
-            breadcrumbParameter(parameter.label),
+          breadcrumbs: operationUsage.positionals.map((positional) =>
+            breadcrumbPositional(positional.label),
           ),
-          options: executionUsage.options,
-          parameters: executionUsage.parameters,
+          positionals: operationUsage.positionals,
           subcommands: [],
+          options: operationUsage.options,
         };
       }
       try {
-        const executionRunner = execution.createRunnerFromArgs(readerArgs);
+        const operationRunner = operation.createRunnerFromArgs(readerArgs);
         const lastPositional = readerArgs.consumePositional();
         if (lastPositional !== undefined) {
-          throw Error(`Unexpected parameter: "${lastPositional}"`);
+          throw Error(`Unexpected positional: "${lastPositional}"`);
         }
         return {
           generateUsage,
           async executeWithContext(context: Context) {
-            return executionRunner.executeWithContext(context);
+            return operationRunner.executeWithContext(context);
           },
         };
       } catch (error) {
@@ -78,7 +84,7 @@ export function command<Context, Result>(
 
 export function commandWithSubcommands<Context, Payload, Result>(
   metadata: CommandMetadata,
-  execution: Execution<Context, Payload>,
+  operation: Operation<Context, Payload>,
   subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
 ): Command<Context, Result> {
   return {
@@ -87,58 +93,69 @@ export function commandWithSubcommands<Context, Payload, Result>(
     },
     createRunnerFromArgs(readerArgs: ReaderArgs) {
       try {
-        const executionRunner = execution.createRunnerFromArgs(readerArgs);
+        const operationRunner = operation.createRunnerFromArgs(readerArgs);
         const subcommandName = readerArgs.consumePositional();
         if (subcommandName === undefined) {
-          throw new Error("Missing required parameter: SUBCOMMAND");
+          throw new TypoError(
+            new TypoText(
+              new TypoString(`Missing required positional: `),
+              new TypoString(`SUBCOMMAND`, typoStyleConstants),
+            ),
+          );
         }
         const subcommandInput =
           subcommands[subcommandName as Lowercase<string>];
         if (subcommandInput === undefined) {
-          throw new Error(`Invalid SUBCOMMAND: "${subcommandName}"`);
+          throw new TypoError(
+            new TypoText(
+              new TypoString(`Invalid positional value: `),
+              new TypoString(`SUBCOMMAND`, typoStyleConstants),
+              new TypoString(`: "${subcommandName}"`),
+            ),
+          );
         }
         const subcommandRunner =
           subcommandInput.createRunnerFromArgs(readerArgs);
         return {
           generateUsage() {
-            const executionUsage = execution.generateUsage();
+            const operationUsage = operation.generateUsage();
             const subcommandUsage = subcommandRunner.generateUsage();
             return {
               metadata: subcommandUsage.metadata,
-              breadcrumbs: executionUsage.parameters
-                .map((parameter) => breadcrumbParameter(parameter.label))
+              breadcrumbs: operationUsage.positionals
+                .map((positional) => breadcrumbPositional(positional.label))
                 .concat([breadcrumbCommand(subcommandName)])
                 .concat(subcommandUsage.breadcrumbs),
-              options: executionUsage.options.concat(subcommandUsage.options),
-              parameters: executionUsage.parameters.concat(
-                subcommandUsage.parameters,
+              positionals: operationUsage.positionals.concat(
+                subcommandUsage.positionals,
               ),
               subcommands: subcommandUsage.subcommands,
+              options: operationUsage.options.concat(subcommandUsage.options),
             };
           },
           async executeWithContext(context: Context) {
             return await subcommandRunner.executeWithContext(
-              await executionRunner.executeWithContext(context),
+              await operationRunner.executeWithContext(context),
             );
           },
         };
       } catch (error) {
         return {
           generateUsage() {
-            const executionUsage = execution.generateUsage();
+            const operationUsage = operation.generateUsage();
             return {
               metadata,
-              breadcrumbs: executionUsage.parameters
-                .map((parameter) => breadcrumbParameter(parameter.label))
+              breadcrumbs: operationUsage.positionals
+                .map((positional) => breadcrumbPositional(positional.label))
                 .concat([breadcrumbCommand("<SUBCOMMAND>")]),
-              options: executionUsage.options,
-              parameters: executionUsage.parameters,
+              positionals: operationUsage.positionals,
               subcommands: Object.entries(subcommands).map(
                 ([name, subcommand]) => ({
                   name,
                   description: subcommand.getDescription(),
                 }),
               ),
+              options: operationUsage.options,
             };
           },
           async executeWithContext() {
@@ -152,7 +169,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
 
 export function commandChained<Context, Payload, Result>(
   metadata: CommandMetadata,
-  execution: Execution<Context, Payload>,
+  operation: Operation<Context, Payload>,
   nextCommand: Command<Payload, Result>,
 ): Command<Context, Result> {
   return {
@@ -160,27 +177,27 @@ export function commandChained<Context, Payload, Result>(
       return metadata.description;
     },
     createRunnerFromArgs(readerArgs: ReaderArgs) {
-      const executionRunner = execution.createRunnerFromArgs(readerArgs);
+      const operationRunner = operation.createRunnerFromArgs(readerArgs);
       const nextCommandRunner = nextCommand.createRunnerFromArgs(readerArgs);
       return {
         generateUsage() {
-          const executionUsage = execution.generateUsage();
+          const operationUsage = operation.generateUsage();
           const nextCommandUsage = nextCommandRunner.generateUsage();
           return {
             metadata: nextCommandUsage.metadata,
-            breadcrumbs: executionUsage.parameters
-              .map((parameter) => breadcrumbParameter(parameter.label))
+            breadcrumbs: operationUsage.positionals
+              .map((positional) => breadcrumbPositional(positional.label))
               .concat(nextCommandUsage.breadcrumbs),
-            options: executionUsage.options.concat(nextCommandUsage.options),
-            parameters: executionUsage.parameters.concat(
-              nextCommandUsage.parameters,
+            positionals: operationUsage.positionals.concat(
+              nextCommandUsage.positionals,
             ),
             subcommands: nextCommandUsage.subcommands,
+            options: operationUsage.options.concat(nextCommandUsage.options),
           };
         },
         async executeWithContext(context: Context) {
           return await nextCommandRunner.executeWithContext(
-            await executionRunner.executeWithContext(context),
+            await operationRunner.executeWithContext(context),
           );
         },
       };
@@ -188,8 +205,8 @@ export function commandChained<Context, Payload, Result>(
   };
 }
 
-function breadcrumbParameter(value: string): CommandUsageBreadcrumb {
-  return { parameter: value };
+function breadcrumbPositional(value: string): CommandUsageBreadcrumb {
+  return { positional: value };
 }
 
 function breadcrumbCommand(value: string): CommandUsageBreadcrumb {
