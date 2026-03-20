@@ -100,27 +100,17 @@ it("run", async () => {
   await testCase(["--version", "--help"], [rootUsage], [], 0);
   await testCase(["--help", "--version"], [rootUsage], [], 0);
 
-  // Test multiple errors at once
+  // Test multiple errors at once (first one should show only)
   await testCase(
-    ["--invalid1", "--invalid2", "--invalid3"],
+    ["--invalid1", "--invalid2", "required1", "--invalid3"],
     [],
-    [
-      rootUsage,
-      "Error: --invalid1: Unexpected unknown option",
-      "Error: --invalid2: Unexpected unknown option",
-      "Error: --invalid3: Unexpected unknown option",
-    ],
+    [rootUsage, "Error: --invalid1: Unexpected unknown option"],
     1,
   );
   await testCase(
-    ["required1", "--flag=not-a-bool", "unknown", "-wut", "--single-value"],
+    ["required1", "unknown", "-wut", "--flag", "--single-value"],
     [],
-    [
-      rootUsage,
-      'Error: <SUBCOMMAND>: Invalid value: "unknown"',
-      "Error: -wut: Unexpected unknown option",
-      "Error: --single-value: Requires a value, but got end of input",
-    ],
+    [rootUsage, 'Error: <SUBCOMMAND>: Invalid value: "unknown"'],
     1,
   );
 
@@ -148,21 +138,13 @@ it("run", async () => {
   await testCase(
     ["--url", "https://example.com"],
     [],
-    [
-      rootUsage,
-      "Error: --url: Unexpected unknown option",
-      'Error: Unexpected argument: "https://example.com"',
-    ],
+    [rootUsage, "Error: --url: Unexpected unknown option"],
     1,
   );
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
-    [
-      rootUsage,
-      "Error: --url: Unexpected unknown option",
-      'Error: Unexpected argument: "https://example.com"',
-    ],
+    [rootUsage, "Error: --url: Unexpected unknown option"],
     1,
   );
   await testCase(
@@ -208,13 +190,7 @@ it("run", async () => {
   await testCase(
     ["--invalid", "required1", "subcommand", "required2"],
     [],
-    [
-      rootUsage,
-      "Error: --invalid: Unexpected unknown option",
-      'Error: Unexpected argument: "required1"',
-      'Error: Unexpected argument: "subcommand"', // TODO - do we need those ?
-      'Error: Unexpected argument: "required2"',
-    ],
+    [rootUsage, "Error: --invalid: Unexpected unknown option"],
     1,
   );
   await testCase(
@@ -308,10 +284,6 @@ async function testCase(
     null as unknown as void,
   ]);
   const onLogStdErr = makeMocked<string, void>([
-    null as unknown as void,
-    null as unknown as void,
-    null as unknown as void,
-    null as unknown as void,
     null as unknown as void,
     null as unknown as void,
   ]);

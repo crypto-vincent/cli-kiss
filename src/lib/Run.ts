@@ -12,10 +12,10 @@ export async function runAsCliAndExit<Context>(
     usageOnHelp?: boolean | undefined;
     buildVersion?: string | undefined;
     useColors?: boolean | undefined;
-    onExecutionError?: ((error: unknown) => void) | undefined;
     onLogStdOut?: ((message: string) => void) | undefined; // TODO - this is a problem, deep commands use console
     onLogStdErr?: ((message: string) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
+    onExecutionError?: ((error: unknown) => void) | undefined;
   },
 ): Promise<never> {
   const readerArgs = new ReaderArgs(cliArgs);
@@ -48,17 +48,13 @@ export async function runAsCliAndExit<Context>(
   const onLogStdErr = application?.onLogStdErr ?? console.error;
   const onExit = application?.onExit ?? process.exit;
   const commandFactory = command.createFactory(readerArgs);
-  const parsingErrors = [];
   while (true) {
     try {
       const positional = readerArgs.consumePositional();
       if (positional === undefined) {
         break;
       }
-      throw Error(`Unexpected argument: "${positional}"`);
-    } catch (parsingError) {
-      parsingErrors.push(parsingError);
-    }
+    } catch (_) {}
   }
   if (usageOnHelp) {
     if (readerArgs.getOptionValues("--help" as any).length > 0) {
@@ -86,11 +82,8 @@ export async function runAsCliAndExit<Context>(
       return onExit(1);
     }
   } catch (parsingError) {
-    parsingErrors.unshift(parsingError);
     onLogStdErr(computeUsageString(cliName, commandFactory, typoSupport));
-    for (const parsingError of parsingErrors) {
-      onLogStdErr(typoSupport.computeStyledErrorMessage(parsingError));
-    }
+    onLogStdErr(typoSupport.computeStyledErrorMessage(parsingError));
     return onExit(1);
   }
 }
