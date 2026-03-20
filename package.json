@@ -21,7 +21,6 @@
     "tests": "jest --config jest.config.ts",
     "build": "tsup src/index.ts --dts --clean --minify --sourcemap --out-dir dist",
     "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:build": "vitepress build docs"
   }
 }

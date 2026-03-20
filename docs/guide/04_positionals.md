@@ -1,6 +1,6 @@
 # Positionals
 
-Positionals are bare (non-option) arguments passed by position. Declare them in order in the `positionals` array of [`operation`](/guide/commands).
+Positionals are bare (non-option) arguments passed by position. Declare them in order in the `positionals` array of [`operation`](/guide/02_commands).
 
 ## `positionalRequired` — must be present
 

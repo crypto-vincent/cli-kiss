@@ -1,6 +1,6 @@
 # Options
 
-Options are named arguments prefixed with `--` (or `-` for short forms). Declare them in the `options` map of [`operation`](/guide/commands).
+Options are named arguments prefixed with `--` (or `-` for short forms). Declare them in the `options` map of [`operation`](/guide/02_commands).
 
 ## `optionFlag` — boolean toggle
 
@@ -37,7 +37,7 @@ A flag specified more than once triggers a parse error. Use [`optionRepeatable`]
 
 ## `optionSingleValue` — one typed value
 
-Accepts exactly one value. Use any [`Type`](/guide/types) to decode it.
+Accepts exactly one value. Use any [`Type`](/guide/05_types) to decode it.
 
 ```ts
 import { optionSingleValue, typeString } from "cli-kiss";

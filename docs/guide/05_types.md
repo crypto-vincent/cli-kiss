@@ -128,7 +128,7 @@ typePaths.decoder("/usr/bin:/usr/local/bin") // → ["/usr/bin", "/usr/local/bin
 ```
 
 ::: tip
-Prefer [`optionRepeatable`](/guide/options#optionrepeatable-collect-multiple-values) over `typeList` when users should pass multiple values as separate flags (`--file a --file b` rather than `--files a,b`).
+Prefer [`optionRepeatable`](/guide/03_options#optionrepeatable-collect-multiple-values) over `typeList` when users should pass multiple values as separate flags (`--file a --file b` rather than `--files a,b`).
 :::
 
 ---

@@ -85,4 +85,4 @@ my-cli/
 └── package.json
 ```
 
-Each command lives in its own file and is composed together in the entry point. See the [Commands](./commands) guide to learn how.
+Each command lives in its own file and is composed together in the entry point. See the [Commands](./02_commands) guide to learn how.
