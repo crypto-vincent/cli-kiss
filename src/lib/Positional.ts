@@ -17,12 +17,12 @@ export function positionalRequired<Value>(definition: {
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Value> {
-  const label = definition.label ?? definition.type.label;
+  const label = `<${definition.label ?? definition.type.label}>`;
   return {
     generateUsage() {
       return {
         description: definition.description,
-        label: `<${label}>` as Uppercase<string>,
+        label: label as Uppercase<string>,
       };
     },
     consumePositionals(readerPositionals: ReaderPositionals) {
@@ -30,8 +30,8 @@ export function positionalRequired<Value>(definition: {
       if (positional === undefined) {
         throw new TypoError(
           new TypoText(
-            new TypoString(`Missing required positional argument: `),
             new TypoString(label, typoStyleUserInput),
+            new TypoString(`: Is required, but was not provided`),
           ),
         );
       }
@@ -50,12 +50,12 @@ export function positionalOptional<Value>(definition: {
   type: Type<Value>;
   default: () => Value;
 }): Positional<Value> {
-  const label = definition.label ?? definition.type.label;
+  const label = `[${definition.label ?? definition.type.label}]`;
   return {
     generateUsage() {
       return {
         description: definition.description,
-        label: `[${label}]` as Uppercase<string>,
+        label: label as Uppercase<string>,
       };
     },
     consumePositionals(readerPositionals: ReaderPositionals) {
@@ -66,8 +66,8 @@ export function positionalOptional<Value>(definition: {
         } catch (error) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`Failed to compute default value for: `),
               new TypoString(label, typoStyleUserInput),
+              new TypoString(`: Failed to compute default value`),
             ),
             error,
           );

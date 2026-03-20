@@ -32,6 +32,7 @@ export function optionFlag(definition: {
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   default?: () => boolean;
 }): Option<boolean> {
+  const label = `<${typeBoolean.label}>` as Uppercase<string>;
   return {
     generateUsage() {
       return {
@@ -52,9 +53,8 @@ export function optionFlag(definition: {
           if (optionValues.length > 1) {
             throw new TypoError(
               new TypoText(
-                new TypoString(`Option value for: `),
                 new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(`: must not be set multiple times`),
+                new TypoString(`: Must not be set multiple times`),
               ),
             );
           }
@@ -66,8 +66,8 @@ export function optionFlag(definition: {
             } catch (error) {
               throw new TypoError(
                 new TypoText(
-                  new TypoString(`Failed to compute default value for: `),
                   new TypoString(`--${definition.long}`, typoStyleConstants),
+                  new TypoString(`: Failed to compute default value`),
                 ),
                 error,
               );
@@ -80,7 +80,7 @@ export function optionFlag(definition: {
               new TypoText(
                 new TypoString(`--${definition.long}`, typoStyleConstants),
                 new TypoString(`: `),
-                new TypoString(typeBoolean.label, typoStyleUserInput),
+                new TypoString(label, typoStyleUserInput),
               ),
           );
         },
@@ -98,14 +98,14 @@ export function optionSingleValue<Value>(definition: {
   type: Type<Value>;
   default: () => Value;
 }): Option<Value> {
-  const label = definition.label ?? definition.type.label;
+  const label = `<${definition.label ?? definition.type.label}>`;
   return {
     generateUsage() {
       return {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        label: `<${label}>` as Uppercase<string>,
+        label: label as Uppercase<string>,
       };
     },
     createGetter(readerOptions: ReaderOptions) {
@@ -119,9 +119,8 @@ export function optionSingleValue<Value>(definition: {
           if (optionValues.length > 1) {
             throw new TypoError(
               new TypoText(
-                new TypoString(`Option value for: `),
                 new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(`: must not be set multiple times`),
+                new TypoString(`: Must not be set multiple times`),
               ),
             );
           }
@@ -132,8 +131,8 @@ export function optionSingleValue<Value>(definition: {
             } catch (error) {
               throw new TypoError(
                 new TypoText(
-                  new TypoString(`Failed to compute default value for: `),
                   new TypoString(`--${definition.long}`, typoStyleConstants),
+                  new TypoString(`: Failed to compute default value`),
                 ),
                 error,
               );
@@ -163,7 +162,7 @@ export function optionRepeatable<Value>(definition: {
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Option<Array<Value>> {
-  const label = definition.label ?? definition.type.label;
+  const label = `<${definition.label ?? definition.type.label}>`;
   return {
     generateUsage() {
       // TODO - showcase that it can be repeated ?
@@ -171,7 +170,7 @@ export function optionRepeatable<Value>(definition: {
         description: definition.description,
         long: definition.long,
         short: definition.short,
-        label: `<${label}>` as Uppercase<string>,
+        label: label as Uppercase<string>,
       };
     },
     createGetter(readerOptions: ReaderOptions) {

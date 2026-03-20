@@ -107,8 +107,8 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandName === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`Missing required positional argument: `),
-              new TypoString(`SUBCOMMAND`, typoStyleConstants),
+              new TypoString(`<SUBCOMMAND>`, typoStyleConstants),
+              new TypoString(`: Is required, but was not provided`),
             ),
           );
         }
@@ -117,9 +117,8 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandInput === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`Invalid value for positional argument: `),
-              new TypoString(`SUBCOMMAND`, typoStyleConstants),
-              new TypoString(`: "${subcommandName}"`),
+              new TypoString(`<SUBCOMMAND>`, typoStyleConstants),
+              new TypoString(`: Invalid value: "${subcommandName}"`),
             ),
           );
         }

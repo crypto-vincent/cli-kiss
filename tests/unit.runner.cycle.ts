@@ -97,19 +97,19 @@ it("run", async () => {
   await testCase(
     [],
     [],
-    [rootUsage, "Error: Missing required positional argument: REQUIRED1"],
+    [rootUsage, "Error: <REQUIRED1>: Is required, but was not provided"],
     1,
   );
   await testCase(
     ["required1"],
     [],
-    [rootUsage, "Error: Missing required positional argument: SUBCOMMAND"],
+    [rootUsage, "Error: <SUBCOMMAND>: Is required, but was not provided"],
     1,
   );
   await testCase(
     ["required1", "subcommand"],
     [],
-    [subcommandUsage, "Error: Missing required positional argument: REQUIRED2"],
+    [subcommandUsage, "Error: <REQUIRED2>: Is required, but was not provided"],
     1,
   );
 
@@ -117,19 +117,19 @@ it("run", async () => {
   await testCase(
     ["--url", "https://example.com"],
     [],
-    [rootUsage, `Error: Unknown option: --url`],
+    [rootUsage, "Error: --url: Unexpected unknown option"],
     1,
   );
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
-    [rootUsage, `Error: Unknown option: --url`],
+    [rootUsage, "Error: --url: Unexpected unknown option"],
     1,
   );
   await testCase(
     ["required1", "subcommand", "--url", "https://example.com"],
     [],
-    [subcommandUsage, "Error: Missing required positional argument: REQUIRED2"],
+    [subcommandUsage, "Error: <REQUIRED2>: Is required, but was not provided"],
     1,
   );
   await testCase(
@@ -143,16 +143,13 @@ it("run", async () => {
   await testCase(
     ["--flag", "--flag", "required1", "subcommand", "required2"],
     [],
-    [
-      subcommandUsage,
-      "Error: Option value for: --flag: must not be set multiple times",
-    ],
+    [subcommandUsage, "Error: --flag: Must not be set multiple times"],
     1,
   );
   await testCase(
     ["--flag=42", "required1", "subcommand", "required2"],
     [],
-    [subcommandUsage, 'Error: --flag: BOOLEAN: Invalid value: "42"'],
+    [subcommandUsage, 'Error: --flag: <BOOLEAN>: Invalid value: "42"'],
     1,
   );
   await testCase(
@@ -168,26 +165,23 @@ it("run", async () => {
     0,
   );
 
-  // Test parsing errors
+  // Test option parsing errors
   await testCase(
     ["--invalid", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, `Error: Unknown option: --invalid`],
+    [rootUsage, "Error: --invalid: Unexpected unknown option"],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--nope"],
     [],
-    [subcommandUsage, "Error: Unknown option: --nope"],
+    [subcommandUsage, "Error: --nope: Unexpected unknown option"],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--url"],
     [],
-    [
-      subcommandUsage,
-      "Error: Option parsing: --url: requires a value, but got end of input",
-    ],
+    [subcommandUsage, "Error: --url: requires a value, but got end of input"],
     1,
   );
 
@@ -197,7 +191,7 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      'Error: REQUIRED2: Unexpected value: "invalid" (expected: "required2"|"required2-bis")',
+      'Error: <REQUIRED2>: Unexpected value: "invalid" (expected: "required2"|"required2-bis")',
     ],
     1,
   );
@@ -206,14 +200,14 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: NUMBER: Unexpected value: "44" (expected: "42"|"43")',
+      'Error: --single-value: <NUMBER>: Unexpected value: "44" (expected: "42"|"43")',
     ],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--url", "not-a-url"],
     [],
-    [subcommandUsage, "Error: --url: URL: TypeError: Invalid URL"],
+    [subcommandUsage, "Error: --url: <URL>: TypeError: Invalid URL"],
     1,
   );
 
@@ -241,10 +235,7 @@ it("run", async () => {
       "43",
     ],
     [],
-    [
-      subcommandUsage,
-      "Error: Option value for: --single-value: must not be set multiple times",
-    ],
+    [subcommandUsage, "Error: --single-value: Must not be set multiple times"],
     1,
   );
 });

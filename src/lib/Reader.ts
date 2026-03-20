@@ -146,8 +146,8 @@ export class ReaderArgs {
       }
       throw new TypoError(
         new TypoText(
-          new TypoString(`Unknown option: `),
           new TypoString(`-${arg.slice(shortIndexStart)}`, typoStyleConstants),
+          new TypoString(`: Unexpected unknown option`),
         ),
       );
     }
@@ -169,8 +169,8 @@ export class ReaderArgs {
     }
     throw new TypoError(
       new TypoText(
-        new TypoString(`Unknown option: `),
         new TypoString(constant, typoStyleConstants),
+        new TypoString(`: Unexpected unknown option`),
       ),
     );
   }
@@ -202,7 +202,6 @@ export class ReaderArgs {
     if (arg === null) {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Option parsing: `),
           new TypoString(constant, typoStyleConstants),
           new TypoString(`: requires a value, but got end of input`),
         ),
@@ -211,7 +210,6 @@ export class ReaderArgs {
     if (this.#parsedDouble) {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Option parsing: `),
           new TypoString(constant, typoStyleConstants),
           new TypoString(`: requires a value before "--"`),
         ),
@@ -221,7 +219,6 @@ export class ReaderArgs {
     if (arg.startsWith("-")) {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Option parsing: `),
           new TypoString(constant, typoStyleConstants),
           new TypoString(`: requires a value, but got: "${arg}"`),
         ),
