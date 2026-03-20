@@ -6,23 +6,88 @@ import {
   TypoText,
 } from "./Typo";
 
+/**
+ * An opaque key that uniquely identifies a registered CLI option within a
+ * {@link ReaderArgs} instance.
+ *
+ * Keys are returned by {@link ReaderArgs.registerOption} and passed back to
+ * {@link ReaderArgs.getOptionValues} to retrieve the parsed values. The internal
+ * representation is intentionally opaque — treat it as a handle, not a string.
+ */
 export type ReaderOptionKey = (string | { __brand: "ReaderOptionKey" }) & {
   __brand: "ReaderOptionKey";
 };
 
+/**
+ * Interface for registering and querying CLI options during argument parsing.
+ *
+ * {@link ReaderArgs} implements both `ReaderOptions` and {@link ReaderPositionals}.
+ * The two interfaces are exposed separately so that option and positional parsing logic
+ * can depend only on the capability they need.
+ */
 export type ReaderOptions = {
+  /**
+   * Registers a new option so the parser can recognise it when scanning argument tokens.
+   *
+   * @param definition.longs - The long-form names (without `--`) for this option.
+   * @param definition.shorts - The short-form names (without `-`) for this option.
+   * @param definition.valued - When `true`, the option consumes the following token as
+   *   its value. When `false`, the option is a boolean flag.
+   * @returns An opaque {@link ReaderOptionKey} used to retrieve parsed values later.
+   * @throws `Error` if any of the given names has already been registered, or if a
+   *   short name overlaps (is a prefix of, or has as a prefix, another registered short).
+   */
   registerOption(definition: {
     longs: Array<string>;
     shorts: Array<string>;
     valued: boolean;
   }): ReaderOptionKey;
+  /**
+   * Returns all values collected for the option identified by `key`.
+   *
+   * @param key - The key returned by a prior {@link ReaderOptions.registerOption} call.
+   * @returns An array of raw string values, one per occurrence of the option on the
+   *   command line. Empty if the option was never provided.
+   * @throws `Error` if `key` was not previously registered on this instance.
+   */
   getOptionValues(key: ReaderOptionKey): Array<string>;
 };
 
+/**
+ * Interface for consuming positional (non-option) argument tokens during parsing.
+ *
+ * {@link ReaderArgs} implements both {@link ReaderOptions} and `ReaderPositionals`.
+ */
 export type ReaderPositionals = {
+  /**
+   * Consumes and returns the next positional token from the argument list, skipping
+   * any option tokens (which are parsed as side-effects).
+   *
+   * @returns The next positional string value, or `undefined` if no more positionals
+   *   are available.
+   * @throws {@link TypoError} if an unrecognised option token is encountered while
+   *   scanning for the next positional.
+   */
   consumePositional(): string | undefined;
 };
 
+/**
+ * The core argument parser for `cli-kiss`. Parses a flat array of raw CLI tokens into
+ * named options and positional values.
+ *
+ * Options must be registered with {@link ReaderArgs.registerOption} **before**
+ * {@link ReaderArgs.consumePositional} is called, because the parser needs to know
+ * whether each token is an option name, an option value, or a bare positional.
+ *
+ * **Supported argument syntax:**
+ * - Long options: `--name`, `--name value`, `--name=value`
+ * - Short options: `-n`, `-n value`, `-n=value`, `-nvalue`, `-abc` (stacked flags)
+ * - End-of-options separator: `--` — all subsequent tokens are treated as positionals.
+ *
+ * In most cases you do not need to use `ReaderArgs` directly; it is created internally
+ * by {@link runAsCliAndExit}. It is exposed for advanced use cases such as building
+ * custom runners.
+ */
 export class ReaderArgs {
   #args: ReadonlyArray<string>;
   #parsedIndex: number;
@@ -32,6 +97,10 @@ export class ReaderArgs {
   #valuedByKey: Map<ReaderOptionKey, boolean>;
   #resultByKey: Map<ReaderOptionKey, Array<string>>;
 
+  /**
+   * @param args - The raw command-line tokens to parse. Typically `process.argv.slice(2)`.
+   *   The array is not modified; a read cursor is maintained internally.
+   */
   constructor(args: ReadonlyArray<string>) {
     this.#args = args;
     this.#parsedIndex = 0;
@@ -42,6 +111,24 @@ export class ReaderArgs {
     this.#resultByKey = new Map();
   }
 
+  /**
+   * Registers a CLI option so the parser can recognise it.
+   *
+   * All `longs` and `shorts` are associated with the same returned key. Calling
+   * `getOptionValues(key)` after parsing will return values collected under any of the
+   * registered names.
+   *
+   * Short names support stacking (e.g. `-abc` is parsed as `-a -b -c`) and inline
+   * values (e.g. `-nvalue`). Short names must not be a prefix of, nor have as a prefix,
+   * any other registered short name — the parser uses prefix matching to parse stacked
+   * shorts, so overlapping prefixes would be ambiguous.
+   *
+   * @param definition.longs - Long-form names (without `--`).
+   * @param definition.shorts - Short-form names (without `-`).
+   * @param definition.valued - `true` if the option consumes a value; `false` for flags.
+   * @returns An opaque {@link ReaderOptionKey} to pass to {@link ReaderArgs.getOptionValues}.
+   * @throws `Error` if any name is already registered or if two short names overlap.
+   */
   registerOption(definition: {
     longs: Array<string>;
     shorts: Array<string>;
@@ -83,6 +170,15 @@ export class ReaderArgs {
     return key;
   }
 
+  /**
+   * Returns all raw string values collected for the given option key.
+   *
+   * @param key - A key previously returned by {@link ReaderArgs.registerOption}.
+   * @returns An array of string values, one per occurrence on the command line. For
+   *   flags this will be `["true"]` per occurrence; for valued options it will be the
+   *   literal value strings.
+   * @throws `Error` if `key` was not registered on this instance.
+   */
   getOptionValues(key: ReaderOptionKey): Array<string> {
     const optionResult = this.#resultByKey.get(key);
     if (optionResult === undefined) {
@@ -91,6 +187,20 @@ export class ReaderArgs {
     return optionResult;
   }
 
+  /**
+   * Scans forward through the argument list and returns the next bare positional token,
+   * consuming and parsing any intervening option tokens as side-effects.
+   *
+   * Option tokens encountered during the scan are recorded in the internal results map
+   * (equivalent to registering them against their key). Any unrecognised option token
+   * causes a {@link TypoError} to be thrown immediately.
+   *
+   * After `--` is encountered, all remaining tokens are treated as positionals.
+   *
+   * @returns The next positional string, or `undefined` when the argument list is
+   *   exhausted.
+   * @throws {@link TypoError} if an unrecognised option (long or short) is encountered.
+   */
   consumePositional(): string | undefined {
     while (true) {
       const arg = this.#consumeArg();
