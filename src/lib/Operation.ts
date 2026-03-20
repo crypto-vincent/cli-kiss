@@ -90,7 +90,7 @@ export type OperationUsage = {
  * The `handler` receives:
  * - `context` — the value passed down from the parent command (or from
  *   {@link runAsCliAndExit}).
- * - `inputs.options` — an object whose keys match `inputs.options` and whose values are
+ * - `inputs.options` — an object whose keys match those declared in `inputs.options` and whose values are
  *   the parsed option values.
  * - `inputs.positionals` — a tuple whose elements match `inputs.positionals` and whose
  *   values are the parsed positional values, in declaration order.

@@ -16,7 +16,7 @@ import { usageToStyledLines } from "./Usage";
  * - `1` — Argument parsing failed (a usage summary is also printed to stderr), or the
  *   command threw an unhandled execution error.
  *
- * **Built-in flags (opt-in):**
+ * **Built-in flags (opt-out):**
  * - `--help` — Enabled by default (`usageOnHelp: true`). Prints the usage summary to
  *   stdout and exits with code `0`. This flag takes precedence over `--version`.
  * - `--version` — Enabled when `buildVersion` is provided. Prints `<cliName> <version>`
