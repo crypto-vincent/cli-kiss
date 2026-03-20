@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: cli-kiss 💋
+  name: CLI-kiss
   text: CLI for TypeScript.
   tagline:
     No bloat, no dependency. Only what you need.</br>Standard expected behaviour
