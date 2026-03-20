@@ -1,5 +1,5 @@
 import { ReaderArgs as ReaderOptions } from "./Reader";
-import { Type, typeBoolean, typeDecode } from "./Type";
+import { Type, typeBoolean, typeDecodeWithContext } from "./Type";
 import {
   TypoError,
   TypoString,
@@ -33,7 +33,7 @@ export function optionFlag(definition: {
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   default?: () => boolean;
 }): Option<boolean> {
-  const label = `<${typeBoolean.label}>` as Uppercase<string>;
+  const label = `<${typeBoolean.label}>`;
   return {
     generateUsage() {
       return {
@@ -74,15 +74,10 @@ export function optionFlag(definition: {
               );
             }
           }
-          return typeDecode(
+          return typeDecodeWithContext(
             typeBoolean,
             optionValue,
-            () =>
-              new TypoText(
-                new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(`: `),
-                new TypoString(label, typoStyleUserInput),
-              ),
+            makeDecodeContext(definition.long, label),
           );
         },
       };
@@ -141,15 +136,10 @@ export function optionSingleValue<Value>(definition: {
               );
             }
           }
-          return typeDecode(
+          return typeDecodeWithContext(
             definition.type,
             optionValue,
-            () =>
-              new TypoText(
-                new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(`: `),
-                new TypoString(label, typoStyleUserInput),
-              ),
+            makeDecodeContext(definition.long, label),
           );
         },
       };
@@ -188,21 +178,25 @@ export function optionRepeatable<Value>(definition: {
           return readerOptions
             .getOptionValues(key)
             .map((value) =>
-              typeDecode(
+              typeDecodeWithContext(
                 definition.type,
                 value,
-                () =>
-                  new TypoText(
-                    new TypoString(`--${definition.long}`, typoStyleConstants),
-                    new TypoString(`: `),
-                    new TypoString(label, typoStyleUserInput),
-                  ),
+                makeDecodeContext(definition.long, label),
               ),
             );
         },
       };
     },
   };
+}
+
+function makeDecodeContext(long: string, label: string): () => TypoText {
+  return () =>
+    new TypoText(
+      new TypoString(`--${long}`, typoStyleConstants),
+      new TypoString(`: `),
+      new TypoString(label, typoStyleUserInput),
+    );
 }
 
 function registerOption(

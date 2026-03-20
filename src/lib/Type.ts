@@ -33,8 +33,13 @@ export const typeBoolean: Type<boolean> = {
 export const typeDate: Type<Date> = {
   label: "DATE",
   decoder(value: string) {
-    const timestamp = Date.parse(value);
-    if (isNaN(timestamp)) {
+    try {
+      const timestamp = Date.parse(value);
+      if (isNaN(timestamp)) {
+        throw new Error();
+      }
+      return new Date(timestamp);
+    } catch {
       throw new TypoError(
         new TypoText(
           new TypoString(`Invalid date (ISO_8601): `),
@@ -42,7 +47,6 @@ export const typeDate: Type<Date> = {
         ),
       );
     }
-    return new Date(timestamp);
   },
 };
 
@@ -116,10 +120,10 @@ export function typeMapped<Before, After>(
     label: after.label,
     decoder: (value: string) => {
       return after.decoder(
-        typeDecode(
+        typeDecodeWithContext(
           before,
           value,
-          () => new TypoText(new TypoString(before.label, typoStyleUserInput)),
+          () => new TypoText(new TypoString(after.label, typoStyleUserInput)),
         ),
       );
     },
@@ -134,7 +138,7 @@ export function typeOneOf<Value>(
   return {
     label: type.label,
     decoder(value: string) {
-      const decoded = typeDecode(
+      const decoded = typeDecodeWithContext(
         type,
         value,
         () => new TypoText(new TypoString(type.label, typoStyleUserInput)),
@@ -186,7 +190,7 @@ export function typeTuple<const Elements extends Array<any>>(
         );
       }
       return parts.map((part, index) =>
-        typeDecode(
+        typeDecodeWithContext(
           elementTypes[index]!,
           part,
           () =>
@@ -211,7 +215,7 @@ export function typeList<Value>(
       return value
         .split(separator)
         .map((part, index) =>
-          typeDecode(
+          typeDecodeWithContext(
             elementType,
             part,
             () =>
@@ -225,7 +229,8 @@ export function typeList<Value>(
   };
 }
 
-export function typeDecode<Value>(
+// TODO - double check the decoding context labels, there is a cleaner way
+export function typeDecodeWithContext<Value>(
   type: Type<Value>,
   value: string,
   context: () => TypoText,

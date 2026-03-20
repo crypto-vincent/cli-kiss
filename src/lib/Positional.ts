@@ -1,5 +1,5 @@
 import { ReaderPositionals } from "./Reader";
-import { Type, typeDecode } from "./Type";
+import { Type, typeDecodeWithContext } from "./Type";
 import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
 
 export type Positional<Value> = {
@@ -38,11 +38,7 @@ export function positionalRequired<Value>(definition: {
           ),
         );
       }
-      return typeDecode(
-        definition.type,
-        positional,
-        () => new TypoText(new TypoString(label, typoStyleUserInput)),
-      );
+      return typeDecodeWithContext(definition.type, positional, makeDecodeContext(label));
     },
   };
 }
@@ -78,11 +74,7 @@ export function positionalOptional<Value>(definition: {
           );
         }
       }
-      return typeDecode(
-        definition.type,
-        positional,
-        () => new TypoText(new TypoString(label, typoStyleUserInput)),
-      );
+      return typeDecodeWithContext(definition.type, positional, makeDecodeContext(label));
     },
   };
 }
@@ -117,14 +109,14 @@ export function positionalVariadics<Value>(definition: {
           break;
         }
         positionals.push(
-          typeDecode(
-            definition.type,
-            positional,
-            () => new TypoText(new TypoString(label, typoStyleUserInput)),
-          ),
+          typeDecodeWithContext(definition.type, positional, makeDecodeContext(label)),
         );
       }
       return positionals;
     },
   };
+}
+
+function makeDecodeContext(label: string): () => TypoText {
+  return () => new TypoText(new TypoString(label, typoStyleUserInput));
 }
