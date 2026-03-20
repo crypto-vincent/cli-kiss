@@ -17,7 +17,7 @@ import {
 } from "../src";
 
 // TODO - unit test for chained commands
-// TODO - unit test for color styling
+// TODO - unit test for errors styling
 
 it("run", async () => {
   const rootUsage = [

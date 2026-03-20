@@ -1,7 +1,7 @@
 import { it } from "@jest/globals";
 import {
-  Command,
   command,
+  CommandDescriptor,
   commandWithSubcommands,
   operation,
   optionFlag,
@@ -211,7 +211,7 @@ it("run", async () => {
 
 async function getUsage<Context, Result>(
   args: Array<string>,
-  command: Command<Context, Result>,
+  command: CommandDescriptor<Context, Result>,
 ) {
   const readerArgs = new ReaderArgs(args);
   const commandFactory = command.createFactory(readerArgs);

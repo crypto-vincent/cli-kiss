@@ -1,4 +1,4 @@
-import { Command, CommandFactory } from "./Command";
+import { CommandDescriptor, CommandFactory } from "./Command";
 import { ReaderArgs } from "./Reader";
 import { TypoSupport } from "./Typo";
 import { usageToStyledLines } from "./Usage";
@@ -7,7 +7,7 @@ export async function runAsCliAndExit<Context>(
   cliName: Lowercase<string>,
   cliArgs: ReadonlyArray<string>,
   context: Context,
-  command: Command<Context, void>,
+  command: CommandDescriptor<Context, void>,
   application?: {
     usageOnHelp?: boolean | undefined;
     buildVersion?: string | undefined;

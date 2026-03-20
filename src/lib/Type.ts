@@ -1,7 +1,6 @@
 import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
 
 export type Type<Value> = {
-  // TODO - maybe include an optional hint ??
   label: Uppercase<string>; // TODO - is there a better way to enforce uppercase labels?
   decoder(value: string): Value;
 };

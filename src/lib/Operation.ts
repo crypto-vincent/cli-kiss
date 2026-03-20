@@ -2,7 +2,7 @@ import { Option, OptionUsage } from "./Option";
 import { Positional, PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
 
-export type Operation<Input, Output> = {
+export type OperationDescriptor<Input, Output> = {
   generateUsage(): OperationUsage;
   createFactory(readerArgs: ReaderArgs): OperationFactory<Input, Output>;
 };
@@ -34,7 +34,7 @@ export function operation<
     context: Context,
     inputs: { options: Options; positionals: Positionals },
   ) => Promise<Result>,
-): Operation<Context, Result> {
+): OperationDescriptor<Context, Result> {
   return {
     generateUsage() {
       const optionsUsage = new Array<OptionUsage>();

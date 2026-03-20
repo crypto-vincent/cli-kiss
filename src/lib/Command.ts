@@ -1,10 +1,10 @@
-import { Operation } from "./Operation";
+import { OperationDescriptor } from "./Operation";
 import { OptionUsage } from "./Option";
 import { PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
-import { TypoError, TypoString, typoStyleConstants, TypoText } from "./Typo";
+import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
 
-export type Command<Context, Result> = {
+export type CommandDescriptor<Context, Result> = {
   getInformation(): CommandInformation;
   createFactory(readerArgs: ReaderArgs): CommandFactory<Context, Result>;
 };
@@ -45,8 +45,8 @@ export type CommandUsageSubcommand = {
 
 export function command<Context, Result>(
   information: CommandInformation,
-  operation: Operation<Context, Result>,
-): Command<Context, Result> {
+  operation: OperationDescriptor<Context, Result>,
+): CommandDescriptor<Context, Result> {
   return {
     getInformation() {
       return information;
@@ -95,9 +95,11 @@ export function command<Context, Result>(
 
 export function commandWithSubcommands<Context, Payload, Result>(
   information: CommandInformation,
-  operation: Operation<Context, Payload>,
-  subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
-): Command<Context, Result> {
+  operation: OperationDescriptor<Context, Payload>,
+  subcommands: {
+    [subcommand: Lowercase<string>]: CommandDescriptor<Payload, Result>;
+  },
+): CommandDescriptor<Context, Result> {
   return {
     getInformation() {
       return information;
@@ -109,7 +111,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandName === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`<SUBCOMMAND>`, typoStyleConstants),
+              new TypoString(`<SUBCOMMAND>`, typoStyleUserInput),
               new TypoString(`: Is required, but was not provided`),
             ),
           );
@@ -119,7 +121,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandInput === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`<SUBCOMMAND>`, typoStyleConstants),
+              new TypoString(`<SUBCOMMAND>`, typoStyleUserInput),
               new TypoString(`: Invalid value: "${subcommandName}"`),
             ),
           );
@@ -161,7 +163,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
             return {
               breadcrumbs: operationUsage.positionals
                 .map((positional) => breadcrumbPositional(positional.label))
-                .concat([breadcrumbCommand("<SUBCOMMAND>")]),
+                .concat([breadcrumbPositional("<SUBCOMMAND>")]),
               information: information,
               positionals: operationUsage.positionals,
               subcommands: Object.entries(subcommands).map((subcommand) => {
@@ -186,9 +188,9 @@ export function commandWithSubcommands<Context, Payload, Result>(
 
 export function commandChained<Context, Payload, Result>(
   information: CommandInformation,
-  operation: Operation<Context, Payload>,
-  nextCommand: Command<Payload, Result>,
-): Command<Context, Result> {
+  operation: OperationDescriptor<Context, Payload>,
+  nextCommand: CommandDescriptor<Payload, Result>,
+): CommandDescriptor<Context, Result> {
   return {
     getInformation() {
       return information;

@@ -62,7 +62,6 @@ export function optionFlag(definition: {
           }
           const optionValue = optionValues[0];
           if (optionValue === undefined) {
-            // TODO - scoped error util
             try {
               return definition.default ? definition.default() : false;
             } catch (error) {

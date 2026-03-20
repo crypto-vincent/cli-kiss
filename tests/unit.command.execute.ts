@@ -1,7 +1,7 @@
 import { expect, it } from "@jest/globals";
 import {
-  Command,
   command,
+  CommandDescriptor,
   commandWithSubcommands,
   operation,
   optionFlag,
@@ -144,7 +144,7 @@ it("run", async () => {
 async function executeInterpreted<Context, Result>(
   positionals: Array<string>,
   context: Context,
-  command: Command<Context, Result>,
+  command: CommandDescriptor<Context, Result>,
 ) {
   const readerArgs = new ReaderArgs(positionals);
   const commandFactory = command.createFactory(readerArgs);
