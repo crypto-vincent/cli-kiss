@@ -20,6 +20,7 @@ export async function runAsCliAndExit<Context>(
 ): Promise<never> {
   const readerArgs = new ReaderArgs(cliArgs);
   const usageOnHelp = application?.usageOnHelp ?? true;
+  // TODO - this should be part of the usage ? maybe use chained command ?
   if (usageOnHelp) {
     readerArgs.registerOption({
       shorts: [],
@@ -71,6 +72,7 @@ export async function runAsCliAndExit<Context>(
       return onExit(0);
     }
   }
+  // TODO - should we fail if errors is not empty ?
   try {
     const commandInstance = commandFactory.createInstance();
     try {
