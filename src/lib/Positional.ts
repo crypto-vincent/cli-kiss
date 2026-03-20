@@ -88,12 +88,12 @@ export function positionalVariadics<Value>(definition: {
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Array<Value>> {
-  const label = definition.label ?? definition.type.label;
+  const label = `[${definition.label ?? definition.type.label}]`;
   return {
     generateUsage() {
       return {
         description: definition.description,
-        label: (`[${label}]...` +
+        label: (`${label}...` +
           (definition.endDelimiter
             ? `["${definition.endDelimiter}"]`
             : "")) as Uppercase<string>,

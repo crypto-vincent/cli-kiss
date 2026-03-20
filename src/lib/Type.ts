@@ -122,7 +122,7 @@ export function typeTuple<const Elements extends Array<any>>(
           () =>
             new TypoText(
               new TypoString(elementTypes[index]!.label, typoStyleUserInput),
-              new TypoString(` at position ${index}`),
+              new TypoString(`@${index}`),
             ),
         ),
       ) as Elements;
@@ -147,7 +147,7 @@ export function typeList<Value>(
             () =>
               new TypoText(
                 new TypoString(elementType.label, typoStyleUserInput),
-                new TypoString(` at position ${index}`),
+                new TypoString(`@${index}`),
               ),
           ),
         );
