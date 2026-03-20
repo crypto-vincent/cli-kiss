@@ -17,21 +17,6 @@ export function usageToStyledLines(params: {
 
   const lines = new Array<string>();
 
-  // TODO - description stacking for subcommands ?
-  lines.push(
-    textOverview(commandUsage.metadata.description).computeStyledString(
-      typoSupport,
-    ),
-  );
-  if (commandUsage.metadata.details) {
-    lines.push(
-      textSubtleInfo(commandUsage.metadata.details).computeStyledString(
-        typoSupport,
-      ),
-    );
-  }
-
-  lines.push("");
   const breadcrumbs = [
     textUsageTitle("Usage:").computeStyledString(typoSupport),
     textConstants(cliName).computeStyledString(typoSupport),
@@ -51,6 +36,19 @@ export function usageToStyledLines(params: {
     }),
   );
   lines.push(breadcrumbs.join(" "));
+
+  lines.push("");
+  const infoText = new TypoText();
+  infoText.pushString(textUsageIntro(commandUsage.information.description));
+  if (commandUsage.information.hint) {
+    infoText.pushString(textDelimiter(" "));
+    infoText.pushString(textSubtleInfo(`(${commandUsage.information.hint})`));
+  }
+  lines.push(infoText.computeStyledString(typoSupport));
+  if (commandUsage.information.details) {
+    const detailsString = textSubtleInfo(commandUsage.information.details);
+    lines.push(detailsString.computeStyledString(typoSupport));
+  }
 
   if (commandUsage.positionals.length > 0) {
     lines.push("");
@@ -148,8 +146,12 @@ function createInformationals(usage: {
   return [];
 }
 
-function textOverview(value: string): TypoString {
+function textUsageIntro(value: string): TypoString {
   return new TypoString(value, { bold: true });
+}
+
+function textUsageTitle(value: string): TypoString {
+  return new TypoString(value, { fgColor: "darkMagenta", bold: true });
 }
 
 function textUsefulInfo(value: string): TypoString {
@@ -158,10 +160,6 @@ function textUsefulInfo(value: string): TypoString {
 
 function textSubtleInfo(value: string): TypoString {
   return new TypoString(value, { italic: true, dim: true });
-}
-
-function textUsageTitle(value: string): TypoString {
-  return new TypoString(value, { fgColor: "darkMagenta", bold: true });
 }
 
 function textBlockTitle(value: string): TypoString {

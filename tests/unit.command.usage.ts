@@ -94,7 +94,7 @@ const cmd = commandWithSubcommands<string, any, any>(
     sub2: command(
       {
         description: "Subcommand 2 description",
-        hint: "Hint",
+        hint: "Subcommand 2 hint",
         details: [
           "Subcommand 2 details.",
           "Second line of subcommand 2 details.",
@@ -107,7 +107,7 @@ const cmd = commandWithSubcommands<string, any, any>(
               long: "dudu",
               type: typeString,
               default: () => "duduDefault",
-              hint: "Hint",
+              hint: "Dudu option hint",
               description: "Dudu option description",
             }),
           },
@@ -120,7 +120,7 @@ const cmd = commandWithSubcommands<string, any, any>(
             positionalOptional({
               label: "OPT-POS",
               description: "Optional positional string",
-              hint: "Hint",
+              hint: "Optional positional hint",
               type: typeString,
               default: () => "42",
             }),
@@ -151,10 +151,10 @@ it("run", async () => {
    */
 
   expect(usage1).toStrictEqual([
+    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{<SUBCOMMAND>}@darkCyan}+",
+    "",
     "{Root command description}+",
     "{{Root command details. Second line of root command details.}-}*",
-    "",
-    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{<SUBCOMMAND>}@darkCyan}+",
     "",
     "{{Positionals:}@darkGreen}+",
     "  {{<POS-1>}@darkBlue}+  Required positional number 1",
@@ -162,7 +162,7 @@ it("run", async () => {
     "",
     "{{Subcommands:}@darkGreen}+",
     "  {{sub1}@darkCyan}+  Subcommand 1 description",
-    "  {{sub2}@darkCyan}+  Subcommand 2 description {{(Hint)}-}*",
+    "  {{sub2}@darkCyan}+  Subcommand 2 description {{(Subcommand 2 hint)}-}*",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
@@ -171,10 +171,10 @@ it("run", async () => {
     "",
   ]);
   expect(usage2).toStrictEqual([
+    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub1}@darkCyan}+ {{<POS-STRING>}@darkBlue}+",
+    "",
     "{Subcommand 1 description}+",
     "{{Subcommand 1 details. Second line of subcommand 1 details.}-}*",
-    "",
-    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub1}@darkCyan}+ {{<POS-STRING>}@darkBlue}+",
     "",
     "{{Positionals:}@darkGreen}+",
     "  {{<POS-1>}@darkBlue}+       Required positional number 1",
@@ -188,23 +188,23 @@ it("run", async () => {
     "",
   ]);
   expect(usage3).toStrictEqual([
-    "{Subcommand 2 description}+",
-    "{{Subcommand 2 details. Second line of subcommand 2 details.}-}*",
-    "",
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub2}@darkCyan}+ {{<POS-NUMBER>}@darkBlue}+ {{[OPT-POS]}@darkBlue}+ {{[VARIADIC]...}@darkBlue}+",
+    "",
+    "{Subcommand 2 description}+ {{(Subcommand 2 hint)}-}*",
+    "{{Subcommand 2 details. Second line of subcommand 2 details.}-}*",
     "",
     "{{Positionals:}@darkGreen}+",
     "  {{<POS-1>}@darkBlue}+        Required positional number 1",
     "  {{<POS-2>}@darkBlue}+        Required positional number 2",
     "  {{<POS-NUMBER>}@darkBlue}+   Required positional number",
-    "  {{[OPT-POS]}@darkBlue}+      Optional positional string {{(Hint)}-}*",
+    "  {{[OPT-POS]}@darkBlue}+      Optional positional string {{(Optional positional hint)}-}*",
     "  {{[VARIADIC]...}@darkBlue}+  Variadic positionals strings",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
     "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
     "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
-    "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description {{(Hint)}-}*",
+    "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description {{(Dudu option hint)}-}*",
     "",
   ]);
 });

@@ -5,7 +5,7 @@ import { ReaderArgs } from "./Reader";
 import { TypoError, TypoString, typoStyleConstants, TypoText } from "./Typo";
 
 export type Command<Context, Result> = {
-  getMetadata(): CommandMetadata;
+  getInformation(): CommandInformation;
   createFactory(readerArgs: ReaderArgs): CommandFactory<Context, Result>;
 };
 
@@ -18,7 +18,7 @@ export type CommandInstance<Context, Result> = {
   executeWithContext(context: Context): Promise<Result>;
 };
 
-export type CommandMetadata = {
+export type CommandInformation = {
   description: string;
   hint?: string;
   details?: string;
@@ -26,8 +26,8 @@ export type CommandMetadata = {
 };
 
 export type CommandUsage = {
-  metadata: CommandMetadata;
   breadcrumbs: Array<CommandUsageBreadcrumb>;
+  information: CommandInformation;
   positionals: Array<PositionalUsage>;
   subcommands: Array<CommandUsageSubcommand>;
   options: Array<OptionUsage>;
@@ -44,21 +44,21 @@ export type CommandUsageSubcommand = {
 };
 
 export function command<Context, Result>(
-  metadata: CommandMetadata,
+  information: CommandInformation,
   operation: Operation<Context, Result>,
 ): Command<Context, Result> {
   return {
-    getMetadata() {
-      return metadata;
+    getInformation() {
+      return information;
     },
     createFactory(readerArgs: ReaderArgs) {
       function generateUsage(): CommandUsage {
         const operationUsage = operation.generateUsage();
         return {
-          metadata,
           breadcrumbs: operationUsage.positionals.map((positional) =>
             breadcrumbPositional(positional.label),
           ),
+          information: information,
           positionals: operationUsage.positionals,
           subcommands: [],
           options: operationUsage.options,
@@ -94,13 +94,13 @@ export function command<Context, Result>(
 }
 
 export function commandWithSubcommands<Context, Payload, Result>(
-  metadata: CommandMetadata,
+  information: CommandInformation,
   operation: Operation<Context, Payload>,
   subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
 ): Command<Context, Result> {
   return {
-    getMetadata() {
-      return metadata;
+    getInformation() {
+      return information;
     },
     createFactory(readerArgs: ReaderArgs) {
       try {
@@ -130,11 +130,11 @@ export function commandWithSubcommands<Context, Payload, Result>(
             const operationUsage = operation.generateUsage();
             const subcommandUsage = subcommandFactory.generateUsage();
             return {
-              metadata: subcommandUsage.metadata,
               breadcrumbs: operationUsage.positionals
                 .map((positional) => breadcrumbPositional(positional.label))
                 .concat([breadcrumbCommand(subcommandName)])
                 .concat(subcommandUsage.breadcrumbs),
+              information: subcommandUsage.information,
               positionals: operationUsage.positionals.concat(
                 subcommandUsage.positionals,
               ),
@@ -159,13 +159,13 @@ export function commandWithSubcommands<Context, Payload, Result>(
           generateUsage() {
             const operationUsage = operation.generateUsage();
             return {
-              metadata,
               breadcrumbs: operationUsage.positionals
                 .map((positional) => breadcrumbPositional(positional.label))
                 .concat([breadcrumbCommand("<SUBCOMMAND>")]),
+              information: information,
               positionals: operationUsage.positionals,
               subcommands: Object.entries(subcommands).map((subcommand) => {
-                const metadata = subcommand[1].getMetadata();
+                const metadata = subcommand[1].getInformation();
                 return {
                   name: subcommand[0],
                   description: metadata.description,
@@ -185,12 +185,12 @@ export function commandWithSubcommands<Context, Payload, Result>(
 }
 
 export function commandChained<Context, Payload, Result>(
-  metadata: CommandMetadata,
+  metadata: CommandInformation,
   operation: Operation<Context, Payload>,
   nextCommand: Command<Payload, Result>,
 ): Command<Context, Result> {
   return {
-    getMetadata() {
+    getInformation() {
       return metadata;
     },
     createFactory(readerArgs: ReaderArgs) {
@@ -201,7 +201,7 @@ export function commandChained<Context, Payload, Result>(
           const operationUsage = operation.generateUsage();
           const nextCommandUsage = nextCommandFactory.generateUsage();
           return {
-            metadata: nextCommandUsage.metadata,
+            information: nextCommandUsage.information,
             breadcrumbs: operationUsage.positionals
               .map((positional) => breadcrumbPositional(positional.label))
               .concat(nextCommandUsage.breadcrumbs),

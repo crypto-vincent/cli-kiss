@@ -20,9 +20,9 @@ import {
 
 it("run", async () => {
   const rootUsage = [
-    "Root Description",
-    "",
     "Usage: my-cli <REQUIRED1> <SUBCOMMAND>",
+    "",
+    "Root Description",
     "",
     "Positionals:",
     "  <REQUIRED1>  Required1 positional description",
@@ -37,9 +37,9 @@ it("run", async () => {
     "",
   ].join("\n");
   const subcommandUsage = [
-    "Subcommand Description",
-    "",
     "Usage: my-cli <REQUIRED1> subcommand <REQUIRED2> [OPTIONAL] [VARIADICS]...",
+    "",
+    "Subcommand Description",
     "",
     "Positionals:",
     "  <REQUIRED1>     Required1 positional description",
