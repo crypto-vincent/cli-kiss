@@ -125,6 +125,7 @@ export function usageToStyledLines(params: {
     );
   }
 
+  lines.push("");
   return lines;
 }
 

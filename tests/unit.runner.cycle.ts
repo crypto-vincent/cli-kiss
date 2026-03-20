@@ -35,6 +35,7 @@ it("run", async () => {
     "  --flag[=no]              Option flag description",
     "  --repeatable <STRING>    Option repeatable description",
     "  --single-value <NUMBER>  Option single value description",
+    "",
   ].join("\n");
   const subcommandUsage = [
     "Usage: my-cli <REQUIRED1> subcommand <REQUIRED2> [OPTIONAL] [VARIADICS]...",
@@ -52,6 +53,7 @@ it("run", async () => {
     "  --repeatable <STRING>    Option repeatable description",
     "  --single-value <NUMBER>  Option single value description",
     "  --url <URL>              Option url description",
+    "",
   ].join("\n");
 
   // Test that everything could work normally

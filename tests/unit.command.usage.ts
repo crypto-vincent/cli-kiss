@@ -141,10 +141,10 @@ it("run", async () => {
   const usage2 = await getUsage(["50", "51", "sub1"], cmd);
   const usage3 = await getUsage(["40", "41", "sub2", "--doesn't-exist"], cmd);
 
+  /*
   console.log(usage1.join("\n"));
   console.log(usage2.join("\n"));
   console.log(usage3.join("\n"));
-  /*
    */
 
   expect(usage1).toStrictEqual([
@@ -166,6 +166,7 @@ it("run", async () => {
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
     "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
     "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
+    "",
   ]);
   expect(usage2).toStrictEqual([
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub1}@darkCyan}+ {{<POS-STRING>}@darkBlue}+",
@@ -183,6 +184,7 @@ it("run", async () => {
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
     "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
     "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
+    "",
   ]);
   expect(usage3).toStrictEqual([
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{sub2}@darkCyan}+ {{<POS-NUMBER>}@darkBlue}+ {{[OPT-POS]}@darkBlue}+ {{[VARIADIC]...}@darkBlue}+",
@@ -203,6 +205,7 @@ it("run", async () => {
     "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
     "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
     "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description {{(Dudu option hint)}-}*",
+    "",
   ]);
 });
 
@@ -215,6 +218,6 @@ async function getUsage<Context, Result>(
   return usageToStyledLines({
     cliName: "my-cli",
     commandUsage: commandFactory.generateUsage(),
-    typoSupport: TypoSupport.tty(),
+    typoSupport: TypoSupport.mock(),
   });
 }
