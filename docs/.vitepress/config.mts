@@ -1,16 +1,22 @@
 import { defineConfig } from "vitepress";
 
 export default defineConfig({
-  title: "cli-kiss",
-  description: "No bloat, no dependency, full-featured CLI command runner",
+  description: "Full-featured TypeScript CLI builder. No bloat, no dependency.",
+  title: "cli-kiss 💋",
   base: "/cli-kiss/",
+  head: [
+    [
+      "style",
+      {},
+      `
+      .VPDoc div[class*="language-"] code { font-size: 0.8em; line-height: 1.6; }
+      `,
+    ],
+  ],
   themeConfig: {
     nav: [
       { text: "Guide", link: "/guide/01_getting_started" },
-      {
-        text: "npm",
-        link: "https://www.npmjs.com/package/cli-kiss",
-      },
+      { text: "npm", link: "https://www.npmjs.com/package/cli-kiss" },
     ],
     sidebar: [
       {
@@ -26,13 +32,10 @@ export default defineConfig({
       },
     ],
     socialLinks: [
-      {
-        icon: "github",
-        link: "https://github.com/crypto-vincent/cli-kiss",
-      },
+      { icon: "github", link: "https://github.com/crypto-vincent/cli-kiss" },
     ],
     footer: {
-      message: "Released under the MIT License.",
+      message: "CLI: Keep It Simple, Stupid. (KISS)",
     },
   },
 });

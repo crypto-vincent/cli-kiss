@@ -2,39 +2,38 @@
 
 ## `runAndExit`
 
-`runAndExit` is the entry point for every `cli-kiss` CLI. It parses arguments, runs the matched command, and exits the process.
+`runAndExit` is the entry point for every `cli-kiss` CLI. It parses arguments,
+runs the matched command, and exits the process.
 
 ```ts
 await runAndExit(cliName, cliArgs, context, command, options?);
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
-| `cliName` | `Lowercase<string>` | Program name used in help and `--version` output |
-| `cliArgs` | `ReadonlyArray<string>` | Raw arguments — typically `process.argv.slice(2)` |
-| `context` | `Context` | Value forwarded to every command handler |
-| `command` | `CommandDescriptor<Context, void>` | The root command |
-| `options` | `object?` | See below |
+| Parameter | Type                               | Description                                       |
+| --------- | ---------------------------------- | ------------------------------------------------- |
+| `cliName` | `Lowercase<string>`                | Program name used in help and `--version` output  |
+| `cliArgs` | `ReadonlyArray<string>`            | Raw arguments — typically `process.argv.slice(2)` |
+| `context` | `Context`                          | Value forwarded to every command handler          |
+| `command` | `CommandDescriptor<Context, void>` | The root command                                  |
+| `options` | `object?`                          | See below                                         |
 
 ### Options
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `buildVersion` | `string?` | — | Enables `--version` flag; prints `<cliName> <buildVersion>` |
-| `usageOnHelp` | `boolean?` | `true` | Enables `--help` flag |
-| `usageOnError` | `boolean?` | `true` | Prints usage to stderr when parsing fails |
-| `useTtyColors` | `boolean \| "mock"?` | auto | Controls ANSI color output |
-| `onError` | `(error: unknown) => void` | — | Custom handler for execution errors |
-| `onExit` | `(code: number) => never` | `process.exit` | Override for testing |
+| Option         | Type                       | Default        | Description                                                 |
+| -------------- | -------------------------- | -------------- | ----------------------------------------------------------- |
+| `buildVersion` | `string?`                  | —              | Enables `--version` flag; prints `<cliName> <buildVersion>` |
+| `usageOnHelp`  | `boolean?`                 | `true`         | Enables `--help` flag                                       |
+| `usageOnError` | `boolean?`                 | `true`         | Prints usage to stderr when parsing fails                   |
+| `useTtyColors` | `boolean \| "mock"?`       | auto           | Controls ANSI color output                                  |
+| `onError`      | `(error: unknown) => void` | —              | Custom handler for execution errors                         |
+| `onExit`       | `(code: number) => never`  | `process.exit` | Override for testing                                        |
 
 ### Exit codes
 
-| Code | Reason |
-|---|---|
-| `0` | Success, `--help`, or `--version` |
-| `1` | Parse error or uncaught execution error |
-
----
+| Code | Reason                                  |
+| ---- | --------------------------------------- |
+| `0`  | Success, `--help`, or `--version`       |
+| `1`  | Parse error or uncaught execution error |
 
 ## Full example
 
@@ -98,8 +97,13 @@ await runAndExit("my-cli", process.argv.slice(2), undefined, rootCmd, {
 });
 ```
 
+Check it
+
 ```sh
 $ my-cli --help
+```
+
+```text
 Usage: my-cli <SUBCOMMAND>
 
 My deployment CLI
@@ -109,15 +113,17 @@ Subcommands:
 
 Options:
   --db <URL>  Database URL
-
-$ my-cli deploy --dry-run
-[dry-run] would deploy with DB: postgres://localhost/mydb
-
-$ my-cli --version
-my-cli 2.0.0
 ```
 
----
+Try it
+
+```sh
+$ my-cli deploy --dry-run
+```
+
+```text
+[dry-run] would deploy with DB: postgres://localhost/mydb
+```
 
 ## Color control
 
@@ -133,8 +139,6 @@ await runAndExit("my-cli", args, ctx, cmd, { useTtyColors: false });
 // Deterministic mock output (useful in snapshot tests)
 await runAndExit("my-cli", args, ctx, cmd, { useTtyColors: "mock" });
 ```
-
----
 
 ## Testing your CLI
 

@@ -8,7 +8,10 @@ npm install cli-kiss
 
 ## Your first CLI
 
-Here is a minimal "greet" CLI that takes a required `NAME` positional and an optional `--loud` flag:
+Here is a minimal "greet" CLI that takes:
+
+- a required `NAME` positional
+- optional `--loud` flag:
 
 ```ts
 import {
@@ -51,12 +54,29 @@ Run it:
 
 ```sh
 $ greet Alice
+```
+
+```text
 Hello, Alice!
+```
 
+Pass some flags:
+
+```sh
 $ greet --loud Alice
-HELLO, ALICE!
+```
 
+```text
+HELLO, ALICE!
+```
+
+Get some help (built-in)
+
+```sh
 $ greet --help
+```
+
+```text
 Usage: greet <NAME>
 
 Greet someone
@@ -66,8 +86,15 @@ Positionals:
 
 Options:
   --loud[=no]  Print in uppercase
+```
 
+Get the version (built-in)
+
+```sh
 $ greet --version
+```
+
+```text
 greet 1.0.0
 ```
 
@@ -85,4 +112,5 @@ my-cli/
 └── package.json
 ```
 
-Each command lives in its own file and is composed together in the entry point. See the [Commands](./02_commands) guide to learn how.
+Each command lives in its own file and is composed together in the entry point.
+See the [Commands](./02_commands) guide to learn how.

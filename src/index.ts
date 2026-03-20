@@ -8,5 +8,4 @@ export * from "./lib/Type";
 export * from "./lib/Typo";
 export * from "./lib/Usage";
 
-// TODO - add documentation and examples
 // TODO - maybe add a parsed option recap on error

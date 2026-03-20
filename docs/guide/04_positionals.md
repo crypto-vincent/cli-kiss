@@ -1,6 +1,7 @@
 # Positionals
 
-Positionals are bare (non-option) arguments passed by position. Declare them in order in the `positionals` array of [`operation`](/guide/02_commands).
+Positionals are bare (non-option) arguments passed by position. Declare them in
+order in the `positionals` array of [`operation`](/guide/02_commands).
 
 ## `positionalRequired` — must be present
 
@@ -18,14 +19,12 @@ const name = positionalRequired({
 // my-cli         →  Error: <NAME>: Is required, but was not provided
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
-| `type` | `Type<Value>` | Decoder for the raw string token |
-| `label` | `Uppercase<string>?` | Placeholder in help (defaults to uppercased type content) |
-| `description` | `string?` | Help text |
-| `hint` | `string?` | Short note in parentheses |
-
----
+| Parameter     | Type                 | Description                                               |
+| ------------- | -------------------- | --------------------------------------------------------- |
+| `type`        | `Type<Value>`        | Decoder for the raw string token                          |
+| `label`       | `Uppercase<string>?` | Placeholder in help (defaults to uppercased type content) |
+| `description` | `string?`            | Help text                                                 |
+| `hint`        | `string?`            | Short note in parentheses                                 |
 
 ## `positionalOptional` — may be absent
 
@@ -44,15 +43,13 @@ const greeting = positionalOptional({
 // my-cli Howdy    →  "Howdy"
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
-| `type` | `Type<Value>` | Decoder for the raw string token |
-| `label` | `Uppercase<string>?` | Placeholder in help |
-| `description` | `string?` | Help text |
-| `hint` | `string?` | Short note in parentheses |
-| `default` | `() => Value` | Value when absent — **throw** to make it required |
-
----
+| Parameter     | Type                 | Description                                       |
+| ------------- | -------------------- | ------------------------------------------------- |
+| `type`        | `Type<Value>`        | Decoder for the raw string token                  |
+| `label`       | `Uppercase<string>?` | Placeholder in help                               |
+| `description` | `string?`            | Help text                                         |
+| `hint`        | `string?`            | Short note in parentheses                         |
+| `default`     | `() => Value`        | Value when absent — **throw** to make it required |
 
 ## `positionalVariadics` — zero or more
 
@@ -72,31 +69,30 @@ const files = positionalVariadics({
 
 ### End delimiter
 
-Stop collecting at a specific sentinel token:
+Optionally stop collecting at a specific sentinel token:
 
 ```ts
 const args = positionalVariadics({
   type: typeString,
   label: "ARG",
-  endDelimiter: "--",
-  description: "Arguments (end with --)",
+  endDelimiter: "STOP",
+  description: "Arguments (end with STOP)",
 });
-// my-cli foo bar -- ignored   →  ["foo", "bar"]
+// my-cli foo bar STOP ignored   →  ["foo", "bar"]
 ```
 
-| Parameter | Type | Description |
-|---|---|---|
-| `type` | `Type<Value>` | Decoder applied to each token |
-| `label` | `Uppercase<string>?` | Placeholder in help |
-| `description` | `string?` | Help text |
-| `hint` | `string?` | Short note in parentheses |
-| `endDelimiter` | `string?` | Sentinel token that stops collection |
-
----
+| Parameter      | Type                 | Description                          |
+| -------------- | -------------------- | ------------------------------------ |
+| `type`         | `Type<Value>`        | Decoder applied to each token        |
+| `label`        | `Uppercase<string>?` | Placeholder in help                  |
+| `description`  | `string?`            | Help text                            |
+| `hint`         | `string?`            | Short note in parentheses            |
+| `endDelimiter` | `string?`            | Sentinel token that stops collection |
 
 ## Ordering rules
 
-Positionals are consumed **in declaration order**. Required positionals should come first; variadics should be last.
+Positionals are consumed **in declaration order**. Required positionals should
+come first; variadics should be last.
 
 ```ts
 operation(
@@ -105,12 +101,18 @@ operation(
     positionals: [
       positionalRequired({ type: typeString, label: "SOURCE" }),
       positionalRequired({ type: typeString, label: "DEST" }),
-      positionalOptional({ type: typeString, label: "TAG", default: () => "latest" }),
+      positionalOptional({
+        type: typeString,
+        label: "TAG",
+        default: () => "latest",
+      }),
       positionalVariadics({ type: typeString, label: "EXTRA" }),
     ],
   },
-  async (_ctx, { positionals: [source, dest, tag, extras] }) => { /* ... */ },
-)
+  async (_ctx, { positionals: [source, dest, tag, extras] }) => {
+    /* ... */
+  },
+);
 // my-cli src/ dst/                →  source="src/", dest="dst/", tag="latest", extras=[]
 // my-cli src/ dst/ v2 a b c       →  source="src/", dest="dst/", tag="v2", extras=["a","b","c"]
 ```

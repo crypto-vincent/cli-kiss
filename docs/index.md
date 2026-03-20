@@ -2,22 +2,29 @@
 layout: home
 
 hero:
-  name: cli-kiss
-  text: Keep It Simple, Stupid
-  tagline: No bloat, no dependency, full-featured CLI command runner for TypeScript.
+  name: cli-kiss 💋
+  text: CLI for TypeScript.
+  tagline:
+    No bloat, no dependency. Only what you need.</br>Standard expected behaviour
+    that users are used to.</br><span>K</span>eep <span>I</span>t
+    <span>S</span>imple and <span>S</span>tupid, it just does the job.
+
   actions:
     - theme: brand
       text: Get Started
-      link: /guide/getting-started
+      link: /guide/01_getting_started
     - theme: alt
       text: View on GitHub
       link: https://github.com/crypto-vincent/cli-kiss
 
 features:
   - title: Zero dependencies
-    details: cli-kiss ships with no runtime dependencies. Pure TypeScript, no bloat.
+    details:
+      Ships with no runtime dependencies.<br/>Pure TypeScript, 5kb bundled.
   - title: Fully typed
-    details: Options, positionals, and commands are all strongly typed end-to-end.
+    details:
+      TypeScript first.<br/>Options and positionals inputs strongly typed.
   - title: Composable
-    details: Build complex CLIs by chaining and nesting commands with ease.
+    details:
+      Easily create nested subcommands.<br/>Build complex CLIs by nesting logic.
 ---
