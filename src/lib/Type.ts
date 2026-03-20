@@ -84,6 +84,7 @@ export const typeBoolean: Type<boolean> = {
  * @example
  * ```ts
  * typeDate.decoder("2024-01-15") // → Date object for 2024-01-15
+ * typeDate.decoder("2024-01-15T13:45:30Z") // → Date object for 2024-01-15 13:45:30 UTC
  * typeDate.decoder("not a date") // throws TypoError
  * ```
  */
