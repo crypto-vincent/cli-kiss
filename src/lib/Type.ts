@@ -248,7 +248,7 @@ export const typeString: Type<string> = {
  *   },
  * });
  * // "--port 8080"   →  8080
- * // "--port 99999"  →  TypoError: <PORT>: Port: from: Number: Out of range
+ * // "--port 99999"  →  TypoError: --port: <PORT>: Port: Out of range
  * ```
  */
 export function typeConverted<Before, After>(
@@ -351,7 +351,7 @@ export function typeOneOf(
  * ```ts
  * const typePoint = typeTuple([typeNumber, typeNumber]);
  * typePoint.decoder("3.14,2.71") // → [3.14, 2.71]
- * typePoint.decoder("1,2,3")     // throws TypoError: Found 3 splits: Expected 2 splits
+ * typePoint.decoder("1,2,3")     // → [1, 2]
  * typePoint.decoder("x,2")       // throws TypoError: at 0: Number: Unable to parse: "x"
  * ```
  */

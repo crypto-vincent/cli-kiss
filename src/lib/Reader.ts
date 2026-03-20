@@ -192,7 +192,7 @@ export class ReaderArgs {
    * consuming and parsing any intervening option tokens as side-effects.
    *
    * Option tokens encountered during the scan are recorded in the internal results map
-   * (equivalent to registering them against their key). Any unrecognised option token
+   * (equivalent to recording their values against their key). Any unrecognised option token
    * causes a {@link TypoError} to be thrown immediately.
    *
    * After `--` is encountered, all remaining tokens are treated as positionals.
