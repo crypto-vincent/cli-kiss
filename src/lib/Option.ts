@@ -123,7 +123,7 @@ export function optionSingleValue<Value>(definition: {
             throw new TypoError(
               new TypoText(
                 new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(`: Must not be set multiple times`),
+                new TypoString(`: Requires a single value, but got multiple`),
               ),
             );
           }

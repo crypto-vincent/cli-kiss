@@ -268,7 +268,10 @@ it("run", async () => {
       "43",
     ],
     [],
-    [subcommandUsage, "Error: --single-value: Must not be set multiple times"],
+    [
+      subcommandUsage,
+      "Error: --single-value: Requires a single value, but got multiple",
+    ],
     1,
   );
 });
