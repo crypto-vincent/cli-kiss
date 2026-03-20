@@ -12,6 +12,49 @@ import {
   TypoText,
 } from "./Typo";
 
+/**
+ * Converts a {@link CommandUsage} model into an array of styled lines ready to be
+ * joined with `"\n"` and printed to the terminal.
+ *
+ * The output format is:
+ * ```
+ * Usage: <cliName> [breadcrumbs...]
+ *
+ * <description> (<hint>)
+ * <detail lines...>
+ *
+ * Positionals:
+ *   <LABEL>  <description> (<hint>)
+ *
+ * Subcommands:
+ *   <name>  <description> (<hint>)
+ *
+ * Options:
+ *   -s, --long <LABEL>  <description> (<hint>)
+ *
+ * ```
+ * Sections that have no entries are omitted. The trailing empty line is always included.
+ *
+ * Column alignment within each section is handled by {@link TypoGrid}: the widest entry
+ * in each column sets the width for the entire section.
+ *
+ * @param params.cliName - The CLI program name shown at the start of the usage line.
+ * @param params.commandUsage - The usage model produced by
+ *   {@link CommandFactory.generateUsage}.
+ * @param params.typoSupport - Controls color/styling of the output.
+ * @returns An ordered array of strings, one per output line (including a trailing
+ *   empty string for the blank line at the end).
+ *
+ * @example
+ * ```ts
+ * const lines = usageToStyledLines({
+ *   cliName: "my-cli",
+ *   commandUsage: commandFactory.generateUsage(),
+ *   typoSupport: TypoSupport.none(),
+ * });
+ * process.stdout.write(lines.join("\n"));
+ * ```
+ */
 export function usageToStyledLines(params: {
   cliName: Lowercase<string>;
   commandUsage: CommandUsage;
