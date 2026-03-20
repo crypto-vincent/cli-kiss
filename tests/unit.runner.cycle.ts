@@ -112,6 +112,17 @@ it("run", async () => {
     ],
     1,
   );
+  await testCase(
+    ["required1", "--flag=not-a-bool", "unknown", "-wut", "--single-value"],
+    [],
+    [
+      rootUsage,
+      'Error: <SUBCOMMAND>: Invalid value: "unknown"',
+      "Error: -wut: Unexpected unknown option",
+      "Error: --single-value: Requires a value, but got end of input",
+    ],
+    1,
+  );
 
   // Test missing required inputs
   await testCase(
