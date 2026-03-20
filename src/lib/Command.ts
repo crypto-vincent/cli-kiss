@@ -6,11 +6,15 @@ import { TypoError, TypoString, typoStyleConstants, TypoText } from "./Typo";
 
 export type Command<Context, Result> = {
   getDescription(): string | undefined;
-  createRunnerFromArgs(readerArgs: ReaderArgs): CommandRunner<Context, Result>;
+  createFactory(readerArgs: ReaderArgs): CommandFactory<Context, Result>;
 };
 
-export type CommandRunner<Context, Result> = {
+export type CommandFactory<Context, Result> = {
   generateUsage(): CommandUsage;
+  createInstance(): CommandInstance<Context, Result>;
+};
+
+export type CommandInstance<Context, Result> = {
   executeWithContext(context: Context): Promise<Result>;
 };
 
@@ -45,7 +49,7 @@ export function command<Context, Result>(
     getDescription() {
       return metadata.description;
     },
-    createRunnerFromArgs(readerArgs: ReaderArgs) {
+    createFactory(readerArgs: ReaderArgs) {
       function generateUsage(): CommandUsage {
         const operationUsage = operation.generateUsage();
         return {
@@ -59,21 +63,26 @@ export function command<Context, Result>(
         };
       }
       try {
-        const operationRunner = operation.createRunnerFromArgs(readerArgs);
+        const operationFactory = operation.createFactory(readerArgs);
         const endPositional = readerArgs.consumePositional();
         if (endPositional !== undefined) {
           throw Error(`Unexpected argument: "${endPositional}"`);
         }
         return {
           generateUsage,
-          async executeWithContext(context: Context) {
-            return operationRunner.executeWithContext(context);
+          createInstance() {
+            const operationInstance = operationFactory.createInstance();
+            return {
+              async executeWithContext(context: Context) {
+                return await operationInstance.executeWithContext(context);
+              },
+            };
           },
         };
       } catch (error) {
         return {
           generateUsage,
-          async executeWithContext() {
+          createInstance() {
             throw error;
           },
         };
@@ -91,9 +100,9 @@ export function commandWithSubcommands<Context, Payload, Result>(
     getDescription() {
       return metadata.description;
     },
-    createRunnerFromArgs(readerArgs: ReaderArgs) {
+    createFactory(readerArgs: ReaderArgs) {
       try {
-        const operationRunner = operation.createRunnerFromArgs(readerArgs);
+        const operationFactory = operation.createFactory(readerArgs);
         const subcommandName = readerArgs.consumePositional();
         if (subcommandName === undefined) {
           throw new TypoError(
@@ -114,12 +123,11 @@ export function commandWithSubcommands<Context, Payload, Result>(
             ),
           );
         }
-        const subcommandRunner =
-          subcommandInput.createRunnerFromArgs(readerArgs);
+        const subcommandFactory = subcommandInput.createFactory(readerArgs);
         return {
           generateUsage() {
             const operationUsage = operation.generateUsage();
-            const subcommandUsage = subcommandRunner.generateUsage();
+            const subcommandUsage = subcommandFactory.generateUsage();
             return {
               metadata: subcommandUsage.metadata,
               breadcrumbs: operationUsage.positionals
@@ -133,10 +141,16 @@ export function commandWithSubcommands<Context, Payload, Result>(
               options: operationUsage.options.concat(subcommandUsage.options),
             };
           },
-          async executeWithContext(context: Context) {
-            return await subcommandRunner.executeWithContext(
-              await operationRunner.executeWithContext(context),
-            );
+          createInstance() {
+            const operationInstance = operationFactory.createInstance();
+            const subcommandInstance = subcommandFactory.createInstance();
+            return {
+              async executeWithContext(context: Context) {
+                return await subcommandInstance.executeWithContext(
+                  await operationInstance.executeWithContext(context),
+                );
+              },
+            };
           },
         };
       } catch (error) {
@@ -158,7 +172,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
               options: operationUsage.options,
             };
           },
-          async executeWithContext() {
+          createInstance() {
             throw error;
           },
         };
@@ -176,13 +190,13 @@ export function commandChained<Context, Payload, Result>(
     getDescription() {
       return metadata.description;
     },
-    createRunnerFromArgs(readerArgs: ReaderArgs) {
-      const operationRunner = operation.createRunnerFromArgs(readerArgs);
-      const nextCommandRunner = nextCommand.createRunnerFromArgs(readerArgs);
+    createFactory(readerArgs: ReaderArgs) {
+      const operationFactory = operation.createFactory(readerArgs);
+      const nextCommandFactory = nextCommand.createFactory(readerArgs);
       return {
         generateUsage() {
           const operationUsage = operation.generateUsage();
-          const nextCommandUsage = nextCommandRunner.generateUsage();
+          const nextCommandUsage = nextCommandFactory.generateUsage();
           return {
             metadata: nextCommandUsage.metadata,
             breadcrumbs: operationUsage.positionals
@@ -195,10 +209,16 @@ export function commandChained<Context, Payload, Result>(
             options: operationUsage.options.concat(nextCommandUsage.options),
           };
         },
-        async executeWithContext(context: Context) {
-          return await nextCommandRunner.executeWithContext(
-            await operationRunner.executeWithContext(context),
-          );
+        createInstance() {
+          const operationInstance = operationFactory.createInstance();
+          const nextCommandInstance = nextCommandFactory.createInstance();
+          return {
+            async executeWithContext(context: Context) {
+              return await nextCommandInstance.executeWithContext(
+                await operationInstance.executeWithContext(context),
+              );
+            },
+          };
         },
       };
     },

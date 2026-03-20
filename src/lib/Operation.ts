@@ -4,10 +4,14 @@ import { ReaderArgs } from "./Reader";
 
 export type Operation<Input, Output> = {
   generateUsage(): OperationUsage;
-  createRunnerFromArgs(readerArgs: ReaderArgs): OperationRunner<Input, Output>;
+  createFactory(readerArgs: ReaderArgs): OperationFactory<Input, Output>;
 };
 
-export type OperationRunner<Input, Output> = {
+export type OperationFactory<Input, Output> = {
+  createInstance(): OperationInstance<Input, Output>;
+};
+
+export type OperationInstance<Input, Output> = {
   executeWithContext(input: Input): Promise<Output>;
 };
 
@@ -46,7 +50,7 @@ export function operation<
       }
       return { options: optionsUsage, positionals: positionalsUsage };
     },
-    createRunnerFromArgs(readerArgs: ReaderArgs) {
+    createFactory(readerArgs: ReaderArgs) {
       const optionsGetters: any = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
@@ -57,15 +61,19 @@ export function operation<
         positionalsValues.push(positionalInput.consumePositionals(readerArgs));
       }
       return {
-        executeWithContext(context: Context) {
+        createInstance() {
           const optionsValues: any = {};
           for (const optionKey in optionsGetters) {
             optionsValues[optionKey] = optionsGetters[optionKey]!.getValue();
           }
-          return handler(context, {
-            options: optionsValues,
-            positionals: positionalsValues,
-          });
+          return {
+            executeWithContext(context: Context) {
+              return handler(context, {
+                options: optionsValues,
+                positionals: positionalsValues,
+              });
+            },
+          };
         },
       };
     },

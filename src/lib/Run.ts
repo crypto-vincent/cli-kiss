@@ -1,4 +1,4 @@
-import { Command, CommandRunner } from "./Command";
+import { Command, CommandFactory } from "./Command";
 import { ReaderArgs } from "./Reader";
 import { TypoSupport } from "./Typo";
 import { usageToStyledLines } from "./Usage";
@@ -9,14 +9,13 @@ export async function runAsCliAndExit<Context>(
   context: Context,
   command: Command<Context, void>,
   application?: {
-    usageOnError?: boolean | undefined;
     usageOnHelp?: boolean | undefined;
     buildVersion?: string | undefined;
     useColors?: boolean | undefined;
     onLogStdOut?: ((message: string) => void) | undefined; // TODO - this is a problem, deep commands use console
     onLogStdErr?: ((message: string) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
-    onError?: ((error: unknown) => void) | undefined;
+    onExecutionError?: ((error: unknown) => void) | undefined;
   },
 ): Promise<never> {
   // TODO - can those flags could be implemented as a chained command ??
@@ -45,14 +44,16 @@ export async function runAsCliAndExit<Context>(
     longs: ["completion"],
   });
   */
-  const commandRunner = command.createRunnerFromArgs(readerArgs);
+  const commandFactory = command.createFactory(readerArgs);
   while (true) {
     const positional = readerArgs.consumePositional();
     if (positional === undefined) {
       break;
     }
   }
+  const typoSupport = chooseTypoSupport(application?.useColors);
   const onLogStdOut = application?.onLogStdOut ?? console.log;
+  const onLogStdErr = application?.onLogStdErr ?? console.error;
   const onExit = application?.onExit ?? process.exit;
   if (buildVersion) {
     if (readerArgs.getOptionValues("--version" as any).length > 0) {
@@ -62,37 +63,38 @@ export async function runAsCliAndExit<Context>(
   }
   if (usageOnHelp) {
     if (readerArgs.getOptionValues("--help" as any).length > 0) {
-      const typoSupport = chooseTypoSupport(application?.useColors);
-      onLogStdOut(computeUsageString(cliName, commandRunner, typoSupport));
+      onLogStdOut(computeUsageString(cliName, commandFactory, typoSupport));
       return onExit(0);
     }
   }
   try {
-    await commandRunner.executeWithContext(context);
-    return onExit(0);
-  } catch (error) {
-    if (application?.onError) {
-      application.onError(error);
-    } else {
-      const onLogStdErr = application?.onLogStdErr ?? console.error;
-      const typoSupport = chooseTypoSupport(application?.useColors);
-      if (application?.usageOnError ?? true) {
-        onLogStdErr(computeUsageString(cliName, commandRunner, typoSupport));
+    const commandInstance = commandFactory.createInstance();
+    try {
+      await commandInstance.executeWithContext(context);
+      return onExit(0);
+    } catch (error) {
+      if (application?.onExecutionError) {
+        application.onExecutionError(error);
+      } else {
+        onLogStdErr(typoSupport.computeStyledErrorMessage(error));
       }
-      onLogStdErr(typoSupport.computeStyledErrorMessage(error));
+      return onExit(1);
     }
+  } catch (error) {
+    onLogStdErr(computeUsageString(cliName, commandFactory, typoSupport));
+    onLogStdErr(typoSupport.computeStyledErrorMessage(error));
     return onExit(1);
   }
 }
 
 function computeUsageString<Context, Result>(
   cliName: Lowercase<string>,
-  commandRunner: CommandRunner<Context, Result>,
+  commandFactory: CommandFactory<Context, Result>,
   typoSupport: TypoSupport,
 ) {
   return usageToStyledLines({
     cliName,
-    commandUsage: commandRunner.generateUsage(),
+    commandUsage: commandFactory.generateUsage(),
     typoSupport,
   }).join("\n");
 }

@@ -147,6 +147,7 @@ async function executeInterpreted<Context, Result>(
   command: Command<Context, Result>,
 ) {
   const readerArgs = new ReaderArgs(positionals);
-  const commandRunner = command.createRunnerFromArgs(readerArgs);
-  return await commandRunner.executeWithContext(context);
+  const commandFactory = command.createFactory(readerArgs);
+  const commandInstance = commandFactory.createInstance();
+  return await commandInstance.executeWithContext(context);
 }

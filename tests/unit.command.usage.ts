@@ -211,18 +211,10 @@ async function getUsage<Context, Result>(
   command: Command<Context, Result>,
 ) {
   const readerArgs = new ReaderArgs(args);
-  const commandRunner = command.createRunnerFromArgs(readerArgs);
-  /*
-  try {
-    const interpreterInstance = interpreterFactory.createInterpreterInstance();
-    console.log(await interpreterInstance.executeWithContext({} as Context));
-  } catch (error) {
-    console.error("Error during execution:", error);
-  }
-  */
+  const commandFactory = command.createFactory(readerArgs);
   return usageToStyledLines({
     cliName: "my-cli",
-    commandUsage: commandRunner.generateUsage(),
+    commandUsage: commandFactory.generateUsage(),
     typoSupport: TypoSupport.mock(),
   });
 }

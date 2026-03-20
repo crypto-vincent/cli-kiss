@@ -53,9 +53,31 @@ it("run", async () => {
     "",
   ].join("\n");
 
-  await testCase(["required1", "subcommand", "required2"], [], [], 0);
-  await testCase(["--version"], ["my-cli 1.0.0"], [], 0);
+  // Test that everything could work normally
+  await testCase(
+    ["required1", "subcommand", "required2"],
+    ["Has executed root command", "Has executed subcommand"],
+    [],
+    0,
+  );
 
+  // Check that version flag takes precedence over execution
+  await testCase(["--version"], ["my-cli 1.0.0"], [], 0);
+  await testCase(["required1", "--version"], ["my-cli 1.0.0"], [], 0);
+  await testCase(
+    ["required1", "subcommand", "--version"],
+    ["my-cli 1.0.0"],
+    [],
+    0,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--version"],
+    ["my-cli 1.0.0"],
+    [],
+    0,
+  );
+
+  // Check that help flag takes precedence over execution
   await testCase(["--help"], [rootUsage], [], 0);
   await testCase(["required1", "--help"], [rootUsage], [], 0);
   await testCase(
@@ -71,6 +93,7 @@ it("run", async () => {
     0,
   );
 
+  // Test missing required inputs
   await testCase(
     [],
     [],
@@ -89,38 +112,14 @@ it("run", async () => {
     [subcommandUsage, "Error: Missing required positional argument: REQUIRED2"],
     1,
   );
-  await testCase(
-    ["required1", "subcommand", "invalid"],
-    [],
-    [
-      subcommandUsage,
-      'Error: REQUIRED2: Unexpected value: "invalid" (expected: "required2"|"required2-bis")',
-    ],
-    1,
-  );
 
+  // Test that flags become available when subcommand is known
   await testCase(
-    ["required1", "subcommand", "required2", "--nope"],
+    ["--url", "https://example.com"],
     [],
-    [subcommandUsage, "Error: Unknown option: --nope"],
+    [rootUsage, `Error: Unknown option: --url`],
     1,
   );
-  await testCase(
-    ["required1", "subcommand", "required2", "--url"],
-    [],
-    [
-      subcommandUsage,
-      "Error: Option parsing: --url: requires a value, but got end of input",
-    ],
-    1,
-  );
-  await testCase(
-    ["required1", "subcommand", "required2", "--url", "not-a-url"],
-    [],
-    [subcommandUsage, "Error: --url: URL: TypeError: Invalid URL"],
-    1,
-  );
-
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
@@ -135,17 +134,12 @@ it("run", async () => {
   );
   await testCase(
     ["required1", "subcommand", "required2", "--url", "https://example.com"],
-    [],
+    ["Has executed root command", "Has executed subcommand"],
     [],
     0,
   );
 
-  await testCase(
-    ["--invalid", "required1", "subcommand", "required2"],
-    [],
-    [rootUsage, `Error: Unknown option: --invalid`],
-    1,
-  );
+  // Test option as flag parsing cases
   await testCase(
     ["--flag", "--flag", "required1", "subcommand", "required2"],
     [],
@@ -163,17 +157,67 @@ it("run", async () => {
   );
   await testCase(
     ["--flag=no", "required1", "subcommand", "required2"],
-    [],
+    ["Has executed root command", "Has executed subcommand"],
     [],
     0,
   );
   await testCase(
     ["--flag=yes", "required1", "subcommand", "required2"],
-    [],
+    ["Has executed root command", "Has executed subcommand"],
     [],
     0,
   );
 
+  // Test parsing errors
+  await testCase(
+    ["--invalid", "required1", "subcommand", "required2"],
+    [],
+    [rootUsage, `Error: Unknown option: --invalid`],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--nope"],
+    [],
+    [subcommandUsage, "Error: Unknown option: --nope"],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--url"],
+    [],
+    [
+      subcommandUsage,
+      "Error: Option parsing: --url: requires a value, but got end of input",
+    ],
+    1,
+  );
+
+  // Test invalid input values type decoding errors
+  await testCase(
+    ["required1", "subcommand", "invalid"],
+    [],
+    [
+      subcommandUsage,
+      'Error: REQUIRED2: Unexpected value: "invalid" (expected: "required2"|"required2-bis")',
+    ],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--single-value=44"],
+    [],
+    [
+      subcommandUsage,
+      'Error: --single-value: NUMBER: Unexpected value: "44" (expected: "42"|"43")',
+    ],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--url", "not-a-url"],
+    [],
+    [subcommandUsage, "Error: --url: URL: TypeError: Invalid URL"],
+    1,
+  );
+
+  // Test option multiple value parsing cases
   await testCase(
     [
       "required1",
@@ -183,7 +227,7 @@ it("run", async () => {
       "--repeatable",
       "43",
     ],
-    [],
+    ["Has executed root command", "Has executed subcommand"],
     [],
     0,
   );
@@ -203,15 +247,6 @@ it("run", async () => {
     ],
     1,
   );
-  await testCase(
-    ["required1", "subcommand", "required2", "--single-value=44"],
-    [],
-    [
-      subcommandUsage,
-      'Error: --single-value: NUMBER: Unexpected value: "44" (expected: "42"|"43")',
-    ],
-    1,
-  );
 });
 
 async function testCase(
@@ -220,7 +255,16 @@ async function testCase(
   expectStdErr: Array<string>,
   expectExit: number,
 ) {
-  const cmd = commandWithSubcommands<null, null, void>(
+  const onLogStdOut = makeMocked<string, void>([
+    null as unknown as void,
+    null as unknown as void,
+  ]);
+  const onLogStdErr = makeMocked<string, void>([
+    null as unknown as void,
+    null as unknown as void,
+  ]);
+  const onExit = makeMocked<number, never>([null as never]);
+  const cmd = commandWithSubcommands<null, void, void>(
     { description: "Root Description" },
     operation(
       {
@@ -250,7 +294,7 @@ async function testCase(
         ],
       },
       async () => {
-        return null;
+        onLogStdOut.call("Has executed root command");
       },
     ),
     {
@@ -284,20 +328,13 @@ async function testCase(
               }),
             ],
           },
-          async () => {},
+          async () => {
+            onLogStdOut.call("Has executed subcommand");
+          },
         ),
       ),
     },
   );
-  const onLogStdOut = makeMocked<string, void>([
-    null as unknown as void,
-    null as unknown as void,
-  ]);
-  const onLogStdErr = makeMocked<string, void>([
-    null as unknown as void,
-    null as unknown as void,
-  ]);
-  const onExit = makeMocked<number, never>([null as never]);
   await runAsCliAndExit("my-cli", args, null, cmd, {
     buildVersion: "1.0.0",
     onExit: onExit.call,
