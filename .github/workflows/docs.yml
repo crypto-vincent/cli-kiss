@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - "COOKBOOK.md"
       - "docs/**"
       - ".github/workflows/docs.yml"
   workflow_dispatch:
@@ -24,32 +23,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pandoc
-        run: sudo apt-get install -y pandoc
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
       - name: Build site
-        run: |
-          mkdir -p _site
-          pandoc COOKBOOK.md \
-            --from gfm \
-            --to html5 \
-            --standalone \
-            --template docs/template.html \
-            --toc \
-            --toc-depth 2 \
-            --highlight-style zenburn \
-            --metadata title="cli-kiss Cookbook" \
-            --css style.css \
-            --output _site/index.html
-          cp docs/style.css _site/style.css
+        run: npm run docs:build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: _site
+          path: docs/.vitepress/dist
 
   deploy:
     needs: build
