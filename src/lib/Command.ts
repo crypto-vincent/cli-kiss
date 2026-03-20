@@ -66,10 +66,6 @@ export function command<Context, Result>(
       }
       try {
         const operationFactory = operation.createFactory(readerArgs);
-        const endPositional = readerArgs.consumePositional();
-        if (endPositional !== undefined) {
-          throw Error(`Unexpected argument: "${endPositional}"`);
-        }
         return {
           generateUsage,
           createInstance() {

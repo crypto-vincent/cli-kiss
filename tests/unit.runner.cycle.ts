@@ -148,13 +148,21 @@ it("run", async () => {
   await testCase(
     ["--url", "https://example.com"],
     [],
-    [rootUsage, "Error: --url: Unexpected unknown option"],
+    [
+      rootUsage,
+      "Error: --url: Unexpected unknown option",
+      'Error: Unexpected argument: "https://example.com"',
+    ],
     1,
   );
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
-    [rootUsage, "Error: --url: Unexpected unknown option"],
+    [
+      rootUsage,
+      "Error: --url: Unexpected unknown option",
+      'Error: Unexpected argument: "https://example.com"',
+    ],
     1,
   );
   await testCase(
@@ -200,7 +208,13 @@ it("run", async () => {
   await testCase(
     ["--invalid", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, "Error: --invalid: Unexpected unknown option"],
+    [
+      rootUsage,
+      "Error: --invalid: Unexpected unknown option",
+      'Error: Unexpected argument: "required1"',
+      'Error: Unexpected argument: "subcommand"', // TODO - do we need those ?
+      'Error: Unexpected argument: "required2"',
+    ],
     1,
   );
   await testCase(
@@ -294,6 +308,8 @@ async function testCase(
     null as unknown as void,
   ]);
   const onLogStdErr = makeMocked<string, void>([
+    null as unknown as void,
+    null as unknown as void,
     null as unknown as void,
     null as unknown as void,
     null as unknown as void,

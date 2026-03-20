@@ -20,7 +20,6 @@ export async function runAsCliAndExit<Context>(
 ): Promise<never> {
   const readerArgs = new ReaderArgs(cliArgs);
   const usageOnHelp = application?.usageOnHelp ?? true;
-  // TODO - this should be part of the usage ? maybe use chained command ?
   if (usageOnHelp) {
     readerArgs.registerOption({
       shorts: [],
@@ -49,15 +48,16 @@ export async function runAsCliAndExit<Context>(
   const onLogStdErr = application?.onLogStdErr ?? console.error;
   const onExit = application?.onExit ?? process.exit;
   const commandFactory = command.createFactory(readerArgs);
-  const errors = [];
+  const parsingErrors = [];
   while (true) {
     try {
       const positional = readerArgs.consumePositional();
       if (positional === undefined) {
         break;
       }
-    } catch (error) {
-      errors.push(error);
+      throw Error(`Unexpected argument: "${positional}"`);
+    } catch (parsingError) {
+      parsingErrors.push(parsingError);
     }
   }
   if (usageOnHelp) {
@@ -72,25 +72,24 @@ export async function runAsCliAndExit<Context>(
       return onExit(0);
     }
   }
-  // TODO - should we fail if errors is not empty ?
   try {
     const commandInstance = commandFactory.createInstance();
     try {
       await commandInstance.executeWithContext(context);
       return onExit(0);
-    } catch (error) {
+    } catch (executionError) {
       if (application?.onExecutionError) {
-        application.onExecutionError(error);
+        application.onExecutionError(executionError);
       } else {
-        onLogStdErr(typoSupport.computeStyledErrorMessage(error));
+        onLogStdErr(typoSupport.computeStyledErrorMessage(executionError));
       }
       return onExit(1);
     }
-  } catch (error) {
-    errors.unshift(error);
+  } catch (parsingError) {
+    parsingErrors.unshift(parsingError);
     onLogStdErr(computeUsageString(cliName, commandFactory, typoSupport));
-    for (const error of errors) {
-      onLogStdErr(typoSupport.computeStyledErrorMessage(error));
+    for (const parsingError of parsingErrors) {
+      onLogStdErr(typoSupport.computeStyledErrorMessage(parsingError));
     }
     return onExit(1);
   }
