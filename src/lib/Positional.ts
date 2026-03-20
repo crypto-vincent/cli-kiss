@@ -38,7 +38,11 @@ export function positionalRequired<Value>(definition: {
           ),
         );
       }
-      return typeDecodeWithContext(definition.type, positional, makeDecodeContext(label));
+      return typeDecodeWithContext(
+        definition.type,
+        positional,
+        makeDecodeContext(label),
+      );
     },
   };
 }
@@ -74,7 +78,11 @@ export function positionalOptional<Value>(definition: {
           );
         }
       }
-      return typeDecodeWithContext(definition.type, positional, makeDecodeContext(label));
+      return typeDecodeWithContext(
+        definition.type,
+        positional,
+        makeDecodeContext(label),
+      );
     },
   };
 }
@@ -109,7 +117,11 @@ export function positionalVariadics<Value>(definition: {
           break;
         }
         positionals.push(
-          typeDecodeWithContext(definition.type, positional, makeDecodeContext(label)),
+          typeDecodeWithContext(
+            definition.type,
+            positional,
+            makeDecodeContext(label),
+          ),
         );
       }
       return positionals;
