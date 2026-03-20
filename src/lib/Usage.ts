@@ -58,14 +58,9 @@ export function usageToStyledLines(params: {
     const typoGrid = new TypoGrid();
     for (const positionalUsage of commandUsage.positionals) {
       const typoGridRow = new Array<TypoText>();
-      typoGridRow.push(new TypoText(textDelimiter()));
+      typoGridRow.push(new TypoText(textDelimiter("  ")));
       typoGridRow.push(new TypoText(textUserInput(positionalUsage.label)));
-      if (positionalUsage.description) {
-        typoGridRow.push(new TypoText(textDelimiter()));
-        typoGridRow.push(
-          new TypoText(textUsefulInfo(positionalUsage.description)),
-        );
-      }
+      typoGridRow.push(...createInformationals(positionalUsage));
       typoGrid.pushRow(typoGridRow);
     }
     lines.push(
@@ -77,14 +72,11 @@ export function usageToStyledLines(params: {
     lines.push("");
     lines.push(textBlockTitle("Subcommands:").computeStyledString(typoSupport));
     const typoGrid = new TypoGrid();
-    for (const subcommand of commandUsage.subcommands) {
+    for (const subcommandUsage of commandUsage.subcommands) {
       const typoGridRow = new Array<TypoText>();
-      typoGridRow.push(new TypoText(textDelimiter()));
-      typoGridRow.push(new TypoText(textConstants(subcommand.name)));
-      if (subcommand.description) {
-        typoGridRow.push(new TypoText(textDelimiter()));
-        typoGridRow.push(new TypoText(textUsefulInfo(subcommand.description)));
-      }
+      typoGridRow.push(new TypoText(textDelimiter("  ")));
+      typoGridRow.push(new TypoText(textConstants(subcommandUsage.name)));
+      typoGridRow.push(...createInformationals(subcommandUsage));
       typoGrid.pushRow(typoGridRow);
     }
     lines.push(
@@ -98,7 +90,7 @@ export function usageToStyledLines(params: {
     const typoGrid = new TypoGrid();
     for (const optionUsage of commandUsage.options) {
       const typoGridRow = new Array<TypoText>();
-      typoGridRow.push(new TypoText(textDelimiter()));
+      typoGridRow.push(new TypoText(textDelimiter("  ")));
       if (optionUsage.short) {
         typoGridRow.push(
           new TypoText(
@@ -125,10 +117,7 @@ export function usageToStyledLines(params: {
           ),
         );
       }
-      if (optionUsage.description) {
-        typoGridRow.push(new TypoText(textDelimiter()));
-        typoGridRow.push(new TypoText(textUsefulInfo(optionUsage.description)));
-      }
+      typoGridRow.push(...createInformationals(optionUsage));
       typoGrid.pushRow(typoGridRow);
     }
     lines.push(
@@ -138,6 +127,25 @@ export function usageToStyledLines(params: {
 
   lines.push("");
   return lines;
+}
+
+function createInformationals(usage: {
+  description: string | undefined;
+  hint: string | undefined;
+}): Array<TypoText> {
+  const informationals = [];
+  if (usage.description) {
+    informationals.push(textDelimiter(" "));
+    informationals.push(textUsefulInfo(usage.description));
+  }
+  if (usage.hint) {
+    informationals.push(textDelimiter(" "));
+    informationals.push(textSubtleInfo(`(${usage.hint})`));
+  }
+  if (informationals.length > 0) {
+    return [new TypoText(textDelimiter(" "), ...informationals)];
+  }
+  return [];
 }
 
 function textOverview(value: string): TypoString {
@@ -168,6 +176,6 @@ function textUserInput(value: string): TypoString {
   return new TypoString(value, typoStyleUserInput);
 }
 
-function textDelimiter(value?: string): TypoString {
-  return new TypoString(value ?? "  ");
+function textDelimiter(value: string): TypoString {
+  return new TypoString(value);
 }

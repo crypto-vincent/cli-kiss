@@ -16,6 +16,8 @@ import {
   typeUrl,
 } from "../src";
 
+// TODO - unit test for color styling
+
 it("run", async () => {
   const rootUsage = [
     "Root Description",
@@ -92,6 +94,10 @@ it("run", async () => {
     [],
     0,
   );
+
+  // Help takes precedence over version
+  await testCase(["--version", "--help"], [rootUsage], [], 0);
+  await testCase(["--help", "--version"], [rootUsage], [], 0);
 
   // Test missing required inputs
   await testCase(

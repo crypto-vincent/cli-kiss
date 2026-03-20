@@ -94,6 +94,7 @@ const cmd = commandWithSubcommands<string, any, any>(
     sub2: command(
       {
         description: "Subcommand 2 description",
+        hint: "Hint",
         details: [
           "Subcommand 2 details.",
           "Second line of subcommand 2 details.",
@@ -106,6 +107,7 @@ const cmd = commandWithSubcommands<string, any, any>(
               long: "dudu",
               type: typeString,
               default: () => "duduDefault",
+              hint: "Hint",
               description: "Dudu option description",
             }),
           },
@@ -118,6 +120,7 @@ const cmd = commandWithSubcommands<string, any, any>(
             positionalOptional({
               label: "OPT-POS",
               description: "Optional positional string",
+              hint: "Hint",
               type: typeString,
               default: () => "42",
             }),
@@ -159,7 +162,7 @@ it("run", async () => {
     "",
     "{{Subcommands:}@darkGreen}+",
     "  {{sub1}@darkCyan}+  Subcommand 1 description",
-    "  {{sub2}@darkCyan}+  Subcommand 2 description",
+    "  {{sub2}@darkCyan}+  Subcommand 2 description {{(Hint)}-}*",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
@@ -194,14 +197,14 @@ it("run", async () => {
     "  {{<POS-1>}@darkBlue}+        Required positional number 1",
     "  {{<POS-2>}@darkBlue}+        Required positional number 2",
     "  {{<POS-NUMBER>}@darkBlue}+   Required positional number",
-    "  {{[OPT-POS]}@darkBlue}+      Optional positional string",
+    "  {{[OPT-POS]}@darkBlue}+      Optional positional string {{(Hint)}-}*",
     "  {{[VARIADIC]...}@darkBlue}+  Variadic positionals strings",
     "",
     "{{Options:}@darkGreen}+",
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           Root boolean-flag description",
     "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  Root string-option description",
     "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  Root complex-option description",
-    "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description",
+    "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description {{(Hint)}-}*",
     "",
   ]);
 });

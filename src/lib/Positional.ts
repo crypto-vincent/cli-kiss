@@ -9,11 +9,13 @@ export type Positional<Value> = {
 
 export type PositionalUsage = {
   description: string | undefined;
+  hint: string | undefined;
   label: Uppercase<string>;
 };
 
 export function positionalRequired<Value>(definition: {
   description?: string;
+  hint?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Value> {
@@ -22,6 +24,7 @@ export function positionalRequired<Value>(definition: {
     generateUsage() {
       return {
         description: definition.description,
+        hint: definition.hint,
         label: label as Uppercase<string>,
       };
     },
@@ -46,6 +49,7 @@ export function positionalRequired<Value>(definition: {
 
 export function positionalOptional<Value>(definition: {
   description?: string;
+  hint?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
   default: () => Value;
@@ -55,6 +59,7 @@ export function positionalOptional<Value>(definition: {
     generateUsage() {
       return {
         description: definition.description,
+        hint: definition.hint,
         label: label as Uppercase<string>,
       };
     },
@@ -85,6 +90,7 @@ export function positionalOptional<Value>(definition: {
 export function positionalVariadics<Value>(definition: {
   endDelimiter?: string;
   description?: string;
+  hint?: string;
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Array<Value>> {
@@ -93,6 +99,7 @@ export function positionalVariadics<Value>(definition: {
     generateUsage() {
       return {
         description: definition.description,
+        hint: definition.hint,
         label: (`${label}...` +
           (definition.endDelimiter
             ? `["${definition.endDelimiter}"]`

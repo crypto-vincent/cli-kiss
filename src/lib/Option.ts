@@ -15,10 +15,10 @@ export type Option<Value> = {
 
 export type OptionUsage = {
   description: string | undefined;
+  hint: string | undefined;
   long: Lowercase<string>; // TODO - better type for long option names ?
   short: string | undefined;
   label: Uppercase<string> | undefined;
-  // TODO - default value for usage ? but it can be dynamic, so maybe not
 };
 
 export type OptionGetter<Value> = {
@@ -29,6 +29,7 @@ export function optionFlag(definition: {
   long: Lowercase<string>;
   short?: string;
   description?: string;
+  hint?: string;
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   default?: () => boolean;
 }): Option<boolean> {
@@ -37,6 +38,7 @@ export function optionFlag(definition: {
     generateUsage() {
       return {
         description: definition.description,
+        hint: definition.hint,
         long: definition.long,
         short: definition.short,
         label: undefined,
@@ -93,6 +95,7 @@ export function optionSingleValue<Value>(definition: {
   long: Lowercase<string>;
   short?: string;
   description?: string;
+  hint?: string;
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   label?: Uppercase<string>;
   type: Type<Value>;
@@ -103,6 +106,7 @@ export function optionSingleValue<Value>(definition: {
     generateUsage() {
       return {
         description: definition.description,
+        hint: definition.hint,
         long: definition.long,
         short: definition.short,
         label: label as Uppercase<string>,
@@ -158,6 +162,7 @@ export function optionRepeatable<Value>(definition: {
   long: Lowercase<string>;
   short?: string;
   description?: string;
+  hint?: string;
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   label?: Uppercase<string>;
   type: Type<Value>;
@@ -168,6 +173,7 @@ export function optionRepeatable<Value>(definition: {
       // TODO - showcase that it can be repeated ?
       return {
         description: definition.description,
+        hint: definition.hint,
         long: definition.long,
         short: definition.short,
         label: label as Uppercase<string>,

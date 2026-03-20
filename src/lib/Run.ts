@@ -12,27 +12,26 @@ export async function runAsCliAndExit<Context>(
     usageOnHelp?: boolean | undefined;
     buildVersion?: string | undefined;
     useColors?: boolean | undefined;
+    onExecutionError?: ((error: unknown) => void) | undefined;
     onLogStdOut?: ((message: string) => void) | undefined; // TODO - this is a problem, deep commands use console
     onLogStdErr?: ((message: string) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
-    onExecutionError?: ((error: unknown) => void) | undefined;
   },
 ): Promise<never> {
-  // TODO - can those flags could be implemented as a chained command ??
   const readerArgs = new ReaderArgs(cliArgs);
-  const buildVersion = application?.buildVersion;
-  if (buildVersion) {
-    readerArgs.registerOption({
-      shorts: [],
-      longs: ["version"],
-      valued: false,
-    });
-  }
   const usageOnHelp = application?.usageOnHelp ?? true;
   if (usageOnHelp) {
     readerArgs.registerOption({
       shorts: [],
       longs: ["help"],
+      valued: false,
+    });
+  }
+  const buildVersion = application?.buildVersion;
+  if (buildVersion) {
+    readerArgs.registerOption({
+      shorts: [],
+      longs: ["version"],
       valued: false,
     });
   }
@@ -55,15 +54,15 @@ export async function runAsCliAndExit<Context>(
   const onLogStdOut = application?.onLogStdOut ?? console.log;
   const onLogStdErr = application?.onLogStdErr ?? console.error;
   const onExit = application?.onExit ?? process.exit;
-  if (buildVersion) {
-    if (readerArgs.getOptionValues("--version" as any).length > 0) {
-      onLogStdOut([cliName, buildVersion].join(" "));
-      return onExit(0);
-    }
-  }
   if (usageOnHelp) {
     if (readerArgs.getOptionValues("--help" as any).length > 0) {
       onLogStdOut(computeUsageString(cliName, commandFactory, typoSupport));
+      return onExit(0);
+    }
+  }
+  if (buildVersion) {
+    if (readerArgs.getOptionValues("--version" as any).length > 0) {
+      onLogStdOut([cliName, buildVersion].join(" "));
       return onExit(0);
     }
   }
