@@ -41,7 +41,6 @@ it("run", async () => {
     "1.5",
     "1.6",
   ]);
-
   expect(readerArgs.getOptionValues(kFlag1)).toStrictEqual(["true"]);
   expect(readerArgs.getOptionValues(kFlag2)).toStrictEqual(["woops", "true"]);
 });

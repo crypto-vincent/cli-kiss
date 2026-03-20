@@ -68,7 +68,7 @@ export function optionFlag(definition: {
               throw new TypoError(
                 new TypoText(
                   new TypoString(`--${definition.long}`, typoStyleConstants),
-                  new TypoString(`: Failed to compute default value`),
+                  new TypoString(`: Failed to get default value`),
                 ),
                 error,
               );
@@ -135,7 +135,7 @@ export function optionSingleValue<Value>(definition: {
               throw new TypoError(
                 new TypoText(
                   new TypoString(`--${definition.long}`, typoStyleConstants),
-                  new TypoString(`: Failed to compute default value`),
+                  new TypoString(`: Failed to get default value`),
                 ),
                 error,
               );

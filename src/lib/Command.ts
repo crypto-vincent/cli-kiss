@@ -2,7 +2,13 @@ import { OperationDescriptor } from "./Operation";
 import { OptionUsage } from "./Option";
 import { PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
-import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
+import {
+  TypoError,
+  TypoString,
+  typoStyleQuote,
+  typoStyleUserInput,
+  TypoText,
+} from "./Typo";
 
 export type CommandDescriptor<Context, Result> = {
   getInformation(): CommandInformation;
@@ -21,7 +27,7 @@ export type CommandInstance<Context, Result> = {
 export type CommandInformation = {
   description: string;
   hint?: string;
-  details?: string;
+  details?: Array<string>;
   // TODO - printable examples ?
 };
 
@@ -122,7 +128,8 @@ export function commandWithSubcommands<Context, Payload, Result>(
           throw new TypoError(
             new TypoText(
               new TypoString(`<SUBCOMMAND>`, typoStyleUserInput),
-              new TypoString(`: Invalid value: "${subcommandName}"`),
+              new TypoString(`: Invalid value: `),
+              new TypoString(`"${subcommandName}"`, typoStyleQuote),
             ),
           );
         }

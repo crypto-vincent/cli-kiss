@@ -18,7 +18,7 @@ export function usageToStyledLines(params: {
   const lines = new Array<string>();
 
   const breadcrumbs = [
-    textUsageTitle("Usage:").computeStyledString(typoSupport),
+    textUsageHero("Usage:").computeStyledString(typoSupport),
     textConstants(cliName).computeStyledString(typoSupport),
   ].concat(
     commandUsage.breadcrumbs.map((breadcrumb) => {
@@ -38,16 +38,18 @@ export function usageToStyledLines(params: {
   lines.push(breadcrumbs.join(" "));
 
   lines.push("");
-  const infoText = new TypoText();
-  infoText.pushString(textUsageIntro(commandUsage.information.description));
+  const introText = new TypoText();
+  introText.pushString(textUsageText(commandUsage.information.description));
   if (commandUsage.information.hint) {
-    infoText.pushString(textDelimiter(" "));
-    infoText.pushString(textSubtleInfo(`(${commandUsage.information.hint})`));
+    introText.pushString(textDelimiter(" "));
+    introText.pushString(textSubtleInfo(`(${commandUsage.information.hint})`));
   }
-  lines.push(infoText.computeStyledString(typoSupport));
-  if (commandUsage.information.details) {
-    const detailsString = textSubtleInfo(commandUsage.information.details);
-    lines.push(detailsString.computeStyledString(typoSupport));
+  lines.push(introText.computeStyledString(typoSupport));
+
+  for (const detail of commandUsage.information.details ?? []) {
+    const detailText = new TypoText();
+    detailText.pushString(textSubtleInfo(detail));
+    lines.push(detailText.computeStyledString(typoSupport));
   }
 
   if (commandUsage.positionals.length > 0) {
@@ -123,7 +125,6 @@ export function usageToStyledLines(params: {
     );
   }
 
-  lines.push("");
   return lines;
 }
 
@@ -146,24 +147,24 @@ function createInformationals(usage: {
   return [];
 }
 
-function textUsageIntro(value: string): TypoString {
-  return new TypoString(value, { bold: true });
+function textUsageHero(value: string): TypoString {
+  return new TypoString(value, { fgColor: "darkMagenta", bold: true });
 }
 
-function textUsageTitle(value: string): TypoString {
-  return new TypoString(value, { fgColor: "darkMagenta", bold: true });
+function textUsageText(value: string): TypoString {
+  return new TypoString(value, { bold: true });
 }
 
 function textUsefulInfo(value: string): TypoString {
   return new TypoString(value);
 }
 
-function textSubtleInfo(value: string): TypoString {
-  return new TypoString(value, { italic: true, dim: true });
-}
-
 function textBlockTitle(value: string): TypoString {
   return new TypoString(value, { fgColor: "darkGreen", bold: true });
+}
+
+function textSubtleInfo(value: string): TypoString {
+  return new TypoString(value, { italic: true, dim: true });
 }
 
 function textConstants(value: string): TypoString {

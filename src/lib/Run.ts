@@ -8,18 +8,18 @@ export async function runAsCliAndExit<Context>(
   cliArgs: ReadonlyArray<string>,
   context: Context,
   command: CommandDescriptor<Context, void>,
-  application?: {
+  options?: {
+    useColors?: boolean | undefined;
     usageOnHelp?: boolean | undefined;
     buildVersion?: string | undefined;
-    useColors?: boolean | undefined;
-    onLogStdOut?: ((message: string) => void) | undefined; // TODO - this is a problem, deep commands use console
+    onExecutionError?: ((error: unknown) => void) | undefined;
+    onLogStdOut?: ((message: string) => void) | undefined;
     onLogStdErr?: ((message: string) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
-    onExecutionError?: ((error: unknown) => void) | undefined;
   },
 ): Promise<never> {
   const readerArgs = new ReaderArgs(cliArgs);
-  const usageOnHelp = application?.usageOnHelp ?? true;
+  const usageOnHelp = options?.usageOnHelp ?? true;
   if (usageOnHelp) {
     readerArgs.registerOption({
       shorts: [],
@@ -27,7 +27,7 @@ export async function runAsCliAndExit<Context>(
       valued: false,
     });
   }
-  const buildVersion = application?.buildVersion;
+  const buildVersion = options?.buildVersion;
   if (buildVersion) {
     readerArgs.registerOption({
       shorts: [],
@@ -43,10 +43,10 @@ export async function runAsCliAndExit<Context>(
     longs: ["completion"],
   });
   */
-  const typoSupport = chooseTypoSupport(application?.useColors);
-  const onLogStdOut = application?.onLogStdOut ?? console.log;
-  const onLogStdErr = application?.onLogStdErr ?? console.error;
-  const onExit = application?.onExit ?? process.exit;
+  const typoSupport = chooseTypoSupport(options?.useColors);
+  const onLogStdOut = options?.onLogStdOut ?? console.log;
+  const onLogStdErr = options?.onLogStdErr ?? console.error;
+  const onExit = options?.onExit ?? process.exit;
   const commandFactory = command.createFactory(readerArgs);
   while (true) {
     try {
@@ -74,8 +74,8 @@ export async function runAsCliAndExit<Context>(
       await commandInstance.executeWithContext(context);
       return onExit(0);
     } catch (executionError) {
-      if (application?.onExecutionError) {
-        application.onExecutionError(executionError);
+      if (options?.onExecutionError) {
+        options.onExecutionError(executionError);
       } else {
         onLogStdErr(typoSupport.computeStyledErrorMessage(executionError));
       }

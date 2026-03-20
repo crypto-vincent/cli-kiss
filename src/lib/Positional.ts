@@ -72,7 +72,7 @@ export function positionalOptional<Value>(definition: {
           throw new TypoError(
             new TypoText(
               new TypoString(label, typoStyleUserInput),
-              new TypoString(`: Failed to compute default value`),
+              new TypoString(`: Failed to get default value`),
             ),
             error,
           );

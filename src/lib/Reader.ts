@@ -1,4 +1,10 @@
-import { TypoError, TypoString, typoStyleConstants, TypoText } from "./Typo";
+import {
+  TypoError,
+  TypoString,
+  typoStyleConstants,
+  typoStyleQuote,
+  TypoText,
+} from "./Typo";
 
 export type ReaderOptionKey = (string | { __brand: "ReaderOptionKey" }) & {
   __brand: "ReaderOptionKey";
@@ -211,7 +217,8 @@ export class ReaderArgs {
       throw new TypoError(
         new TypoText(
           new TypoString(constant, typoStyleConstants),
-          new TypoString(`: Requires a value before "--"`),
+          new TypoString(`: Requires a value before `),
+          new TypoString(`"--"`, typoStyleQuote),
         ),
       );
     }
@@ -220,7 +227,8 @@ export class ReaderArgs {
       throw new TypoError(
         new TypoText(
           new TypoString(constant, typoStyleConstants),
-          new TypoString(`: Requires a value, but got: "${arg}"`),
+          new TypoString(`: Requires a value, but got: `),
+          new TypoString(`"${arg}"`, typoStyleQuote),
         ),
       );
     }

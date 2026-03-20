@@ -1,4 +1,10 @@
-import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
+import {
+  TypoError,
+  TypoString,
+  typoStyleQuote,
+  typoStyleUserInput,
+  TypoText,
+} from "./Typo";
 
 export type Type<Value> = {
   label: Uppercase<string>; // TODO - is there a better way to enforce uppercase labels?
@@ -15,7 +21,12 @@ export const typeBoolean: Type<boolean> = {
     if (lowerValue === "false" || lowerValue === "no") {
       return false;
     }
-    throw new Error(`Invalid value: "${value}"`);
+    throw new TypoError(
+      new TypoText(
+        new TypoString(`Invalid boolean: `),
+        new TypoString(`"${value}"`, typoStyleQuote),
+      ),
+    );
   },
 };
 
@@ -24,7 +35,12 @@ export const typeDate: Type<Date> = {
   decoder(value: string) {
     const timestamp = Date.parse(value);
     if (isNaN(timestamp)) {
-      throw new Error(`Invalid ISO_8601 value: "${value}"`);
+      throw new TypoError(
+        new TypoText(
+          new TypoString(`Invalid date (ISO_8601): `),
+          new TypoString(`"${value}"`, typoStyleQuote),
+        ),
+      );
     }
     return new Date(timestamp);
   },
@@ -33,7 +49,16 @@ export const typeDate: Type<Date> = {
 export const typeUrl: Type<URL> = {
   label: "URL",
   decoder(value: string) {
-    return new URL(value);
+    try {
+      return new URL(value);
+    } catch {
+      throw new TypoError(
+        new TypoText(
+          new TypoString(`Invalid URL: `),
+          new TypoString(`"${value}"`, typoStyleQuote),
+        ),
+      );
+    }
   },
 };
 
@@ -47,14 +72,32 @@ export const typeString: Type<string> = {
 export const typeNumber: Type<number> = {
   label: "NUMBER",
   decoder(value: string) {
-    return Number(value);
+    try {
+      return Number(value);
+    } catch {
+      throw new TypoError(
+        new TypoText(
+          new TypoString(`Invalid number: `),
+          new TypoString(`"${value}"`, typoStyleQuote),
+        ),
+      );
+    }
   },
 };
 
 export const typeBigInt: Type<bigint> = {
   label: "BIGINT",
   decoder(value: string) {
-    return BigInt(value);
+    try {
+      return BigInt(value);
+    } catch {
+      throw new TypoError(
+        new TypoText(
+          new TypoString(`Invalid integer: `),
+          new TypoString(`"${value}"`, typoStyleQuote),
+        ),
+      );
+    }
   },
 };
 
@@ -95,8 +138,26 @@ export function typeOneOf<Value>(
       if (valuesSet.has(decoded)) {
         return decoded;
       }
-      const valuesDesc = values.map((v) => `"${v}"`).join("|");
-      throw new Error(`Unexpected value: "${value}" (expected: ${valuesDesc})`);
+      const valuesPreview = [];
+      for (const value of values) {
+        if (valuesPreview.length >= 5) {
+          valuesPreview.push(new TypoString(`...`));
+          break;
+        }
+        if (valuesPreview.length > 0) {
+          valuesPreview.push(new TypoString(` | `));
+        }
+        valuesPreview.push(new TypoString(`"${value}"`, typoStyleQuote));
+      }
+      throw new TypoError(
+        new TypoText(
+          new TypoString(`Invalid value: `),
+          new TypoString(`"${value}"`, typoStyleQuote),
+          new TypoString(` (expected one of: `),
+          ...valuesPreview,
+          new TypoString(`)`),
+        ),
+      );
     },
   };
 }
@@ -112,7 +173,13 @@ export function typeTuple<const Elements extends Array<any>>(
     decoder(value: string) {
       const parts = value.split(separator, elementTypes.length);
       if (parts.length !== elementTypes.length) {
-        throw new Error(`Invalid tuple parts: ${JSON.stringify(parts)}`);
+        throw new TypoError(
+          new TypoText(
+            new TypoString(`Invalid tuple: `),
+            new TypoString(`"${value}"`, typoStyleQuote),
+            new TypoString(` (expected ${elementTypes.length} parts)`),
+          ),
+        );
       }
       return parts.map((part, index) =>
         typeDecode(

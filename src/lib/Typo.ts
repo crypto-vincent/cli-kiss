@@ -26,6 +26,10 @@ export type TypoStyle = {
   strikethrough?: boolean;
 };
 
+export const typoStyleFailure: TypoStyle = {
+  fgColor: "darkRed",
+  bold: true,
+};
 export const typoStyleConstants: TypoStyle = {
   fgColor: "darkCyan",
   bold: true,
@@ -34,8 +38,8 @@ export const typoStyleUserInput: TypoStyle = {
   fgColor: "darkBlue",
   bold: true,
 };
-export const typoStyleFailure: TypoStyle = {
-  fgColor: "darkRed",
+export const typoStyleQuote: TypoStyle = {
+  fgColor: "darkYellow",
   bold: true,
 };
 

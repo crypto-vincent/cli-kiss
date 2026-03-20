@@ -142,11 +142,11 @@ it("run", async () => {
 });
 
 async function executeInterpreted<Context, Result>(
-  positionals: Array<string>,
+  args: Array<string>,
   context: Context,
   command: CommandDescriptor<Context, Result>,
 ) {
-  const readerArgs = new ReaderArgs(positionals);
+  const readerArgs = new ReaderArgs(args);
   const commandFactory = command.createFactory(readerArgs);
   const commandInstance = commandFactory.createInstance();
   return await commandInstance.executeWithContext(context);

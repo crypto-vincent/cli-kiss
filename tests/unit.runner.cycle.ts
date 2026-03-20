@@ -35,7 +35,6 @@ it("run", async () => {
     "  --flag[=no]              Option flag description",
     "  --repeatable <STRING>    Option repeatable description",
     "  --single-value <NUMBER>  Option single value description",
-    "",
   ].join("\n");
   const subcommandUsage = [
     "Usage: my-cli <REQUIRED1> subcommand <REQUIRED2> [OPTIONAL] [VARIADICS]...",
@@ -53,7 +52,6 @@ it("run", async () => {
     "  --repeatable <STRING>    Option repeatable description",
     "  --single-value <NUMBER>  Option single value description",
     "  --url <URL>              Option url description",
-    "",
   ].join("\n");
 
   // Test that everything could work normally
@@ -170,7 +168,7 @@ it("run", async () => {
   await testCase(
     ["--flag=42", "required1", "subcommand", "required2"],
     [],
-    [subcommandUsage, 'Error: --flag: <BOOLEAN>: Invalid value: "42"'],
+    [subcommandUsage, 'Error: --flag: <BOOLEAN>: Invalid boolean: "42"'],
     1,
   );
   await testCase(
@@ -224,7 +222,7 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      'Error: <REQUIRED2>: Unexpected value: "invalid" (expected: "required2"|"required2-bis")',
+      'Error: <REQUIRED2>: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
     ],
     1,
   );
@@ -233,14 +231,14 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <NUMBER>: Unexpected value: "44" (expected: "42"|"43")',
+      'Error: --single-value: <NUMBER>: Invalid value: "44" (expected one of: "42" | "43")',
     ],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--url", "not-a-url"],
     [],
-    [subcommandUsage, "Error: --url: <URL>: TypeError: Invalid URL"],
+    [subcommandUsage, 'Error: --url: <URL>: Invalid URL: "not-a-url"'],
     1,
   );
 
