@@ -85,7 +85,7 @@ export type ReaderPositionals = {
  * - End-of-options separator: `--` — all subsequent tokens are treated as positionals.
  *
  * In most cases you do not need to use `ReaderArgs` directly; it is created internally
- * by {@link runAsCliAndExit}. It is exposed for advanced use cases such as building
+ * by {@link runAndExit}. It is exposed for advanced use cases such as building
  * custom runners.
  */
 export class ReaderArgs {

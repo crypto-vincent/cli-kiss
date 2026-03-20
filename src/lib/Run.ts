@@ -44,10 +44,8 @@ import { usageToStyledLines } from "./Usage";
  *   stderr before the error message whenever argument parsing fails.
  * @param options.buildVersion - When provided, registers a `--version` flag that prints
  *   `<cliName> <buildVersion>` to stdout and exits with code `0`.
- * @param options.onExecutionError - Custom handler for errors thrown during command
- *   execution. If omitted, the error is printed to stderr via {@link TypoSupport}.
- * @param options.onLogStdOut - Overrides the standard output sink (default: `console.log`).
- * @param options.onLogStdErr - Overrides the standard error sink (default: `console.error`).
+ * @param options.onError - Custom handler for errors thrown during command execution.
+ *   If omitted, the error is printed to stderr via {@link TypoSupport}.
  * @param options.onExit - Overrides the process exit function (default: `process.exit`).
  *   Useful for testing — supply a function that throws or captures the exit code instead
  *   of actually terminating the process.
@@ -56,7 +54,7 @@ import { usageToStyledLines } from "./Usage";
  *
  * @example
  * ```ts
- * import { runAsCliAndExit, command, operation, positionalRequired, typeString } from "cli-kiss";
+ * import { runAndExit, command, operation, positionalRequired, typeString } from "cli-kiss";
  *
  * const greetCommand = command(
  *   { description: "Greet someone" },
@@ -68,12 +66,12 @@ import { usageToStyledLines } from "./Usage";
  *   ),
  * );
  *
- * await runAsCliAndExit("greet", process.argv.slice(2), undefined, greetCommand, {
+ * await runAndExit("greet", process.argv.slice(2), undefined, greetCommand, {
  *   buildVersion: "1.0.0",
  * });
  * ```
  */
-export async function runAsCliAndExit<Context>(
+export async function runAndExit<Context>(
   cliName: Lowercase<string>,
   cliArgs: ReadonlyArray<string>,
   context: Context,
@@ -83,9 +81,7 @@ export async function runAsCliAndExit<Context>(
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
-    onExecutionError?: ((error: unknown) => void) | undefined;
-    onLogStdOut?: ((message: string) => void) | undefined;
-    onLogStdErr?: ((message: string) => void) | undefined;
+    onError?: ((error: unknown) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
   },
 ): Promise<never> {
@@ -114,17 +110,6 @@ export async function runAsCliAndExit<Context>(
     longs: ["completion"],
   });
   */
-  const typoSupport =
-    options?.useTtyColors === undefined
-      ? TypoSupport.inferFromProcess()
-      : options.useTtyColors === "mock"
-        ? TypoSupport.mock()
-        : options.useTtyColors
-          ? TypoSupport.tty()
-          : TypoSupport.none();
-  const onLogStdOut = options?.onLogStdOut ?? console.log;
-  const onLogStdErr = options?.onLogStdErr ?? console.error;
-  const onExit = options?.onExit ?? process.exit;
   const commandFactory = command.createFactory(readerArgs);
   while (true) {
     try {
@@ -134,15 +119,24 @@ export async function runAsCliAndExit<Context>(
       }
     } catch (_) {}
   }
+  const onExit = options?.onExit ?? process.exit;
+  const typoSupport =
+    options?.useTtyColors === undefined
+      ? TypoSupport.inferFromProcess()
+      : options.useTtyColors === "mock"
+        ? TypoSupport.mock()
+        : options.useTtyColors
+          ? TypoSupport.tty()
+          : TypoSupport.none();
   if (usageOnHelp) {
     if (readerArgs.getOptionValues("--help" as any).length > 0) {
-      onLogStdOut(computeUsageString(cliName, commandFactory, typoSupport));
+      console.log(computeUsageString(cliName, commandFactory, typoSupport));
       return onExit(0);
     }
   }
   if (buildVersion) {
     if (readerArgs.getOptionValues("--version" as any).length > 0) {
-      onLogStdOut([cliName, buildVersion].join(" "));
+      console.log([cliName, buildVersion].join(" "));
       return onExit(0);
     }
   }
@@ -152,18 +146,18 @@ export async function runAsCliAndExit<Context>(
       await commandInstance.executeWithContext(context);
       return onExit(0);
     } catch (executionError) {
-      if (options?.onExecutionError) {
-        options.onExecutionError(executionError);
+      if (options?.onError) {
+        options.onError(executionError);
       } else {
-        onLogStdErr(typoSupport.computeStyledErrorMessage(executionError));
+        console.error(typoSupport.computeStyledErrorMessage(executionError));
       }
       return onExit(1);
     }
   } catch (parsingError) {
     if (options?.usageOnError ?? true) {
-      onLogStdErr(computeUsageString(cliName, commandFactory, typoSupport));
+      console.error(computeUsageString(cliName, commandFactory, typoSupport));
     }
-    onLogStdErr(typoSupport.computeStyledErrorMessage(parsingError));
+    console.error(typoSupport.computeStyledErrorMessage(parsingError));
     return onExit(1);
   }
 }

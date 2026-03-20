@@ -368,9 +368,8 @@ export class TypoError extends Error {
  * - {@link TypoSupport.inferFromProcess} — auto-detects based on `process.stdout.isTTY`
  *   and the `FORCE_COLOR` / `NO_COLOR` environment variables.
  *
- * `TypoSupport` is consumed by {@link runAsCliAndExit} (via the `useTtyColors` option)
- * and can also be used directly when building custom usage renderers with
- * {@link usageToStyledLines}.
+ * `TypoSupport` is consumed by {@link runAndExit} (via the `useTtyColors` option)
+ * and can also be used directly when building custom usage renderers with {@link usageToStyledLines}.
  */
 export class TypoSupport {
   #kind: "none" | "tty" | "mock";

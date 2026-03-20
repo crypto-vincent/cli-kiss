@@ -5,7 +5,7 @@ import {
   optionFlag,
   optionRepeatable,
   optionSingleValue,
-  runAsCliAndExit,
+  runAndExit,
   typeNumber,
   typeUrl,
 } from "../src";
@@ -34,43 +34,43 @@ it("run", async () => {
 });
 
 async function testCase(args: Array<string>, error: string) {
+  const onLogStdOut = makeMocked<string, void>([]);
   const onLogStdErr = makeMocked<string, void>([null as unknown as void]);
   const onExit = makeMocked<number, never>([null as never]);
-  await runAsCliAndExit(
-    "my-cli",
-    args,
-    null,
-    command<void, void>(
-      { description: "" },
-      operation(
-        {
-          options: {
-            optionFlag: optionFlag({ long: "flag" }),
-            optionSingleValue: optionSingleValue({
-              label: "LOCATION",
-              long: "single-value",
-              type: typeUrl,
-              default: () => undefined,
-            }),
-            optionRepeatable: optionRepeatable({
-              label: "INDEX",
-              long: "repeatable",
-              type: typeNumber,
-            }),
-          },
-          positionals: [],
+  const rootCommand = command<void, void>(
+    { description: "" },
+    operation(
+      {
+        options: {
+          optionFlag: optionFlag({
+            long: "flag",
+          }),
+          optionSingleValue: optionSingleValue({
+            label: "LOCATION",
+            long: "single-value",
+            type: typeUrl,
+            default: () => undefined,
+          }),
+          optionRepeatable: optionRepeatable({
+            label: "INDEX",
+            long: "repeatable",
+            type: typeNumber,
+          }),
         },
-        async (_, _inputs) => {},
-      ),
+        positionals: [],
+      },
+      async () => {},
     ),
-    {
-      buildVersion: "1.0.0",
-      usageOnError: false,
-      useTtyColors: "mock",
-      onLogStdErr: onLogStdErr.call,
-      onExit: onExit.call,
-    },
   );
+  console.log = onLogStdOut.call;
+  console.error = onLogStdErr.call;
+  await runAndExit("my-cli", args, null, rootCommand, {
+    buildVersion: "1.0.0",
+    usageOnError: false,
+    useTtyColors: "mock",
+    onExit: onExit.call,
+  });
+  expect(onLogStdOut.history).toEqual([]);
   expect(onLogStdErr.history).toEqual([error]);
   expect(onExit.history).toEqual([1]);
 }

@@ -66,7 +66,7 @@ export type OperationInstance<Input, Output> = {
    * option/positional values.
    *
    * @param input - Context from the parent command (or the root context supplied to
-   *   {@link runAsCliAndExit}).
+   *   {@link runAndExit}).
    * @returns A promise resolving to the handler's return value.
    */
   executeWithContext(input: Input): Promise<Output>;
@@ -89,7 +89,7 @@ export type OperationUsage = {
  *
  * The `handler` receives:
  * - `context` — the value passed down from the parent command (or from
- *   {@link runAsCliAndExit}).
+ *   {@link runAndExit}).
  * - `inputs.options` — an object whose keys match those declared in `inputs.options` and whose values are
  *   the parsed option values.
  * - `inputs.positionals` — a tuple whose elements match `inputs.positionals` and whose

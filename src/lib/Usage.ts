@@ -39,8 +39,7 @@ import {
  * in each column sets the width for the entire section.
  *
  * @param params.cliName - The CLI program name shown at the start of the usage line.
- * @param params.commandUsage - The usage model produced by
- *   {@link CommandFactory.generateUsage}.
+ * @param params.commandUsage - The usage model produced by {@link CommandFactory.generateUsage}.
  * @param params.typoSupport - Controls color/styling of the output.
  * @returns An ordered array of strings, one per output line (including a trailing
  *   empty string for the blank line at the end).
@@ -50,7 +49,7 @@ import {
  * const lines = usageToStyledLines({
  *   cliName: "my-cli",
  *   commandUsage: commandFactory.generateUsage(),
- *   typoSupport: TypoSupport.none(),
+ *   typoSupport: TypoSupport.tty(),
  * });
  * process.stdout.write(lines.join("\n"));
  * ```

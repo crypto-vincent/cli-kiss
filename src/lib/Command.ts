@@ -16,12 +16,12 @@ import {
  *
  * A `CommandDescriptor` is the central building block of a `cli-kiss` CLI. You create
  * one with {@link command}, {@link commandWithSubcommands}, or {@link commandChained},
- * and pass it to {@link runAsCliAndExit} to run your CLI.
+ * and pass it to {@link runAndExit} to run your CLI.
  *
  * @typeParam Context - The value passed into the command when it is executed. It flows
- *   from {@link runAsCliAndExit}'s `context` argument down through the command chain.
+ *   from {@link runAndExit}'s `context` argument down through the command chain.
  * @typeParam Result - The value produced by executing the command. For root commands
- *   passed to {@link runAsCliAndExit} this is always `void`.
+ *   passed to {@link runAndExit} this is always `void`.
  */
 export type CommandDescriptor<Context, Result> = {
   /** Returns the static metadata (description, hint, details) for this command. */
@@ -74,7 +74,7 @@ export type CommandInstance<Context, Result> = {
   /**
    * Executes the command with the provided context.
    *
-   * @param context - Arbitrary value injected by the caller (see {@link runAsCliAndExit}).
+   * @param context - Arbitrary value injected by the caller (see {@link runAndExit}).
    * @returns A promise that resolves to the command's result, or rejects if the
    *   command handler throws.
    */
@@ -84,8 +84,7 @@ export type CommandInstance<Context, Result> = {
 /**
  * Static, human-readable metadata attached to a command.
  *
- * This information is displayed in the usage/help output produced by
- * {@link usageToStyledLines}.
+ * This information is displayed in the usage/help output produced by {@link usageToStyledLines}.
  */
 export type CommandInformation = {
   /** Short description of what the command does. Shown prominently in the usage header. */
@@ -176,7 +175,7 @@ export type CommandUsageSubcommand = {
  * @param information - Static metadata (description, hint, details) for the command.
  * @param operation - The operation that defines options, positionals, and the execution
  *   handler for this command.
- * @returns A {@link CommandDescriptor} suitable for passing to {@link runAsCliAndExit}
+ * @returns A {@link CommandDescriptor} suitable for passing to {@link runAndExit}
  *   or composing with {@link commandWithSubcommands} / {@link commandChained}.
  *
  * @example

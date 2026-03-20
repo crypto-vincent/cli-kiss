@@ -9,7 +9,7 @@ import {
   positionalOptional,
   positionalRequired,
   positionalVariadics,
-  runAsCliAndExit,
+  runAndExit,
   typeConverted,
   typeOneOf,
   typeString,
@@ -324,7 +324,7 @@ async function testCase(
         ],
       },
       async () => {
-        onLogStdOut.call("Has executed root command");
+        console.log("Has executed root command");
       },
     ),
     {
@@ -359,17 +359,17 @@ async function testCase(
             ],
           },
           async () => {
-            onLogStdOut.call("Has executed subcommand");
+            console.log("Has executed subcommand");
           },
         ),
       ),
     },
   );
-  await runAsCliAndExit("my-cli", args, null, cmd, {
+  console.log = onLogStdOut.call;
+  console.error = onLogStdErr.call;
+  await runAndExit("my-cli", args, null, cmd, {
     buildVersion: "1.0.0",
     useTtyColors: false,
-    onLogStdOut: onLogStdOut.call,
-    onLogStdErr: onLogStdErr.call,
     onExit: onExit.call,
   });
   expect({
