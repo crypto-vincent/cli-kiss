@@ -11,6 +11,7 @@ export async function runAsCliAndExit<Context>(
   options?: {
     useColors?: boolean | undefined;
     usageOnHelp?: boolean | undefined;
+    usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
     onExecutionError?: ((error: unknown) => void) | undefined;
     onLogStdOut?: ((message: string) => void) | undefined;
@@ -82,7 +83,9 @@ export async function runAsCliAndExit<Context>(
       return onExit(1);
     }
   } catch (parsingError) {
-    onLogStdErr(computeUsageString(cliName, commandFactory, typoSupport));
+    if (options?.usageOnError ?? true) {
+      onLogStdErr(computeUsageString(cliName, commandFactory, typoSupport));
+    }
     onLogStdErr(typoSupport.computeStyledErrorMessage(parsingError));
     return onExit(1);
   }

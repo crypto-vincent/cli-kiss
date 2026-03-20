@@ -151,11 +151,11 @@ export class TypoError extends Error {
   constructor(currentTypoText: TypoText, source?: unknown) {
     const typoText = new TypoText();
     typoText.pushText(currentTypoText);
-    if (source instanceof Error) {
-      typoText.pushString(new TypoString(`: ${source.message}`));
-    } else if (source instanceof TypoError) {
+    if (source instanceof TypoError) {
       typoText.pushString(new TypoString(": "));
       typoText.pushText(source.#typoText);
+    } else if (source instanceof Error) {
+      typoText.pushString(new TypoString(`: ${source.message}`));
     } else if (source !== undefined) {
       typoText.pushString(new TypoString(`: ${String(source)}`));
     }

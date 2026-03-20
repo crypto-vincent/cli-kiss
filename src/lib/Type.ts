@@ -73,7 +73,11 @@ export const typeNumber: Type<number> = {
   label: "NUMBER",
   decoder(value: string) {
     try {
-      return Number(value);
+      const parsed = Number(value);
+      if (isNaN(parsed)) {
+        throw new Error();
+      }
+      return parsed;
     } catch {
       throw new TypoError(
         new TypoText(
