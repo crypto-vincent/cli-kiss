@@ -151,7 +151,7 @@ it("run", async () => {
    */
 
   expect(usage1).toStrictEqual([
-    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{<SUBCOMMAND>}@darkCyan}+",
+    "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{<POS-2>}@darkBlue}+ {{<SUBCOMMAND>}@darkBlue}+",
     "",
     "{Root command description}+",
     "{{Root command details. Second line of root command details.}-}*",
