@@ -185,45 +185,65 @@ export function commandWithSubcommands<Context, Payload, Result>(
 }
 
 export function commandChained<Context, Payload, Result>(
-  metadata: CommandInformation,
+  information: CommandInformation,
   operation: Operation<Context, Payload>,
   nextCommand: Command<Payload, Result>,
 ): Command<Context, Result> {
   return {
     getInformation() {
-      return metadata;
+      return information;
     },
     createFactory(readerArgs: ReaderArgs) {
-      const operationFactory = operation.createFactory(readerArgs);
-      const nextCommandFactory = nextCommand.createFactory(readerArgs);
-      return {
-        generateUsage() {
-          const operationUsage = operation.generateUsage();
-          const nextCommandUsage = nextCommandFactory.generateUsage();
-          return {
-            information: nextCommandUsage.information,
-            breadcrumbs: operationUsage.positionals
-              .map((positional) => breadcrumbPositional(positional.label))
-              .concat(nextCommandUsage.breadcrumbs),
-            positionals: operationUsage.positionals.concat(
-              nextCommandUsage.positionals,
-            ),
-            subcommands: nextCommandUsage.subcommands,
-            options: operationUsage.options.concat(nextCommandUsage.options),
-          };
-        },
-        createInstance() {
-          const operationInstance = operationFactory.createInstance();
-          const nextCommandInstance = nextCommandFactory.createInstance();
-          return {
-            async executeWithContext(context: Context) {
-              return await nextCommandInstance.executeWithContext(
-                await operationInstance.executeWithContext(context),
-              );
-            },
-          };
-        },
-      };
+      try {
+        const operationFactory = operation.createFactory(readerArgs);
+        const nextCommandFactory = nextCommand.createFactory(readerArgs);
+        return {
+          generateUsage() {
+            const operationUsage = operation.generateUsage();
+            const nextCommandUsage = nextCommandFactory.generateUsage();
+            return {
+              breadcrumbs: operationUsage.positionals
+                .map((positional) => breadcrumbPositional(positional.label))
+                .concat(nextCommandUsage.breadcrumbs),
+              information: nextCommandUsage.information,
+              positionals: operationUsage.positionals.concat(
+                nextCommandUsage.positionals,
+              ),
+              subcommands: nextCommandUsage.subcommands,
+              options: operationUsage.options.concat(nextCommandUsage.options),
+            };
+          },
+          createInstance() {
+            const operationInstance = operationFactory.createInstance();
+            const nextCommandInstance = nextCommandFactory.createInstance();
+            return {
+              async executeWithContext(context: Context) {
+                return await nextCommandInstance.executeWithContext(
+                  await operationInstance.executeWithContext(context),
+                );
+              },
+            };
+          },
+        };
+      } catch (error) {
+        return {
+          generateUsage() {
+            const operationUsage = operation.generateUsage();
+            return {
+              breadcrumbs: operationUsage.positionals
+                .map((positional) => breadcrumbPositional(positional.label))
+                .concat([breadcrumbPositional("[REST]...")]),
+              information: information,
+              positionals: operationUsage.positionals,
+              subcommands: [],
+              options: operationUsage.options,
+            };
+          },
+          createInstance() {
+            throw error;
+          },
+        };
+      }
     },
   };
 }

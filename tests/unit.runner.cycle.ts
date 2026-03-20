@@ -16,6 +16,7 @@ import {
   typeUrl,
 } from "../src";
 
+// TODO - unit test for chained commands
 // TODO - unit test for color styling
 
 it("run", async () => {
@@ -98,6 +99,19 @@ it("run", async () => {
   // Help takes precedence over version
   await testCase(["--version", "--help"], [rootUsage], [], 0);
   await testCase(["--help", "--version"], [rootUsage], [], 0);
+
+  // Test multiple errors at once
+  await testCase(
+    ["--invalid1", "--invalid2", "--invalid3"],
+    [],
+    [
+      rootUsage,
+      "Error: --invalid1: Unexpected unknown option",
+      "Error: --invalid2: Unexpected unknown option",
+      "Error: --invalid3: Unexpected unknown option",
+    ],
+    1,
+  );
 
   // Test missing required inputs
   await testCase(
@@ -187,7 +201,19 @@ it("run", async () => {
   await testCase(
     ["required1", "subcommand", "required2", "--url"],
     [],
-    [subcommandUsage, "Error: --url: requires a value, but got end of input"],
+    [subcommandUsage, "Error: --url: Requires a value, but got end of input"],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--url", "--", "url"],
+    [],
+    [subcommandUsage, 'Error: --url: Requires a value before "--"'],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--url", "--url"],
+    [],
+    [subcommandUsage, 'Error: --url: Requires a value, but got: "--url"'],
     1,
   );
 
@@ -257,6 +283,8 @@ async function testCase(
     null as unknown as void,
   ]);
   const onLogStdErr = makeMocked<string, void>([
+    null as unknown as void,
+    null as unknown as void,
     null as unknown as void,
     null as unknown as void,
   ]);

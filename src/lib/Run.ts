@@ -43,17 +43,22 @@ export async function runAsCliAndExit<Context>(
     longs: ["completion"],
   });
   */
-  const commandFactory = command.createFactory(readerArgs);
-  while (true) {
-    const positional = readerArgs.consumePositional();
-    if (positional === undefined) {
-      break;
-    }
-  }
   const typoSupport = chooseTypoSupport(application?.useColors);
   const onLogStdOut = application?.onLogStdOut ?? console.log;
   const onLogStdErr = application?.onLogStdErr ?? console.error;
   const onExit = application?.onExit ?? process.exit;
+  const commandFactory = command.createFactory(readerArgs);
+  const errors = [];
+  while (true) {
+    try {
+      const positional = readerArgs.consumePositional();
+      if (positional === undefined) {
+        break;
+      }
+    } catch (error) {
+      errors.push(error);
+    }
+  }
   if (usageOnHelp) {
     if (readerArgs.getOptionValues("--help" as any).length > 0) {
       onLogStdOut(computeUsageString(cliName, commandFactory, typoSupport));
@@ -80,8 +85,11 @@ export async function runAsCliAndExit<Context>(
       return onExit(1);
     }
   } catch (error) {
+    errors.unshift(error);
     onLogStdErr(computeUsageString(cliName, commandFactory, typoSupport));
-    onLogStdErr(typoSupport.computeStyledErrorMessage(error));
+    for (const error of errors) {
+      onLogStdErr(typoSupport.computeStyledErrorMessage(error));
+    }
     return onExit(1);
   }
 }

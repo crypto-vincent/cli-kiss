@@ -203,7 +203,7 @@ export class ReaderArgs {
       throw new TypoError(
         new TypoText(
           new TypoString(constant, typoStyleConstants),
-          new TypoString(`: requires a value, but got end of input`),
+          new TypoString(`: Requires a value, but got end of input`),
         ),
       );
     }
@@ -211,7 +211,7 @@ export class ReaderArgs {
       throw new TypoError(
         new TypoText(
           new TypoString(constant, typoStyleConstants),
-          new TypoString(`: requires a value before "--"`),
+          new TypoString(`: Requires a value before "--"`),
         ),
       );
     }
@@ -220,7 +220,7 @@ export class ReaderArgs {
       throw new TypoError(
         new TypoText(
           new TypoString(constant, typoStyleConstants),
-          new TypoString(`: requires a value, but got: "${arg}"`),
+          new TypoString(`: Requires a value, but got: "${arg}"`),
         ),
       );
     }
