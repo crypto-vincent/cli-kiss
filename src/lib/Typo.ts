@@ -26,10 +26,24 @@ export type TypoStyle = {
   strikethrough?: boolean;
 };
 
+export const typoStyleTitle: TypoStyle = {
+  fgColor: "darkGreen",
+  bold: true,
+};
+export const typoStyleLogic: TypoStyle = {
+  fgColor: "darkMagenta",
+  bold: true,
+};
+export const typoStyleQuote: TypoStyle = {
+  fgColor: "darkYellow",
+  bold: true,
+};
+
 export const typoStyleFailure: TypoStyle = {
   fgColor: "darkRed",
   bold: true,
 };
+
 export const typoStyleConstants: TypoStyle = {
   fgColor: "darkCyan",
   bold: true,
@@ -38,9 +52,13 @@ export const typoStyleUserInput: TypoStyle = {
   fgColor: "darkBlue",
   bold: true,
 };
-export const typoStyleQuote: TypoStyle = {
-  fgColor: "darkYellow",
+
+export const typoStyleRegularStrong: TypoStyle = {
   bold: true,
+};
+export const typoStyleRegularWeaker: TypoStyle = {
+  italic: true,
+  dim: true,
 };
 
 export class TypoString {
@@ -165,6 +183,16 @@ export class TypoError extends Error {
   computeStyledString(typoSupport: TypoSupport): string {
     return this.#typoText.computeStyledString(typoSupport);
   }
+  static tryWithContext<Value>(
+    thrower: () => Value,
+    context: () => TypoText,
+  ): Value {
+    try {
+      return thrower();
+    } catch (error) {
+      throw new TypoError(context(), error);
+    }
+  }
 }
 
 export class TypoSupport {
@@ -196,10 +224,10 @@ export class TypoSupport {
         return TypoSupport.none();
       }
     }
-    if (!process.stdout || !process.stdout.isTTY) {
-      return TypoSupport.none();
+    if (process.stdout && process.stdout.isTTY) {
+      return TypoSupport.tty();
     }
-    return TypoSupport.tty();
+    return TypoSupport.none();
   }
   computeStyledString(value: string, typoStyle: TypoStyle): string {
     if (this.#kind === "none") {

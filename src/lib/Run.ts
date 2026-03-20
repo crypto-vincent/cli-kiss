@@ -9,7 +9,7 @@ export async function runAsCliAndExit<Context>(
   context: Context,
   command: CommandDescriptor<Context, void>,
   options?: {
-    useColors?: boolean | undefined;
+    useTtyColors?: boolean | undefined | "mock";
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
@@ -44,7 +44,14 @@ export async function runAsCliAndExit<Context>(
     longs: ["completion"],
   });
   */
-  const typoSupport = chooseTypoSupport(options?.useColors);
+  const typoSupport =
+    options?.useTtyColors === undefined
+      ? TypoSupport.inferFromProcess()
+      : options.useTtyColors === "mock"
+        ? TypoSupport.mock()
+        : options.useTtyColors
+          ? TypoSupport.tty()
+          : TypoSupport.none();
   const onLogStdOut = options?.onLogStdOut ?? console.log;
   const onLogStdErr = options?.onLogStdErr ?? console.error;
   const onExit = options?.onExit ?? process.exit;
@@ -101,11 +108,4 @@ function computeUsageString<Context, Result>(
     commandUsage: commandFactory.generateUsage(),
     typoSupport,
   }).join("\n");
-}
-
-function chooseTypoSupport(useColors?: boolean): TypoSupport {
-  if (useColors === undefined) {
-    return TypoSupport.inferFromProcess();
-  }
-  return useColors ? TypoSupport.tty() : TypoSupport.none();
 }

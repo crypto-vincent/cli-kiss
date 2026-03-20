@@ -74,7 +74,12 @@ export function command<Context, Result>(
         const operationFactory = operation.createFactory(readerArgs);
         const endPositional = readerArgs.consumePositional();
         if (endPositional !== undefined) {
-          throw Error(`Unexpected argument: "${endPositional}"`);
+          throw new TypoError(
+            new TypoText(
+              new TypoString(`Unexpected argument: `),
+              new TypoString(`"${endPositional}"`, typoStyleQuote),
+            ),
+          );
         }
         return {
           generateUsage,

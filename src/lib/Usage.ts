@@ -3,6 +3,10 @@ import {
   TypoGrid,
   TypoString,
   typoStyleConstants,
+  typoStyleLogic,
+  typoStyleRegularStrong,
+  typoStyleRegularWeaker,
+  typoStyleTitle,
   typoStyleUserInput,
   TypoSupport,
   TypoText,
@@ -149,11 +153,11 @@ function createInformationals(usage: {
 }
 
 function textUsageHero(value: string): TypoString {
-  return new TypoString(value, { fgColor: "darkMagenta", bold: true });
+  return new TypoString(value, typoStyleLogic);
 }
 
 function textUsageText(value: string): TypoString {
-  return new TypoString(value, { bold: true });
+  return new TypoString(value, typoStyleRegularStrong);
 }
 
 function textUsefulInfo(value: string): TypoString {
@@ -161,11 +165,11 @@ function textUsefulInfo(value: string): TypoString {
 }
 
 function textBlockTitle(value: string): TypoString {
-  return new TypoString(value, { fgColor: "darkGreen", bold: true });
+  return new TypoString(value, typoStyleTitle);
 }
 
 function textSubtleInfo(value: string): TypoString {
-  return new TypoString(value, { italic: true, dim: true });
+  return new TypoString(value, typoStyleRegularWeaker);
 }
 
 function textConstants(value: string): TypoString {

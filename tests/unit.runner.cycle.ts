@@ -10,7 +10,7 @@ import {
   positionalRequired,
   positionalVariadics,
   runAsCliAndExit,
-  typeNumber,
+  typeConverted,
   typeOneOf,
   typeString,
   typeUrl,
@@ -32,9 +32,9 @@ it("run", async () => {
     "  subcommand  Subcommand Description",
     "",
     "Options:",
-    "  --flag[=no]              Option flag description",
-    "  --repeatable <STRING>    Option repeatable description",
-    "  --single-value <NUMBER>  Option single value description",
+    "  --flag[=no]                   Option flag description",
+    "  --repeatable <STRING>         Option repeatable description",
+    "  --single-value <NUMBER-ENUM>  Option single value description",
     "",
   ].join("\n");
   const subcommandUsage = [
@@ -49,10 +49,10 @@ it("run", async () => {
     "  [VARIADICS]...  Variadics positional description",
     "",
     "Options:",
-    "  --flag[=no]              Option flag description",
-    "  --repeatable <STRING>    Option repeatable description",
-    "  --single-value <NUMBER>  Option single value description",
-    "  --url <URL>              Option url description",
+    "  --flag[=no]                   Option flag description",
+    "  --repeatable <STRING>         Option repeatable description",
+    "  --single-value <NUMBER-ENUM>  Option single value description",
+    "  --url <URL>                   Option url description",
     "",
   ].join("\n");
 
@@ -170,7 +170,7 @@ it("run", async () => {
   await testCase(
     ["--flag=42", "required1", "subcommand", "required2"],
     [],
-    [subcommandUsage, 'Error: --flag: <BOOLEAN>: Invalid boolean: "42"'],
+    [subcommandUsage, 'Error: --flag: <BOOLEAN>: Boolean: Invalid value: "42"'],
     1,
   );
   await testCase(
@@ -224,7 +224,7 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      'Error: <REQUIRED2>: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
+      'Error: <REQUIRED2>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
     ],
     1,
   );
@@ -233,14 +233,14 @@ it("run", async () => {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <NUMBER>: Invalid value: "44" (expected one of: "42" | "43")',
+      'Error: --single-value: <NUMBER-ENUM>: NUMBER-ENUM: from: STRING-ENUM: Invalid value: "44" (expected one of: "42" | "43")',
     ],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--url", "not-a-url"],
     [],
-    [subcommandUsage, 'Error: --url: <URL>: Invalid URL: "not-a-url"'],
+    [subcommandUsage, 'Error: --url: <URL>: Url: Unable to parse: "not-a-url"'],
     1,
   );
 
@@ -307,7 +307,10 @@ async function testCase(
           }),
           optionSingleValue: optionSingleValue({
             long: "single-value",
-            type: typeOneOf(typeNumber, [42, 43]),
+            type: typeConverted(typeOneOf("STRING-ENUM", ["42", "43"]), {
+              content: "NUMBER-ENUM",
+              decoder: (value) => Number(value),
+            }),
             description: "Option single value description",
             default: () => 42,
           }),
@@ -338,7 +341,7 @@ async function testCase(
             },
             positionals: [
               positionalRequired({
-                type: typeOneOf(typeString, ["required2", "required2-bis"]),
+                type: typeOneOf("STRING-ENUM", ["required2", "required2-bis"]),
                 label: "REQUIRED2",
                 description: "Required2 positional description",
               }),
@@ -364,10 +367,10 @@ async function testCase(
   );
   await runAsCliAndExit("my-cli", args, null, cmd, {
     buildVersion: "1.0.0",
-    onExit: onExit.call,
+    useTtyColors: false,
     onLogStdOut: onLogStdOut.call,
     onLogStdErr: onLogStdErr.call,
-    useColors: false,
+    onExit: onExit.call,
   });
   expect({
     stdOut: onLogStdOut.history,

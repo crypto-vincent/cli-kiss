@@ -1,9 +1,10 @@
 import { ReaderArgs as ReaderOptions } from "./Reader";
-import { Type, typeBoolean, typeDecodeWithContext } from "./Type";
+import { Type, typeBoolean } from "./Type";
 import {
   TypoError,
   TypoString,
   typoStyleConstants,
+  typoStyleLogic,
   typoStyleUserInput,
   TypoText,
 } from "./Typo";
@@ -33,7 +34,7 @@ export function optionFlag(definition: {
   aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
   default?: () => boolean;
 }): Option<boolean> {
-  const label = `<${typeBoolean.label}>`;
+  const label = `<${typeBoolean.content.toUpperCase()}>`;
   return {
     generateUsage() {
       return {
@@ -74,11 +75,7 @@ export function optionFlag(definition: {
               );
             }
           }
-          return typeDecodeWithContext(
-            typeBoolean,
-            optionValue,
-            makeDecodeContext(definition.long, label),
-          );
+          return decodeValue(definition.long, label, typeBoolean, optionValue);
         },
       };
     },
@@ -95,7 +92,7 @@ export function optionSingleValue<Value>(definition: {
   type: Type<Value>;
   default: () => Value;
 }): Option<Value> {
-  const label = `<${definition.label ?? definition.type.label}>`;
+  const label = `<${definition.label ?? definition.type.content.toUpperCase()}>`;
   return {
     generateUsage() {
       return {
@@ -136,10 +133,11 @@ export function optionSingleValue<Value>(definition: {
               );
             }
           }
-          return typeDecodeWithContext(
+          return decodeValue(
+            definition.long,
+            label,
             definition.type,
             optionValue,
-            makeDecodeContext(definition.long, label),
           );
         },
       };
@@ -156,7 +154,7 @@ export function optionRepeatable<Value>(definition: {
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Option<Array<Value>> {
-  const label = `<${definition.label ?? definition.type.label}>`;
+  const label = `<${definition.label ?? definition.type.content.toUpperCase()}>`;
   return {
     generateUsage() {
       // TODO - showcase that it can be repeated ?
@@ -175,28 +173,33 @@ export function optionRepeatable<Value>(definition: {
       });
       return {
         getValue() {
-          return readerOptions
-            .getOptionValues(key)
-            .map((value) =>
-              typeDecodeWithContext(
-                definition.type,
-                value,
-                makeDecodeContext(definition.long, label),
-              ),
-            );
+          const optionValues = readerOptions.getOptionValues(key);
+          return optionValues.map((optionValue) =>
+            decodeValue(definition.long, label, definition.type, optionValue),
+          );
         },
       };
     },
   };
 }
 
-function makeDecodeContext(long: string, label: string): () => TypoText {
-  return () =>
-    new TypoText(
-      new TypoString(`--${long}`, typoStyleConstants),
-      new TypoString(`: `),
-      new TypoString(label, typoStyleUserInput),
-    );
+function decodeValue<Value>(
+  long: string,
+  label: string,
+  type: Type<Value>,
+  value: string,
+): Value {
+  return TypoError.tryWithContext(
+    () => type.decoder(value),
+    () =>
+      new TypoText(
+        new TypoString(`--${long}`, typoStyleConstants),
+        new TypoString(`: `),
+        new TypoString(label, typoStyleUserInput),
+        new TypoString(`: `),
+        new TypoString(type.content, typoStyleLogic),
+      ),
+  );
 }
 
 function registerOption(

@@ -1,6 +1,12 @@
 import { ReaderPositionals } from "./Reader";
-import { Type, typeDecodeWithContext } from "./Type";
-import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
+import { Type } from "./Type";
+import {
+  TypoError,
+  TypoString,
+  typoStyleLogic,
+  typoStyleUserInput,
+  TypoText,
+} from "./Typo";
 
 export type Positional<Value> = {
   generateUsage(): PositionalUsage;
@@ -19,7 +25,7 @@ export function positionalRequired<Value>(definition: {
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Value> {
-  const label = `<${definition.label ?? definition.type.label}>`;
+  const label = `<${definition.label ?? definition.type.content.toUpperCase()}>`;
   return {
     generateUsage() {
       return {
@@ -38,11 +44,7 @@ export function positionalRequired<Value>(definition: {
           ),
         );
       }
-      return typeDecodeWithContext(
-        definition.type,
-        positional,
-        makeDecodeContext(label),
-      );
+      return decodeValue(label, definition.type, positional);
     },
   };
 }
@@ -54,7 +56,7 @@ export function positionalOptional<Value>(definition: {
   type: Type<Value>;
   default: () => Value;
 }): Positional<Value> {
-  const label = `[${definition.label ?? definition.type.label}]`;
+  const label = `[${definition.label ?? definition.type.content.toUpperCase()}]`;
   return {
     generateUsage() {
       return {
@@ -78,11 +80,7 @@ export function positionalOptional<Value>(definition: {
           );
         }
       }
-      return typeDecodeWithContext(
-        definition.type,
-        positional,
-        makeDecodeContext(label),
-      );
+      return decodeValue(label, definition.type, positional);
     },
   };
 }
@@ -94,7 +92,7 @@ export function positionalVariadics<Value>(definition: {
   label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Array<Value>> {
-  const label = `[${definition.label ?? definition.type.label}]`;
+  const label = `[${definition.label ?? definition.type.content.toUpperCase()}]`;
   return {
     generateUsage() {
       return {
@@ -116,19 +114,25 @@ export function positionalVariadics<Value>(definition: {
         ) {
           break;
         }
-        positionals.push(
-          typeDecodeWithContext(
-            definition.type,
-            positional,
-            makeDecodeContext(label),
-          ),
-        );
+        positionals.push(decodeValue(label, definition.type, positional));
       }
       return positionals;
     },
   };
 }
 
-function makeDecodeContext(label: string): () => TypoText {
-  return () => new TypoText(new TypoString(label, typoStyleUserInput));
+function decodeValue<Value>(
+  label: string,
+  type: Type<Value>,
+  value: string,
+): Value {
+  return TypoError.tryWithContext(
+    () => type.decoder(value),
+    () =>
+      new TypoText(
+        new TypoString(label, typoStyleUserInput),
+        new TypoString(`: `),
+        new TypoString(type.content, typoStyleLogic),
+      ),
+  );
 }

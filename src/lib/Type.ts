@@ -1,18 +1,18 @@
 import {
   TypoError,
   TypoString,
+  typoStyleLogic,
   typoStyleQuote,
-  typoStyleUserInput,
   TypoText,
 } from "./Typo";
 
 export type Type<Value> = {
-  label: Uppercase<string>; // TODO - is there a better way to enforce uppercase labels?
+  content: string;
   decoder(value: string): Value;
 };
 
 export const typeBoolean: Type<boolean> = {
-  label: "BOOLEAN",
+  content: "Boolean",
   decoder(value: string) {
     const lowerValue = value.toLowerCase();
     if (lowerValue === "true" || lowerValue === "yes") {
@@ -23,7 +23,7 @@ export const typeBoolean: Type<boolean> = {
     }
     throw new TypoError(
       new TypoText(
-        new TypoString(`Invalid boolean: `),
+        new TypoString(`Invalid value: `),
         new TypoString(`"${value}"`, typoStyleQuote),
       ),
     );
@@ -31,50 +31,27 @@ export const typeBoolean: Type<boolean> = {
 };
 
 export const typeDate: Type<Date> = {
-  label: "DATE",
+  content: "Date",
   decoder(value: string) {
     try {
-      const timestamp = Date.parse(value);
-      if (isNaN(timestamp)) {
+      const timestampMs = Date.parse(value);
+      if (isNaN(timestampMs)) {
         throw new Error();
       }
-      return new Date(timestamp);
+      return new Date(timestampMs);
     } catch {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Invalid date (ISO_8601): `),
+          new TypoString(`Not a valid ISO_8601: `),
           new TypoString(`"${value}"`, typoStyleQuote),
         ),
       );
     }
-  },
-};
-
-export const typeUrl: Type<URL> = {
-  label: "URL",
-  decoder(value: string) {
-    try {
-      return new URL(value);
-    } catch {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Invalid URL: `),
-          new TypoString(`"${value}"`, typoStyleQuote),
-        ),
-      );
-    }
-  },
-};
-
-export const typeString: Type<string> = {
-  label: "STRING",
-  decoder(value: string) {
-    return value;
   },
 };
 
 export const typeNumber: Type<number> = {
-  label: "NUMBER",
+  content: "Number",
   decoder(value: string) {
     try {
       const parsed = Number(value);
@@ -85,7 +62,7 @@ export const typeNumber: Type<number> = {
     } catch {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Invalid number: `),
+          new TypoString(`Unable to parse: `),
           new TypoString(`"${value}"`, typoStyleQuote),
         ),
       );
@@ -93,15 +70,15 @@ export const typeNumber: Type<number> = {
   },
 };
 
-export const typeBigInt: Type<bigint> = {
-  label: "BIGINT",
+export const typeInteger: Type<bigint> = {
+  content: "Integer",
   decoder(value: string) {
     try {
       return BigInt(value);
     } catch {
       throw new TypoError(
         new TypoText(
-          new TypoString(`Invalid integer: `),
+          new TypoString(`Unable to parse: `),
           new TypoString(`"${value}"`, typoStyleQuote),
         ),
       );
@@ -109,42 +86,60 @@ export const typeBigInt: Type<bigint> = {
   },
 };
 
-export function typeMapped<Before, After>(
-  before: Type<Before>,
-  after: {
-    label: Uppercase<string>;
-    decoder: (value: Before) => After;
+export const typeUrl: Type<URL> = {
+  content: "Url",
+  decoder(value: string) {
+    try {
+      return new URL(value);
+    } catch {
+      throw new TypoError(
+        new TypoText(
+          new TypoString(`Unable to parse: `),
+          new TypoString(`"${value}"`, typoStyleQuote),
+        ),
+      );
+    }
   },
+};
+
+export const typeString: Type<string> = {
+  content: "String",
+  decoder(value: string) {
+    return value;
+  },
+};
+
+export function typeConverted<Before, After>(
+  before: Type<Before>,
+  after: { content: string; decoder: (value: Before) => After },
 ): Type<After> {
   return {
-    label: after.label,
+    content: after.content,
     decoder: (value: string) => {
       return after.decoder(
-        typeDecodeWithContext(
-          before,
-          value,
-          () => new TypoText(new TypoString(after.label, typoStyleUserInput)),
+        TypoError.tryWithContext(
+          () => before.decoder(value),
+          () =>
+            new TypoText(
+              new TypoString("from: "),
+              new TypoString(before.content, typoStyleLogic),
+            ),
         ),
       );
     },
   };
 }
 
-export function typeOneOf<Value>(
-  type: Type<Value>,
-  values: Array<Value>,
-): Type<Value> {
+export function typeOneOf(
+  content: string,
+  values: Array<string>,
+): Type<string> {
   const valuesSet = new Set(values);
   return {
-    label: type.label,
+    content: content,
     decoder(value: string) {
-      const decoded = typeDecodeWithContext(
-        type,
-        value,
-        () => new TypoText(new TypoString(type.label, typoStyleUserInput)),
-      );
-      if (valuesSet.has(decoded)) {
-        return decoded;
+      if (valuesSet.has(value)) {
+        return value;
       }
       const valuesPreview = [];
       for (const value of values) {
@@ -175,31 +170,31 @@ export function typeTuple<const Elements extends Array<any>>(
   separator: string = ",",
 ): Type<Elements> {
   return {
-    label: elementTypes
-      .map((elementType) => elementType.label)
-      .join(separator) as Uppercase<string>,
+    content: elementTypes
+      .map((elementType) => elementType.content)
+      .join(separator),
     decoder(value: string) {
-      const parts = value.split(separator, elementTypes.length);
-      if (parts.length !== elementTypes.length) {
+      const splits = value.split(separator, elementTypes.length);
+      if (splits.length !== elementTypes.length) {
         throw new TypoError(
           new TypoText(
-            new TypoString(`Invalid tuple: `),
+            new TypoString(`Found ${splits.length} splits: `),
+            new TypoString(`Expected ${elementTypes.length} splits from: `),
             new TypoString(`"${value}"`, typoStyleQuote),
-            new TypoString(` (expected ${elementTypes.length} parts)`),
           ),
         );
       }
-      return parts.map((part, index) =>
-        typeDecodeWithContext(
-          elementTypes[index]!,
-          part,
+      return splits.map((split, index) => {
+        const elementType = elementTypes[index]!;
+        return TypoError.tryWithContext(
+          () => elementType.decoder(split),
           () =>
             new TypoText(
-              new TypoString(elementTypes[index]!.label, typoStyleUserInput),
-              new TypoString(`@${index}`),
+              new TypoString(`at ${index}: `),
+              new TypoString(elementType.content, typoStyleLogic),
             ),
-        ),
-      ) as Elements;
+        );
+      }) as Elements;
     },
   };
 }
@@ -209,35 +204,19 @@ export function typeList<Value>(
   separator: string = ",",
 ): Type<Array<Value>> {
   return {
-    label:
-      `${elementType.label}[${separator}${elementType.label}]...` as Uppercase<string>,
+    content: `${elementType.content}[${separator}${elementType.content}]...`,
     decoder(value: string) {
-      return value
-        .split(separator)
-        .map((part, index) =>
-          typeDecodeWithContext(
-            elementType,
-            part,
-            () =>
-              new TypoText(
-                new TypoString(elementType.label, typoStyleUserInput),
-                new TypoString(`@${index}`),
-              ),
-          ),
-        );
+      const splits = value.split(separator);
+      return splits.map((split, index) =>
+        TypoError.tryWithContext(
+          () => elementType.decoder(split),
+          () =>
+            new TypoText(
+              new TypoString(`at ${index}: `),
+              new TypoString(elementType.content, typoStyleLogic),
+            ),
+        ),
+      );
     },
   };
-}
-
-// TODO - double check the decoding context labels, there is a cleaner way
-export function typeDecodeWithContext<Value>(
-  type: Type<Value>,
-  value: string,
-  context: () => TypoText,
-): Value {
-  try {
-    return type.decoder(value);
-  } catch (error) {
-    throw new TypoError(context(), error);
-  }
 }
