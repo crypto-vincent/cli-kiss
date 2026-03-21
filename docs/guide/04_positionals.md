@@ -1,11 +1,10 @@
 # Positionals
 
-Positionals are bare (non-option) arguments passed by position. Declare them in
-order in the `positionals` array of [`operation`](/guide/02_commands).
+Bare (non-`--`) arguments, consumed in order. Declared in the `positionals` array of [`operation`](/guide/02_commands).
 
 ## `positionalRequired` — must be present
 
-Fails with a parse error if the argument is missing.
+Fails if missing.
 
 ```ts
 import { positionalRequired, typeString } from "cli-kiss";
@@ -28,7 +27,7 @@ const name = positionalRequired({
 
 ## `positionalOptional` — may be absent
 
-Falls back to a default value when the argument is not provided.
+Falls back to a default when absent.
 
 ```ts
 import { positionalOptional, typeString } from "cli-kiss";
@@ -53,7 +52,7 @@ const greeting = positionalOptional({
 
 ## `positionalVariadics` — zero or more
 
-Greedily consumes all remaining positional tokens into an array.
+Consumes all remaining tokens into an array.
 
 ```ts
 import { positionalVariadics, typeString } from "cli-kiss";
@@ -91,8 +90,7 @@ const args = positionalVariadics({
 
 ## Ordering rules
 
-Positionals are consumed **in declaration order**. Required positionals should
-come first; variadics should be last.
+Consumed **in declaration order** — required first, variadics last.
 
 ```ts
 operation(

@@ -2,8 +2,7 @@
 
 ## `runAndExit`
 
-`runAndExit` is the entry point for every `cli-kiss` CLI. It parses arguments,
-runs the matched command, and exits the process.
+`runAndExit` parses arguments, runs the matched command, and exits.
 
 ```ts
 await runAndExit(cliName, cliArgs, context, command, options?);
@@ -127,7 +126,7 @@ my-cli deploy --dry-run
 
 ## Color control
 
-By default colors are auto-detected from the terminal. You can override:
+Colors are auto-detected. Override:
 
 ```ts
 // Force colors on
@@ -142,7 +141,7 @@ await runAndExit("my-cli", args, ctx, cmd, { useTtyColors: "mock" });
 
 ## Testing your CLI
 
-Override `onExit` so that `runAndExit` does not terminate your test process:
+Override `onExit` to prevent process exit during tests:
 
 ```ts
 import { runAndExit } from "cli-kiss";
