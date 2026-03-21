@@ -16,6 +16,10 @@ it("run", async () => {
     '{{Error:}@darkRed}+ Unexpected argument: {{"hello"}@darkYellow}+',
   );
   await testCase(
+    ["--nope"],
+    "{{Error:}@darkRed}+ Unexpected unknown option: {{--nope}@darkYellow}+",
+  );
+  await testCase(
     ["--flag", "--flag"],
     "{{Error:}@darkRed}+ {{--flag}@darkCyan}+: Must not be set multiple times",
   );
