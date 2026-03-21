@@ -22,10 +22,11 @@ export type Positional<Value> = {
   /** Returns human-readable metadata used to render the `Positionals:` section of help. */
   generateUsage(): PositionalUsage;
   /**
-   * Consumes the positional from `readerPositionals` and then returns a parser that produces the final decoded value.
+   * Consumes the next positional token from `readerPositionals` and returns a parser
+   * that produces the final decoded value.
    *
-   * The parser is created during {@link Operation.createFactory} and may throw a
-   * {@link TypoError} if the positional is missing (when required) or if decoding fails.
+   * Called during {@link Operation.createFactory}. May defer a {@link TypoError}
+   * (e.g. missing required token) to {@link PositionalParser.parseValue}.
    * @param readerPositionals - The source of positional arguments to be consumed.
    */
   createParser(readerPositionals: ReaderPositionals): PositionalParser<Value>;
@@ -71,12 +72,11 @@ export type PositionalUsage = {
 /**
  * Creates a required positional argument — one that must be present on the command line.
  *
- * The parser consumes the next available positional token and decodes it with
- * `definition.type`. If no token is available, a {@link TypoError} is thrown immediately
- * during parsing (i.e. inside {@link Operation.createFactory}).
- *
- * The label displayed in the usage line defaults to the uppercased `type.content`
- * wrapped in angle brackets (e.g. `<STRING>`). Supply `label` to override.
+ * Consumes the next available positional token and decodes it with `definition.type`.
+ * If no token is available a {@link TypoError} is thrown inside
+ * {@link Operation.createFactory}. The usage label defaults to the uppercased
+ * `type.content` wrapped in angle brackets (e.g. `<STRING>`); supply `label` to
+ * override.
  *
  * @typeParam Value - The TypeScript type produced by the type decoder.
  *
@@ -136,12 +136,11 @@ export function positionalRequired<Value>(definition: {
  * Creates an optional positional argument — one that may or may not appear on the
  * command line.
  *
- * The parser consumes the next available positional token. If no token is available,
- * `definition.default()` is called to supply the fallback value. If the default factory
- * throws, a {@link TypoError} is produced.
- *
- * The label displayed in the usage line defaults to the uppercased `type.content`
- * wrapped in square brackets (e.g. `[STRING]`). Supply `label` to override.
+ * Consumes the next available positional token. If no token is available,
+ * `definition.default()` supplies the fallback value (a throwing factory makes the
+ * positional effectively required). The usage label defaults to the uppercased
+ * `type.content` wrapped in square brackets (e.g. `[STRING]`); supply `label` to
+ * override.
  *
  * @typeParam Value - The TypeScript type produced by the type decoder (or the default).
  *
@@ -208,19 +207,14 @@ export function positionalOptional<Value>(definition: {
 }
 
 /**
- * Creates a variadic positional argument — one that collects zero or more remaining
+ * Creates a variadic positional argument that collects zero or more remaining
  * positional tokens into an array.
  *
- * The parser greedily consumes tokens until either there are no more tokens or it
- * encounters the optional `endDelimiter` sentinel string, which is consumed but not
- * included in the result. Each token is decoded independently with `definition.type`.
- *
- * If absent entirely, the result is an empty array `[]`.
- *
- * The label displayed in the usage line defaults to the uppercased `type.content`
- * wrapped in square brackets followed by `...` (e.g. `[STRING]...`). When an
- * `endDelimiter` is configured, the delimiter is also shown (e.g. `[STRING]...["--"]`).
- * Supply `label` to override the base label.
+ * Greedily consumes tokens until the list is exhausted or the optional
+ * `endDelimiter` sentinel is encountered (consumed but excluded from the result).
+ * Each token is decoded independently with `definition.type`. Returns `[]` when
+ * absent. The usage label defaults to the uppercased `type.content` wrapped in
+ * `[...]...` notation (e.g. `[STRING]...`); supply `label` to override.
  *
  * @typeParam Value - The TypeScript type produced by the type decoder for each token.
  *

@@ -10,9 +10,8 @@ import {
  * An opaque key that uniquely identifies a registered CLI option within a
  * {@link ReaderArgs} instance.
  *
- * Keys are returned by {@link ReaderArgs.registerOption} and passed back to
- * {@link ReaderArgs.getOptionValues} to retrieve the parsed values. The internal
- * representation is intentionally opaque — treat it as a handle, not a string.
+ * Returned by {@link ReaderArgs.registerOption} and passed to
+ * {@link ReaderArgs.getOptionValues}. Treat it as an opaque handle.
  */
 export type ReaderOptionKey = (string | { __brand: "ReaderOptionKey" }) & {
   __brand: "ReaderOptionKey";

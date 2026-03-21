@@ -46,8 +46,8 @@ export type Command<Context, Result> = {
  * 1. **Usage generation** — always available, even when parsing failed.
  * 2. **Instance creation** — throws a {@link TypoError} if parsing failed.
  *
- * @typeParam Context - Input passed to the command {@link Command}.
- * @typeParam Result - Result of the command's logic {@link Command}.
+ * @typeParam Context - Context value for the command. See {@link Command}.
+ * @typeParam Result - Value produced by the command. See {@link Command}.
  */
 export type CommandFactory<Context, Result> = {
   /**
@@ -163,12 +163,10 @@ export type CommandUsageSubcommand = {
 };
 
 /**
- * Creates a leaf command — a command that has no subcommands and directly executes
- * an {@link Operation}.
+ * Creates a leaf command that directly executes an {@link Operation}.
  *
- * During parsing, `command` reads all positionals and options consumed by `operation`,
- * then asserts that no extra positionals remain. Any unexpected trailing positional
- * causes a {@link TypoError} deferred to {@link CommandFactory.createInstance}.
+ * Any unexpected trailing positional after `operation` is parsed causes a
+ * {@link TypoError} deferred to {@link CommandFactory.createInstance}.
  *
  * @typeParam Context - The context value forwarded to the operation handler at
  *   execution time.
@@ -248,19 +246,13 @@ export function command<Context, Result>(
 
 /**
  * Creates a command that first runs an {@link Operation} to produce an
- * intermediate `Payload`, then dispatches execution to one of several named subcommands
- * based on the next positional argument.
+ * intermediate `Payload`, then dispatches to one of several named subcommands
+ * based on the next positional token.
  *
- * **Parsing behaviour:**
- * 1. The `operation`'s positionals and options are parsed from `readerArgs`.
- * 2. The next positional token is consumed as the subcommand name.
- *    - If no token is present, a {@link TypoError} is deferred.
- *    - If the token does not match any key in `subcommands`, a {@link TypoError} is
- *      deferred.
- * 3. The matched subcommand's factory is created with the remaining `readerArgs`.
- *
- * **Usage on error / `--help`:** when the subcommand cannot be determined, the usage
- * output lists all available subcommands under a `Subcommands:` section.
+ * `operation` is parsed first; the following positional is consumed as the
+ * subcommand name. A missing or unrecognised name defers a {@link TypoError}
+ * to {@link CommandFactory.createInstance}; the usage output then lists all
+ * available subcommands under a `Subcommands:` section.
  *
  * @typeParam Context - The context value accepted by the root operation handler.
  * @typeParam Payload - The value produced by the root operation and forwarded as the
@@ -381,24 +373,15 @@ export function commandWithSubcommands<Context, Payload, Result>(
 }
 
 /**
- * Creates a command that chains two command stages by piping the output of an
+ * Creates a command that chains two stages by piping the output of an
  * {@link Operation} directly into a {@link Command} as its context.
  *
- * Unlike {@link commandWithSubcommands}, there is no runtime token consumed for routing;
- * the `nextCommand` is always the continuation. This is useful for splitting a complex
- * command into reusable pieces, such as a shared authentication step followed by
- * different sub-actions.
- *
- * **Parsing behaviour:**
- * 1. `operation`'s positionals and options are parsed.
- * 2. `nextCommand`'s factory is immediately created from the same `readerArgs` (the
- *    remaining unparsed tokens).
- * 3. At execution time, `operation` runs first; its result is passed as the context to
- *    `nextCommand`.
- *
- * **Usage:** breadcrumbs, positionals, and options from both stages are merged into a
- * single flat usage description. The `information` of `nextCommand` takes precedence in
- * the generated usage output.
+ * Unlike {@link commandWithSubcommands}, no token is consumed for routing;
+ * `nextCommand` is always the continuation. `operation` is parsed first, then
+ * `nextCommand`'s factory is created from the remaining tokens. At execution
+ * time `operation` runs first and its result becomes `nextCommand`'s context.
+ * Both stages' breadcrumbs, positionals, and options are merged in the usage
+ * output, with `nextCommand`'s `information` taking precedence.
  *
  * @typeParam Context - The context value accepted by `operation`.
  * @typeParam Payload - The value produced by `operation` and used as the context for

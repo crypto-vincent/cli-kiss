@@ -222,13 +222,12 @@ export const typeString: Type<string> = {
  * Creates a new {@link Type} by chaining a `before` type decoder with an `after`
  * transformation.
  *
- * The raw string is first decoded by `before.decoder`; its result is then passed to
- * `after.decoder`. Errors from `before` are wrapped with a "from: <content>" context
- * prefix so that the full decoding path is visible in error messages.
+ * The raw string is first decoded by `before`; the result is then passed to
+ * `after.decoder`. Errors from `before` are prefixed with `"from: <content>"` for
+ * traceability in error messages.
  *
- * Use this when an existing type (e.g. {@link typeString}, {@link typeOneOf}) produces
- * an intermediate value that needs a further transformation (e.g. parsing a
- * string-keyed enum into a number).
+ * Use this to map an existing type (e.g. {@link typeString}, {@link typeOneOf}) to a
+ * richer TypeScript type.
  *
  * @typeParam Before - The intermediate type produced by `before.decoder`.
  * @typeParam After - The final type produced by `after.decoder`.
@@ -333,13 +332,11 @@ export function typeOneOf(
  * Creates a {@link Type} that decodes a single delimited string into a fixed-length
  * tuple of typed elements.
  *
- * The raw string is split on `separator` into exactly `elementTypes.length` parts.
- * Each part is decoded by its corresponding element type. If the number of splits does
- * not match, or if any element's decoder fails, a {@link TypoError} is thrown with the
- * index and element type context.
- *
- * The resulting `content` is the element types' `content` values joined by `separator`
- * (e.g. `"Number,String"` for a `[number, string]` tuple with `","` separator).
+ * The raw string is split on `separator` into exactly `elementTypes.length` parts;
+ * each part is decoded by its corresponding element type. A wrong number of parts or
+ * a failed element decode throws a {@link TypoError} with the index and type context.
+ * The `content` is the element types' names joined by `separator`
+ * (e.g. `"Number,String"`).
  *
  * @typeParam Elements - The tuple type of decoded element values (inferred from
  *   `elementTypes`).
@@ -395,17 +392,11 @@ export function typeTuple<const Elements extends Array<any>>(
  * homogeneous typed elements.
  *
  * The raw string is split on `separator` and each part is decoded by `elementType`.
- * If any element's decoder fails, a {@link TypoError} is thrown with the index and
- * element type context.
- *
- * Unlike {@link typeTuple}, the number of elements is not fixed; the result array
- * length equals the number of `separator`-delimited parts in the input string. To pass
- * an empty array, the user must pass an empty string (`""`), which splits into one
- * empty-string element — consider using {@link optionRepeatable} instead if you want a
- * naturally empty default.
- *
- * The `content` is formatted as `"<elementContent>[<sep><elementContent>]..."` to
- * signal repeatability.
+ * A failed element decode throws a {@link TypoError} with the index and type context.
+ * Unlike {@link typeTuple}, the element count is not fixed. Note that splitting an
+ * empty string yields one empty-string element — use {@link optionRepeatable} for a
+ * naturally-empty default. The `content` is formatted as
+ * `"<elementContent>[<sep><elementContent>]..."` to signal repeatability.
  *
  * @typeParam Value - The TypeScript element type produced by `elementType.decoder`.
  *

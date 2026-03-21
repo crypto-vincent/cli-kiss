@@ -40,8 +40,8 @@ export type Operation<Input, Output> = {
  * Produced by {@link Operation.createFactory} after argument parsing.
  * Instantiating it finalises value extraction and produces an {@link OperationInstance}.
  *
- * @typeParam Input - operation instance input type {@link Operation}.
- * @typeParam Output - operation instance output type {@link Operation}.
+ * @typeParam Input - Context type. See {@link Operation}.
+ * @typeParam Output - Result type. See {@link Operation}.
  */
 export type OperationFactory<Input, Output> = {
   /**
@@ -87,12 +87,9 @@ export type OperationUsage = {
  * Creates an {@link Operation} from a set of options, positionals, and an
  * async handler function.
  *
- * The `handler` receives:
- * - `context` — the value passed down from the parent command.
- * - `inputs.options` — an object whose keys match those declared in `inputs.options` and whose values are
- *   the parsed option values.
- * - `inputs.positionals` — a tuple whose elements match `inputs.positionals` and whose
- *   values are the parsed positional values, in declaration order.
+ * The `handler` receives the parent `context` and an `inputs` object with
+ * `options` (keyed by the same names declared in `inputs.options`) and
+ * `positionals` (a tuple in declaration order).
  *
  * @typeParam Context - The context type accepted by the handler.
  * @typeParam Result - The return type of the handler.

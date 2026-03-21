@@ -42,6 +42,9 @@ export type Option<Value> = {
  * @typeParam Value - The TypeScript type of the parsed value.
  */
 export type OptionParser<Value> = {
+  /**
+   * @throws {@link TypoError} if validation failed during {@link Option.createParser}.
+   */
   parseValue(): Value;
 };
 
