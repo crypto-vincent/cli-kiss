@@ -1,11 +1,6 @@
 /**
- * Available foreground and background color names for terminal styling.
- *
- * Colors are divided into two groups:
- * - **dark** variants correspond to standard ANSI colors (codes 30–37 / 40–47).
- * - **bright** variants correspond to high-intensity ANSI colors (codes 90–97 / 100–107).
- *
- * Used by {@link TypoStyle}'s `fgColor` and `bgColor` fields.
+ * Color names for terminal styling, used by {@link TypoStyle}.
+ * `dark*` = standard ANSI (30–37); `bright*` = high-intensity (90–97).
  */
 export type TypoColor =
   | "darkBlack"
@@ -26,105 +21,124 @@ export type TypoColor =
   | "brightWhite";
 
 /**
- * Describes the visual styling to apply to a text segment when rendered by a
- * {@link TypoSupport} instance.
- *
- * All fields are optional. When `TypoSupport` is in `"none"` mode, no styling is
- * applied and the raw text is returned unchanged. In `"tty"` mode the corresponding
- * ANSI escape codes are emitted. In `"mock"` mode a deterministic textual representation
- * is produced (useful for snapshot tests).
+ * Visual styling applied by a {@link TypoSupport} instance.
+ * All fields are optional; ignored entirely in `"none"` mode.
  */
 export type TypoStyle = {
-  /** Foreground (text) color. */
+  /**
+   * Foreground (text) color.
+   */
   fgColor?: TypoColor;
-  /** Background color. */
+  /**
+   * Background color.
+   */
   bgColor?: TypoColor;
-  /** Render the text with reduced intensity. */
+  /**
+   * Render with reduced intensity.
+   */
   dim?: boolean;
-  /** Render the text in bold. */
+  /**
+   * Render in bold.
+   */
   bold?: boolean;
-  /** Render the text in italic. */
+  /**
+   * Render in italic.
+   */
   italic?: boolean;
-  /** Render the text with an underline. */
+  /**
+   * Render with an underline.
+   */
   underline?: boolean;
-  /** Render the text with a strikethrough. */
+  /**
+   * Render with a strikethrough.
+   */
   strikethrough?: boolean;
 };
 
 /**
- * Pre-defined {@link TypoStyle} for section titles in the usage output (e.g.
- * `"Positionals:"`, `"Options:"`).
- * Rendered in bold dark-green.
+ * Pre-defined style for section titles (e.g. `"Positionals:"`). Bold dark-green.
  */
 export const typoStyleTitle: TypoStyle = {
   fgColor: "darkGreen",
   bold: true,
 };
-/** Pre-defined {@link TypoStyle} for logic/type identifiers in error messages. Rendered in bold dark-magenta. */
+/**
+ * Pre-defined style for logic/type identifiers in error messages. Bold dark-magenta.
+ */
 export const typoStyleLogic: TypoStyle = {
   fgColor: "darkMagenta",
   bold: true,
 };
-/** Pre-defined {@link TypoStyle} for quoted user-supplied values in error messages. Rendered in bold dark-yellow. */
+/**
+ * Pre-defined style for quoted user-supplied values in error messages. Bold dark-yellow.
+ */
 export const typoStyleQuote: TypoStyle = {
   fgColor: "darkYellow",
   bold: true,
 };
 
-/** Pre-defined {@link TypoStyle} for failure/error labels (e.g. `"Error:"`). Rendered in bold dark-red. */
+/**
+ * Pre-defined style for failure/error labels (e.g. `"Error:"`). Bold dark-red.
+ */
 export const typoStyleFailure: TypoStyle = {
   fgColor: "darkRed",
   bold: true,
 };
 
-/** Pre-defined {@link TypoStyle} for CLI flag/option/command constant names. Rendered in bold dark-cyan. */
+/**
+ * Pre-defined style for CLI flag/option/command names. Bold dark-cyan.
+ */
 export const typoStyleConstants: TypoStyle = {
   fgColor: "darkCyan",
   bold: true,
 };
-/** Pre-defined {@link TypoStyle} for positional placeholders and user-input labels. Rendered in bold dark-blue. */
+/**
+ * Pre-defined style for positional placeholders and user-input labels. Bold dark-blue.
+ */
 export const typoStyleUserInput: TypoStyle = {
   fgColor: "darkBlue",
   bold: true,
 };
 
-/** Pre-defined {@link TypoStyle} for strong regular text (e.g. command descriptions). Rendered in bold. */
+/**
+ * Pre-defined style for strong regular text (e.g. command descriptions). Bold.
+ */
 export const typoStyleRegularStrong: TypoStyle = {
   bold: true,
 };
-/** Pre-defined {@link TypoStyle} for subtle supplementary text (e.g. hints). Rendered in italic and dim. */
+/**
+ * Pre-defined style for subtle supplementary text (e.g. hints). Italic and dim.
+ */
 export const typoStyleRegularWeaker: TypoStyle = {
   italic: true,
   dim: true,
 };
 
 /**
- * An immutable styled string segment consisting of a raw text value and an associated
- * {@link TypoStyle}.
- *
- * Multiple `TypoString`s are composed into a {@link TypoText} for multi-part messages.
- * Rendering is deferred until {@link TypoString.computeStyledString} is called with a
- * {@link TypoSupport} instance.
+ * An immutable styled string segment: a raw text value paired with a {@link TypoStyle}.
+ * Compose multiple segments into a {@link TypoText}; rendering is deferred to {@link TypoString.computeStyledString}.
  */
 export class TypoString {
   #value: string;
   #typoStyle: TypoStyle;
   /**
-   * @param value - The raw text content.
-   * @param typoStyle - The style to apply when rendering. Defaults to `{}` (no style).
+   * @param value - Raw text content.
+   * @param typoStyle - Style to apply when rendering. Defaults to `{}` (no style).
    */
   constructor(value: string, typoStyle: TypoStyle = {}) {
     this.#value = value;
     this.#typoStyle = typoStyle;
   }
-  /** Returns the unstyled raw text content. */
+  /**
+   * Returns the unstyled raw text content.
+   */
   getRawString(): string {
     return this.#value;
   }
   /**
-   * Returns the text with ANSI escape codes (or mock markers) applied by `typoSupport`.
+   * Returns the text styled by `typoSupport`.
    *
-   * @param typoSupport - Controls how styles are rendered (tty colors, mock, or none).
+   * @param typoSupport - Rendering mode.
    */
   computeStyledString(typoSupport: TypoSupport): string {
     return typoSupport.computeStyledString(this.#value, this.#typoStyle);
@@ -132,22 +146,13 @@ export class TypoString {
 }
 
 /**
- * A mutable sequence of {@link TypoString} segments that together form a styled
- * multi-part message.
- *
- * `TypoText` is used throughout the library to build error messages and usage output
- * that carry styling information without being coupled to a specific output mode.
+ * A mutable sequence of {@link TypoString} segments forming a styled multi-part message.
  * Rendering is deferred to {@link TypoText.computeStyledString}.
  */
 export class TypoText {
   #typoStrings: Array<TypoString>;
   /**
-   * Creates a `TypoText` pre-populated with the provided parts. Each part can be a
-   * `TypoText` (flattened by value), a `TypoString`, or a plain `string` (wrapped in an
-   * unstyled `TypoString`).
-   *
-   * @param typoParts - Initial parts to append. Can be any mix of `TypoText`,
-   *   `TypoString`, and `string`.
+   * @param typoParts - Initial segments; `TypoText` is flattened, `string` is wrapped unstyled.
    */
   constructor(...typoParts: Array<TypoText | TypoString | string>) {
     this.#typoStrings = [];
@@ -162,18 +167,17 @@ export class TypoText {
     }
   }
   /**
-   * Appends a single {@link TypoString} segment to the end of this text.
+   * Appends a {@link TypoString} segment.
    *
-   * @param typoString - The segment to append.
+   * @param typoString - Segment to append.
    */
   pushString(typoString: TypoString) {
     this.#typoStrings.push(typoString);
   }
   /**
-   * Appends all segments from another {@link TypoText} to the end of this text
-   * (shallow copy of segments).
+   * Appends all segments from another {@link TypoText} (shallow copy).
    *
-   * @param typoText - The text whose segments are appended.
+   * @param typoText - Source text.
    */
   pushText(typoText: TypoText) {
     for (const typoString of typoText.#typoStrings) {
@@ -181,10 +185,10 @@ export class TypoText {
     }
   }
   /**
-   * Renders all segments into a single string, applying styles via `typoSupport`.
+   * Renders all segments into a single styled string.
    *
-   * @param typoSupport - Controls how styles are rendered.
-   * @returns The concatenated, optionally styled string.
+   * @param typoSupport - Rendering mode.
+   * @returns Concatenated styled string.
    */
   computeStyledString(typoSupport: TypoSupport): string {
     return this.#typoStrings
@@ -193,15 +197,12 @@ export class TypoText {
   }
   /**
    * Returns the concatenation of all segments' raw (unstyled) text.
-   * Equivalent to calling {@link TypoText.computeStyledString} with
-   * {@link TypoSupport.none}.
    */
   computeRawString(): string {
     return this.#typoStrings.map((t) => t.getRawString()).join("");
   }
   /**
-   * Returns the total character length of the raw (unstyled) text.
-   * Used by {@link TypoGrid} to compute column widths for alignment.
+   * Returns the total character count of the raw (unstyled) text.
    */
   computeRawLength(): number {
     let length = 0;
@@ -213,14 +214,9 @@ export class TypoText {
 }
 
 /**
- * A grid of {@link TypoText} cells that renders with column-aligned padding.
- *
- * Each row is an array of `TypoText` cells. When {@link TypoGrid.computeStyledGrid} is
- * called, each column is padded to the width of its widest cell (measured in raw
- * characters). The last column in each row is **not** padded.
- *
- * Used internally by {@link usageToStyledLines} to render the `Positionals:`,
- * `Subcommands:`, and `Options:` sections with neat alignment.
+ * A column-aligned grid of {@link TypoText} cells.
+ * Each column is padded to the widest cell (raw chars); the last column is not padded.
+ * Used by {@link usageToStyledLines} to render `Positionals:`, `Subcommands:`, and `Options:`.
  */
 export class TypoGrid {
   #typoRows: Array<Array<TypoText>>;
@@ -228,21 +224,19 @@ export class TypoGrid {
     this.#typoRows = [];
   }
   /**
-   * Appends a row of cells to the grid.
+   * Appends a row. All rows should have the same cell count for alignment to be meaningful.
    *
-   * @param cells - An ordered array of {@link TypoText} cells for this row. All rows
-   *   should have the same number of cells for alignment to be meaningful.
+   * @param cells - Ordered {@link TypoText} cells.
    */
   pushRow(cells: Array<TypoText>) {
     this.#typoRows.push(cells);
   }
   /**
-   * Renders the grid into a 2-D array of styled strings, with space padding added
-   * between columns (except after the last column).
+   * Renders the grid as a 2-D array of styled (and column-padded) strings.
+   * Join each inner array with `""` to get a line.
    *
-   * @param typoSupport - Controls how styles are rendered.
-   * @returns A 2-D array where each inner array is the styled (and padded) cells of
-   *   one row. Join the inner arrays with `""` to get a single line string.
+   * @param typoSupport - Rendering mode.
+   * @returns 2-D array of styled strings.
    */
   computeStyledGrid(typoSupport: TypoSupport): Array<Array<string>> {
     const widths = new Array<number>();
@@ -286,24 +280,15 @@ export class TypoGrid {
 }
 
 /**
- * An `Error` subclass that carries a {@link TypoText} styled message in addition to
- * the plain-text `Error.message` used by the standard JS error chain.
- *
- * `TypoError` is used throughout `cli-kiss` to report parsing failures (unknown option,
- * type decoding error, missing required argument, etc.). Its styled representation is
- * rendered by {@link TypoSupport.computeStyledErrorMessage} when outputting errors to
- * the terminal.
- *
- * Errors can be chained: if `source` is a `TypoError`, its styled text is appended
- * after `": "` to form the full message context chain.
+ * `Error` subclass with a {@link TypoText} styled message for rich terminal output.
+ * Used throughout the library for parse failures (unknown option, type decode error, etc.).
+ * If `source` is a `TypoError`, its styled text is chained after `": "`.
  */
 export class TypoError extends Error {
   #typoText: TypoText;
   /**
-   * @param currentTypoText - The styled message for this error level.
-   * @param source - An optional cause. If it is a `TypoError`, its styled text is
-   *   appended (chained context). If it is a plain `Error`, its `.message` is appended
-   *   as a plain string. Any other value is stringified with `String()`.
+   * @param currentTypoText - Styled message for this error.
+   * @param source - Optional cause; `TypoError` chains styled text, `Error` appends `.message`, else `String()`.
    */
   constructor(currentTypoText: TypoText, source?: unknown) {
     const typoText = new TypoText();
@@ -320,29 +305,23 @@ export class TypoError extends Error {
     this.#typoText = typoText;
   }
   /**
-   * Renders this error's styled message as a string.
+   * Renders the styled error message (without a `"Error:"` prefix).
    *
-   * @param typoSupport - Controls how ANSI styles are applied.
-   * @returns The full styled error message (without a leading `"Error:"` prefix).
+   * @param typoSupport - Rendering mode.
+   * @returns Styled error string.
    */
   computeStyledString(typoSupport: TypoSupport): string {
     return this.#typoText.computeStyledString(typoSupport);
   }
   /**
-   * Executes `thrower` and returns its result. If `thrower` throws any error, the error
-   * is re-thrown as a new `TypoError` whose message is `context()` with the original
-   * error chained as the source.
+   * Runs `thrower`; on any throw wraps it as a `TypoError` with `context()` prepended.
+   * Useful for adding call-chain context (e.g. `"at 0: Number: ..."`).
    *
-   * This is a convenience helper for adding contextual information to errors that arise
-   * deep in a call chain (e.g. "at 0: Number: Unable to parse: ...").
-   *
-   * @typeParam Value - The return type of `thrower`.
-   * @param thrower - A zero-argument function whose return value is passed through on
-   *   success.
-   * @param context - A zero-argument factory that produces the {@link TypoText} context
-   *   prepended to the caught error. Called only when `thrower` throws.
-   * @returns The value returned by `thrower`.
-   * @throws `TypoError` wrapping the original error with the provided context prepended.
+   * @typeParam Value - Return type of `thrower`.
+   * @param thrower - Function to execute; result passed through on success.
+   * @param context - Produces the {@link TypoText} prepended to the caught error.
+   * @returns Value from `thrower`.
+   * @throws `TypoError` wrapping the original error with context prepended.
    */
   static tryWithContext<Value>(
     thrower: () => Value,
@@ -357,19 +336,9 @@ export class TypoError extends Error {
 }
 
 /**
- * Controls whether and how ANSI terminal styling is applied when rendering
- * {@link TypoString}, {@link TypoText}, and error messages.
- *
- * Instances are created via the static factory methods:
- * - {@link TypoSupport.none} — strips all styling (plain text).
- * - {@link TypoSupport.tty} — applies ANSI escape codes for color terminals.
- * - {@link TypoSupport.mock} — applies a deterministic textual representation useful
- *   for snapshot tests.
- * - {@link TypoSupport.inferFromProcess} — auto-detects based on `process.stdout.isTTY`
- *   and the `FORCE_COLOR` / `NO_COLOR` environment variables.
- *
- * `TypoSupport` is consumed by {@link runAndExit} (via the `useTtyColors` option)
- * and can also be used directly when building custom usage renderers with {@link usageToStyledLines}.
+ * Controls ANSI terminal styling for {@link TypoString}, {@link TypoText}, and error rendering.
+ * Create via {@link TypoSupport.none}, {@link TypoSupport.tty}, {@link TypoSupport.mock},
+ * or {@link TypoSupport.inferFromProcess}.
  */
 export class TypoSupport {
   #kind: "none" | "tty" | "mock";
@@ -377,39 +346,29 @@ export class TypoSupport {
     this.#kind = kind;
   }
   /**
-   * Returns a `TypoSupport` that strips all styling — every styled string is returned
-   * as-is (plain text, no ANSI codes).
+   * Returns a `TypoSupport` that strips all styling (plain text, no ANSI codes).
    */
   static none(): TypoSupport {
     return new TypoSupport("none");
   }
   /**
-   * Returns a `TypoSupport` that applies ANSI escape codes.
-   * Use this when writing to a color-capable terminal (`stdout.isTTY === true`).
+   * Returns a `TypoSupport` that applies ANSI escape codes (for color-capable terminals).
    */
   static tty(): TypoSupport {
     return new TypoSupport("tty");
   }
   /**
-   * Returns a `TypoSupport` that applies a deterministic mock styling representation.
-   *
-   * Instead of real ANSI codes, each style flag is expressed as a readable suffix:
-   * `{text}@color`, `{text}+` (bold), `{text}-` (dim), `{text}*` (italic),
-   * `{text}_` (underline), `{text}~` (strikethrough). Useful for snapshot testing.
+   * Returns a `TypoSupport` with deterministic textual styling for snapshot tests.
+   * Style flags appear as suffixes: `{text}@color`, `{text}+` (bold), `{text}-` (dim),
+   * `{text}*` (italic), `{text}_` (underline), `{text}~` (strikethrough).
    */
   static mock(): TypoSupport {
     return new TypoSupport("mock");
   }
   /**
-   * Selects a `TypoSupport` mode automatically based on the current process environment:
-   *
-   * 1. `FORCE_COLOR=0` or `NO_COLOR` env var set → {@link TypoSupport.none}.
-   * 2. `FORCE_COLOR` env var set (any truthy value) → {@link TypoSupport.tty}.
-   * 3. `process.stdout.isTTY === true` → {@link TypoSupport.tty}.
-   * 4. Otherwise → {@link TypoSupport.none}.
-   *
-   * Falls back to {@link TypoSupport.none} if `process` is not available (e.g. in a
-   * non-Node environment).
+   * Auto-detects styling mode from the process environment.
+   * `FORCE_COLOR=0` / `NO_COLOR` → none; `FORCE_COLOR` (truthy) / `isTTY` → tty; else → none.
+   * Falls back to none if `process` is unavailable.
    */
   static inferFromProcess(): TypoSupport {
     if (!process) {
@@ -432,15 +391,11 @@ export class TypoSupport {
     return TypoSupport.none();
   }
   /**
-   * Applies the given {@link TypoStyle} to `value` and returns the styled string.
+   * Applies `typoStyle` to `value` according to the current mode.
    *
-   * - In `"none"` mode: returns `value` unchanged.
-   * - In `"tty"` mode: wraps `value` in ANSI escape codes and appends a reset code.
-   * - In `"mock"` mode: wraps `value` in a deterministic textual representation.
-   *
-   * @param value - The raw text to style.
-   * @param typoStyle - The style to apply.
-   * @returns The styled string.
+   * @param value - Raw text.
+   * @param typoStyle - Style to apply.
+   * @returns Styled string.
    */
   computeStyledString(value: string, typoStyle: TypoStyle): string {
     if (this.#kind === "none") {
@@ -483,16 +438,10 @@ export class TypoSupport {
     throw new Error(`Unknown TypoSupport kind: ${this.#kind}`);
   }
   /**
-   * Formats an error value as a styled `"Error: <message>"` string.
+   * Formats any thrown value as `"Error: <message>"` with {@link typoStyleFailure} on the prefix.
    *
-   * - If `error` is a {@link TypoError}, its styled text is used for the message part.
-   * - If `error` is a plain `Error`, its `.message` property is used.
-   * - Otherwise `String(error)` is used.
-   *
-   * The `"Error:"` prefix is always styled with {@link typoStyleFailure}.
-   *
-   * @param error - The error to format (any value thrown by a handler).
-   * @returns A styled error string ready to print to stderr.
+   * @param error - Any thrown value.
+   * @returns Styled error string.
    */
   computeStyledErrorMessage(error: unknown): string {
     return [
