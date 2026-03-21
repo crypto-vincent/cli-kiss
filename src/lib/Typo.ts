@@ -38,7 +38,7 @@ export type TypoStyle = {
    */
   dim?: boolean;
   /**
-   * Render in bold.
+   * Render in bold (bright color on some terminals).
    */
   bold?: boolean;
   /**
