@@ -1,12 +1,10 @@
 # Options
 
-Options are named arguments prefixed with `--` (or `-` for short forms). Declare
-them in the `options` map of [`operation`](/guide/02_commands).
+Named `--` arguments (or `-` for short forms). Declared in the `options` map of [`operation`](/guide/02_commands).
 
 ## `optionFlag` — boolean toggle
 
-A flag that is either present or absent. The user can also pass `--flag=yes` /
-`--flag=no`.
+Present or absent. Also accepts `--flag=yes` / `--flag=no`.
 
 ```ts
 import { optionFlag } from "cli-kiss";
@@ -39,7 +37,7 @@ multiple values.
 
 ## `optionSingleValue` — one typed value
 
-Accepts exactly one value. Use any [`Type`](/guide/05_types) to decode it.
+Exactly one typed value.
 
 ```ts
 import { optionSingleValue, typeString } from "cli-kiss";
@@ -71,7 +69,7 @@ const output = optionSingleValue({
 
 ## `optionRepeatable` — collect multiple values
 
-Collects every occurrence into an array. Safe to specify zero or many times.
+Collects every occurrence into an array.
 
 ```ts
 import { optionRepeatable, typeString } from "cli-kiss";

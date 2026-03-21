@@ -1,12 +1,10 @@
 # Commands
 
-Commands are the building blocks of a `cli-kiss` CLI.
-
 Three factory functions cover every use-case.
 
 ## `command` — leaf command
 
-A leaf command has no subcommands. It directly runs an operation.
+No subcommands — directly runs an operation.
 
 ```ts
 import { command, operation, positionalRequired, typeString } from "cli-kiss";
@@ -51,7 +49,7 @@ command(
 
 ## `commandWithSubcommands` — dispatch to a subcommand
 
-Use this when the user must pick one of several sub-actions.
+User must pick one of several sub-actions.
 
 ```ts
 import {
@@ -105,13 +103,11 @@ Subcommands:
 
 ### Subcommand names
 
-The keys of the subcommand map are the literal tokens users type. They must be
-lowercase strings.
+Keys are the tokens users type — must be lowercase strings.
 
 ## `commandChained` — sequential stages
 
-Use this to split a command into reusable steps without introducing a
-user-visible subcommand token.
+Splits a command into reusable steps with no extra user-visible token.
 
 ```ts
 import {
@@ -153,5 +149,4 @@ const authenticatedDeploy = commandChained(
 );
 ```
 
-The two stages' options and positionals are merged into a single flat usage
-output — the user sees one combined command.
+All stages share a single flat usage — users see one combined command.
