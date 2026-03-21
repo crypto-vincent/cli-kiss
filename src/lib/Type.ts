@@ -316,14 +316,14 @@ export function typeTuple<const Elements extends Array<any>>(
     content: elementTypes
       .map((elementType) => elementType.content)
       .join(separator),
-    decoder(value: string) {
-      const splits = value.split(separator, elementTypes.length);
+    decoder(input: string) {
+      const splits = input.split(separator, elementTypes.length);
       if (splits.length !== elementTypes.length) {
         throw new TypoError(
           new TypoText(
             new TypoString(`Found ${splits.length} splits: `),
             new TypoString(`Expected ${elementTypes.length} splits from: `),
-            new TypoString(`"${value}"`, typoStyleQuote),
+            new TypoString(`"${input}"`, typoStyleQuote),
           ),
         );
       }
