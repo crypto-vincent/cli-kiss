@@ -24,7 +24,7 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 | `usageOnHelp`  | `boolean?`                 | `true`         | Enables `--help` flag                                       |
 | `usageOnError` | `boolean?`                 | `true`         | Prints usage to stderr when parsing fails                   |
 | `useTtyColors` | `boolean \| "mock"?`       | auto           | Controls ANSI color output                                  |
-| `onError`      | `(error: unknown) => void` | —              | Custom handler for execution errors                         |
+| `onError`      | `(error: unknown) => void` | —              | Custom handler for parse and execution errors               |
 | `onExit`       | `(code: number) => never`  | `process.exit` | Override for testing                                        |
 
 ### Exit codes

@@ -23,30 +23,6 @@ const greet = command(
 );
 ```
 
-### `CommandInformation`
-
-Every command accepts a metadata object:
-
-| Field         | Type        | Description                                       |
-| ------------- | ----------- | ------------------------------------------------- |
-| `description` | `string`    | Short description shown in help output            |
-| `hint`        | `string?`   | Note shown in parentheses next to the description |
-| `details`     | `string[]?` | Extra lines printed below the description         |
-
-```ts
-command(
-  {
-    description: "Deploy the application",
-    hint: "experimental",
-    details: [
-      "Pushes to the configured remote.",
-      "Runs migrations after push.",
-    ],
-  },
-  deployOperation,
-);
-```
-
 ## `commandWithSubcommands` — dispatch to a subcommand
 
 User must pick one of several sub-actions.
@@ -150,3 +126,62 @@ const authenticatedDeploy = commandChained(
 ```
 
 All stages share a single flat usage — users see one combined command.
+
+## `CommandInformation`
+
+Every command accepts a metadata object:
+
+| Field         | Type        | Description                                       |
+| ------------- | ----------- | ------------------------------------------------- |
+| `description` | `string`    | Short description shown in help output            |
+| `hint`        | `string?`   | Note shown in parentheses next to the description |
+| `details`     | `string[]?` | Extra lines printed below the description         |
+| `examples`    | `Example[]?`| Usage examples shown in the `Examples:` section  |
+
+Each `Example` entry has:
+
+| Field        | Type             | Description                                         |
+| ------------ | ---------------- | --------------------------------------------------- |
+| `explanation`| `string`         | Comment line shown above the example command        |
+| `commandArgs`| `CommandArg[]`   | Ordered list of arguments to render on the command line |
+
+Each `CommandArg` is one of:
+
+| Shape                                        | Renders as              |
+| -------------------------------------------- | ----------------------- |
+| `string`                                     | literal text            |
+| `{ positional: string }`                     | positional value        |
+| `{ subcommand: string }`                     | subcommand name         |
+| `{ option: { long: string; value?: string } }`  | `--long[=value]`     |
+| `{ option: { short: string; value?: string } }` | `-s[=value]`         |
+
+```ts
+command(
+  {
+    description: "Deploy the application",
+    hint: "experimental",
+    details: [
+      "Pushes to the configured remote.",
+      "Runs migrations after push.",
+    ],
+    examples: [
+      {
+        explanation: "Deploy with a specific tag",
+        commandArgs: [
+          { positional: "v1.2.3" },
+          { option: { long: "dry-run" } },
+        ],
+      },
+    ],
+  },
+  deployOperation,
+);
+```
+
+The `Examples:` section in `--help` output renders each entry as a comment followed by the reconstructed command line:
+
+```text
+Examples:
+ # Deploy with a specific tag
+ deploy v1.2.3 --dry-run
+```

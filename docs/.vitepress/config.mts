@@ -16,6 +16,9 @@ export default defineConfig({
   themeConfig: {
     search: {
       provider: "local",
+      options: {
+        detailedView: true,
+      },
     },
     nav: [
       { text: "Guide", link: "/guide/01_getting_started" },
