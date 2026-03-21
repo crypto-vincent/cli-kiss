@@ -15,7 +15,7 @@ import {
  * {@link positionalVariadics} and passed via the `positionals` array of
  * {@link operation}, consumed in declaration order.
  *
- * @typeParam Value - Parsed value type.
+ * @typeParam Value - Decoded value type.
  */
 export type Positional<Value> = {
   /**
@@ -23,31 +23,26 @@ export type Positional<Value> = {
    */
   generateUsage(): PositionalUsage;
   /**
-   * Consumes the next positional token from `readerPositionals` and returns a parser
-   * that produces the final decoded value.
-   *
-   * Called during {@link Operation.createFactory}. May defer a {@link TypoError}
-   * (e.g. missing required token) to {@link PositionalParser.parseValue}.
-   *
-   * @param readerPositionals - Source of positional tokens.
+   * Consumes the next positional token from `readerPositionals`.
+   * Returns a decoder that produces the final value.
    */
-  createParser(readerPositionals: ReaderPositionals): PositionalParser<Value>;
+  consumeAndMakeDecoder(
+    readerPositionals: ReaderPositionals,
+  ): PositionalDecoder<Value>;
 };
 
 /**
- * Retrieves the parsed value for a positional argument.
+ * Produced by {@link Positional.consumeAndMakeDecoder}.
  *
- * Returned by {@link Positional.createParser}, called by {@link OperationFactory.createInstance}.
- *
- * @typeParam Value - Parsed value type.
+ * @typeParam Value - Decoded value type.
  */
-export type PositionalParser<Value> = {
+export type PositionalDecoder<Value> = {
   /**
    * Returns the decoded positional value.
    *
-   * @throws {@link TypoError} if the positional was missing (when required) or if decoding failed.
+   * @throws {@link TypoError} if decoding failed.
    */
-  parseValue(): Value;
+  decodeValue(): Value;
 };
 
 /**
@@ -108,7 +103,7 @@ export function positionalRequired<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    createParser(readerPositionals: ReaderPositionals) {
+    consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
         throw new TypoError(
@@ -119,7 +114,7 @@ export function positionalRequired<Value>(definition: {
         );
       }
       return {
-        parseValue() {
+        decodeValue() {
           return decodeValue(label, definition.type, positional);
         },
       };
@@ -169,10 +164,10 @@ export function positionalOptional<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    createParser(readerPositionals: ReaderPositionals) {
+    consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       return {
-        parseValue() {
+        decodeValue() {
           if (positional === undefined) {
             try {
               return definition.default();
@@ -237,7 +232,7 @@ export function positionalVariadics<Value>(definition: {
             : "")) as Uppercase<string>,
       };
     },
-    createParser(readerPositionals: ReaderPositionals) {
+    consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positionals = new Array<string>();
       while (true) {
         const positional = readerPositionals.consumePositional();
@@ -250,7 +245,7 @@ export function positionalVariadics<Value>(definition: {
         positionals.push(positional);
       }
       return {
-        parseValue() {
+        decodeValue() {
           return positionals.map((positional) => {
             return decodeValue(label, definition.type, positional);
           });
@@ -263,10 +258,10 @@ export function positionalVariadics<Value>(definition: {
 function decodeValue<Value>(
   label: string,
   type: Type<Value>,
-  value: string,
+  input: string,
 ): Value {
   return TypoError.tryWithContext(
-    () => type.decoder(value),
+    () => type.decoder(input),
     () =>
       new TypoText(
         new TypoString(label, typoStyleUserInput),

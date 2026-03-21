@@ -108,12 +108,17 @@ export class ReaderArgs {
       ...definition.shorts.map((short) => `-${short}`),
     ].join(", ") as ReaderOptionKey;
     for (const long of definition.longs) {
+      if (!this.#isValidOptionName(long)) {
+        throw new Error(`Invalid option name: --${long}`);
+      }
       if (this.#keyByLong.has(long)) {
         throw new Error(`Option already registered: --${long}`);
       }
-      this.#keyByLong.set(long, key);
     }
     for (const short of definition.shorts) {
+      if (!this.#isValidOptionName(short)) {
+        throw new Error(`Invalid option name: -${short}`);
+      }
       if (this.#keyByShort.has(short)) {
         throw new Error(`Option already registered: -${short}`);
       }
@@ -132,6 +137,11 @@ export class ReaderArgs {
           );
         }
       }
+    }
+    for (const long of definition.longs) {
+      this.#keyByLong.set(long, key);
+    }
+    for (const short of definition.shorts) {
       this.#keyByShort.set(short, key);
     }
     this.#valuedByKey.set(key, definition.valued);
@@ -141,7 +151,6 @@ export class ReaderArgs {
 
   /**
    * Returns all values collected for the option key.
-   * Flags produce `"true"` per occurrence; valued options produce the literal string.
    *
    * @param key - Key from {@link ReaderArgs.registerOption}.
    * @returns String values, one per occurrence.
@@ -156,7 +165,8 @@ export class ReaderArgs {
   }
 
   /**
-   * Returns the next bare positional token, parsing intervening options as side-effects.
+   * Returns the next bare positional token.
+   * Parse intervening options as side-effects.
    * All tokens after `--` are treated as positionals.
    *
    * @returns The next positional, or `undefined` when exhausted.
@@ -308,5 +318,9 @@ export class ReaderArgs {
 
   #acknowledgeOption(key: ReaderOptionKey, value: string) {
     this.getOptionValues(key).push(value);
+  }
+
+  #isValidOptionName(name: string): boolean {
+    return name.length > 0 && !name.includes("=");
   }
 }

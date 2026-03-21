@@ -46,14 +46,14 @@ typeEnv.decoder("unknown");
 // Error: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
 ```
 
-## `typeConverted` — transform an existing type
+## `typeMapped` — transform an existing type
 
 Chain a `before` type with an `after` transformation:
 
 ```ts
-import { typeConverted, typeNumber } from "cli-kiss";
+import { typeMapped, typeNumber } from "cli-kiss";
 
-const typePort = typeConverted(typeNumber, {
+const typePort = typeMapped(typeNumber, {
   content: "Port",
   decoder: (n) => {
     if (n < 1 || n > 65535) throw new Error("Out of range");

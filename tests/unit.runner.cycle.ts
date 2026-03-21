@@ -10,14 +10,13 @@ import {
   positionalRequired,
   positionalVariadics,
   runAndExit,
-  typeConverted,
+  typeMapped,
   typeOneOf,
   typeString,
   typeUrl,
 } from "../src";
 
 // TODO - unit test for chained commands
-// TODO - unit test for errors styling
 
 it("run", async () => {
   const rootUsage = [
@@ -228,7 +227,10 @@ it("run", async () => {
   await testCase(
     ["invalid", "subcommand"],
     [],
-    [subcommandUsage, "Error: <REQUIRED2>: Is required, but was not provided"],
+    [
+      subcommandUsage,
+      'Error: <REQUIRED1>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+    ],
     1,
   );
   await testCase(
@@ -356,7 +358,7 @@ async function testCase(
           }),
           optionSingleValue: optionSingleValue({
             long: "single-value",
-            type: typeConverted(typeOneOf("STRING-ENUM", ["42", "43"]), {
+            type: typeMapped(typeOneOf("STRING-ENUM", ["42", "43"]), {
               content: "NUMBER-ENUM",
               decoder: (value) => Number(value),
             }),

@@ -15,7 +15,7 @@ import {
  * Created with {@link optionFlag}, {@link optionSingleValue}, or
  * {@link optionRepeatable} and passed via the `options` map of {@link operation}.
  *
- * @typeParam Value - Parsed value type (`boolean`, `T`, or `Array<T>`).
+ * @typeParam Value - Decoded value type.
  */
 export type Option<Value> = {
   /**
@@ -23,27 +23,23 @@ export type Option<Value> = {
    */
   generateUsage(): OptionUsage;
   /**
-   * Registers the option on `readerOptions` and returns an {@link OptionParser}.
-   *
-   * @param readerOptions - Shared argument reader.
+   * Registers the option on `readerOptions` and returns an {@link OptionDecoder}.
    */
-  createParser(readerOptions: ReaderOptions): OptionParser<Value>;
+  registerAndMakeDecoder(readerOptions: ReaderOptions): OptionDecoder<Value>;
 };
 
 /**
- * Retrieves the parsed value for a registered option.
+ * Produced by {@link Option.registerAndMakeDecoder}.
  *
- * Returned by {@link Option.createParser}, called by {@link OperationFactory.createInstance}.
- *
- * @typeParam Value - Parsed value type.
+ * @typeParam Value - Decoded value type.
  */
-export type OptionParser<Value> = {
+export type OptionDecoder<Value> = {
   /**
    * Returns the decoded option value.
    *
-   * @throws {@link TypoError} if validation failed during {@link Option.createParser}.
+   * @throws {@link TypoError} if decoding failed.
    */
-  parseValue(): Value;
+  getAndDecodeValue(): Value;
 };
 
 /**
@@ -52,21 +48,21 @@ export type OptionParser<Value> = {
  */
 export type OptionUsage = {
   /**
-   * Help text.
+   * Long-form name without `--` (e.g. `"verbose"`).
+   */
+  long: Lowercase<string>;
+  /**
+   * Short-form name without `-` (e.g. `"v"`).
+   */
+  short: string | undefined;
+  /**
+   * Help text in usage.
    */
   description: string | undefined;
   /**
    * Short note shown in parentheses.
    */
   hint: string | undefined;
-  /**
-   * Long-form name without `--` (e.g. `"verbose"`).
-   */
-  long: Lowercase<string>; // TODO - better type for long option names ?
-  /**
-   * Short-form name without `-` (e.g. `"v"`).
-   */
-  short: string | undefined;
   /**
    * Value placeholder in help (e.g. `"<FILE>"`). `undefined` for flags.
    */
@@ -116,13 +112,13 @@ export function optionFlag(definition: {
         label: undefined,
       };
     },
-    createParser(readerOptions: ReaderOptions) {
+    registerAndMakeDecoder(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
         ...definition,
         valued: false,
       });
       return {
-        parseValue() {
+        getAndDecodeValue() {
           const optionValues = readerOptions.getOptionValues(key);
           if (optionValues.length > 1) {
             throw new TypoError(
@@ -146,7 +142,13 @@ export function optionFlag(definition: {
               );
             }
           }
-          return decodeValue(definition.long, label, typeBoolean, optionValue);
+          return decodeValue({
+            long: definition.long,
+            short: definition.short,
+            label,
+            type: typeBoolean,
+            input: optionValue,
+          });
         },
       };
     },
@@ -205,13 +207,13 @@ export function optionSingleValue<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    createParser(readerOptions: ReaderOptions) {
+    registerAndMakeDecoder(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
         ...definition,
         valued: true,
       });
       return {
-        parseValue() {
+        getAndDecodeValue() {
           const optionValues = readerOptions.getOptionValues(key);
           if (optionValues.length > 1) {
             throw new TypoError(
@@ -235,12 +237,13 @@ export function optionSingleValue<Value>(definition: {
               );
             }
           }
-          return decodeValue(
-            definition.long,
+          return decodeValue({
+            long: definition.long,
+            short: definition.short,
             label,
-            definition.type,
-            optionValue,
-          );
+            type: definition.type,
+            input: optionValue,
+          });
         },
       };
     },
@@ -298,16 +301,22 @@ export function optionRepeatable<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    createParser(readerOptions: ReaderOptions) {
+    registerAndMakeDecoder(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
         ...definition,
         valued: true,
       });
       return {
-        parseValue() {
+        getAndDecodeValue() {
           const optionValues = readerOptions.getOptionValues(key);
           return optionValues.map((optionValue) =>
-            decodeValue(definition.long, label, definition.type, optionValue),
+            decodeValue({
+              long: definition.long,
+              short: definition.short,
+              label,
+              type: definition.type,
+              input: optionValue,
+            }),
           );
         },
       };
@@ -315,22 +324,28 @@ export function optionRepeatable<Value>(definition: {
   };
 }
 
-function decodeValue<Value>(
-  long: string,
-  label: string,
-  type: Type<Value>,
-  value: string,
-): Value {
+function decodeValue<Value>(params: {
+  long: string;
+  short: string | undefined;
+  label: string;
+  type: Type<Value>;
+  input: string;
+}): Value {
   return TypoError.tryWithContext(
-    () => type.decoder(value),
-    () =>
-      new TypoText(
-        new TypoString(`--${long}`, typoStyleConstants),
-        new TypoString(`: `),
-        new TypoString(label, typoStyleUserInput),
-        new TypoString(`: `),
-        new TypoString(type.content, typoStyleLogic),
-      ),
+    () => params.type.decoder(params.input),
+    () => {
+      const text = new TypoText();
+      if (params.short) {
+        text.pushString(new TypoString(`-${params.short}`, typoStyleConstants));
+        text.pushString(new TypoString(`, `));
+      }
+      text.pushString(new TypoString(`--${params.long}`, typoStyleConstants));
+      text.pushString(new TypoString(`: `));
+      text.pushString(new TypoString(params.label, typoStyleUserInput));
+      text.pushString(new TypoString(`: `));
+      text.pushString(new TypoString(params.type.content, typoStyleLogic));
+      return text;
+    },
   );
 }
 

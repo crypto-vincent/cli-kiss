@@ -18,7 +18,7 @@ import {
  *
  * The output format is:
  * ```
- * Usage: <cliName> [breadcrumbs...]
+ * Usage: <cliName> [segments...]
  *
  * <description> (<hint>)
  * <detail lines...>
@@ -39,7 +39,7 @@ import {
  * in each column sets the width for the entire section.
  *
  * @param params.cliName - Program name for the usage line.
- * @param params.commandUsage - From {@link CommandFactory.generateUsage}.
+ * @param params.commandUsage - From {@link CommandDecoder.generateUsage}.
  * @param params.typoSupport - Rendering mode.
  * @returns One string per output line; trailing empty string for the blank line at the end.
  *
@@ -47,7 +47,7 @@ import {
  * ```ts
  * const lines = usageToStyledLines({
  *   cliName: "my-cli",
- *   commandUsage: commandFactory.generateUsage(),
+ *   commandUsage: commandDecoder.generateUsage(),
  *   typoSupport: TypoSupport.tty(),
  * });
  * process.stdout.write(lines.join("\n"));
@@ -62,25 +62,23 @@ export function usageToStyledLines(params: {
 
   const lines = new Array<string>();
 
-  const breadcrumbs = [
+  const segments = [
     textUsageHero("Usage:").computeStyledString(typoSupport),
     textConstants(cliName).computeStyledString(typoSupport),
   ].concat(
-    commandUsage.breadcrumbs.map((breadcrumb) => {
-      if ("positional" in breadcrumb) {
-        return textUserInput(breadcrumb.positional).computeStyledString(
+    commandUsage.segments.map((segment) => {
+      if ("positional" in segment) {
+        return textUserInput(segment.positional).computeStyledString(
           typoSupport,
         );
       }
-      if ("command" in breadcrumb) {
-        return textConstants(breadcrumb.command).computeStyledString(
-          typoSupport,
-        );
+      if ("command" in segment) {
+        return textConstants(segment.command).computeStyledString(typoSupport);
       }
-      throw new Error(`Unknown breadcrumb: ${JSON.stringify(breadcrumb)}`);
+      throw new Error(`Unknown segment: ${JSON.stringify(segment)}`);
     }),
   );
-  lines.push(breadcrumbs.join(" "));
+  lines.push(segments.join(" "));
 
   lines.push("");
   const introText = new TypoText();

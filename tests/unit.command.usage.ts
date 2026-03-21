@@ -214,10 +214,10 @@ async function getUsage<Context, Result>(
   command: Command<Context, Result>,
 ) {
   const readerArgs = new ReaderArgs(args);
-  const commandFactory = command.createFactory(readerArgs);
+  const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   return usageToStyledLines({
     cliName: "my-cli",
-    commandUsage: commandFactory.generateUsage(),
+    commandUsage: commandDecoder.generateUsage(),
     typoSupport: TypoSupport.mock(),
   });
 }

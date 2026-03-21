@@ -1,4 +1,4 @@
-import { Command, CommandFactory } from "./Command";
+import { Command, CommandDecoder } from "./Command";
 import { ReaderArgs } from "./Reader";
 import { TypoSupport } from "./Typo";
 import { usageToStyledLines } from "./Usage";
@@ -13,7 +13,7 @@ import { usageToStyledLines } from "./Usage";
  *
  * @param cliName - Program name used in usage and `--version` output.
  * @param cliArgs - Raw arguments, typically `process.argv.slice(2)`.
- * @param context - Forwarded to the command handler.
+ * @param context - Forwarded to the command handler, injected dependencies.
  * @param command - Root {@link Command}.
  * @param options - Optional runner configuration.
  * @param options.useTtyColors - Color mode: `true` (always), `false` (never),
@@ -21,7 +21,7 @@ import { usageToStyledLines } from "./Usage";
  * @param options.usageOnHelp - Enables `--help` flag (default `true`).
  * @param options.usageOnError - Prints usage to stderr on parse error (default `true`).
  * @param options.buildVersion - Enables `--version`; prints `<cliName> <buildVersion>`.
- * @param options.onError - Custom handler for execution errors.
+ * @param options.onError - Custom handler for errors.
  * @param options.onExit - Overrides `process.exit`; useful for testing.
  *
  * @returns `Promise<never>` — always calls `onExit`.
@@ -84,7 +84,7 @@ export async function runAndExit<Context>(
     longs: ["completion"],
   });
   */
-  const commandFactory = command.createFactory(readerArgs);
+  const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   while (true) {
     try {
       const positional = readerArgs.consumePositional();
@@ -104,7 +104,7 @@ export async function runAndExit<Context>(
           : TypoSupport.none();
   if (usageOnHelp) {
     if (readerArgs.getOptionValues("--help" as any).length > 0) {
-      console.log(computeUsageString(cliName, commandFactory, typoSupport));
+      console.log(computeUsageString(cliName, commandDecoder, typoSupport));
       return onExit(0);
     }
   }
@@ -115,35 +115,43 @@ export async function runAndExit<Context>(
     }
   }
   try {
-    const commandInstance = commandFactory.createInstance();
+    const commandInterpreter = commandDecoder.decodeAndMakeInterpreter();
     try {
-      await commandInstance.executeWithContext(context);
+      await commandInterpreter.executeWithContext(context);
       return onExit(0);
     } catch (executionError) {
-      if (options?.onError) {
-        options.onError(executionError);
-      } else {
-        console.error(typoSupport.computeStyledErrorMessage(executionError));
-      }
+      handleError(options?.onError, executionError, typoSupport);
       return onExit(1);
     }
   } catch (parsingError) {
     if (options?.usageOnError ?? true) {
-      console.error(computeUsageString(cliName, commandFactory, typoSupport));
+      console.error(computeUsageString(cliName, commandDecoder, typoSupport));
     }
-    console.error(typoSupport.computeStyledErrorMessage(parsingError));
+    handleError(options?.onError, parsingError, typoSupport);
     return onExit(1);
+  }
+}
+
+function handleError(
+  onError: ((error: unknown) => void) | undefined,
+  error: unknown,
+  typoSupport: TypoSupport,
+) {
+  if (onError !== undefined) {
+    onError(error);
+  } else {
+    console.error(typoSupport.computeStyledErrorMessage(error));
   }
 }
 
 function computeUsageString<Context, Result>(
   cliName: Lowercase<string>,
-  commandFactory: CommandFactory<Context, Result>,
+  commandDecoder: CommandDecoder<Context, Result>,
   typoSupport: TypoSupport,
 ) {
   return usageToStyledLines({
     cliName,
-    commandUsage: commandFactory.generateUsage(),
+    commandUsage: commandDecoder.generateUsage(),
     typoSupport,
   }).join("\n");
 }

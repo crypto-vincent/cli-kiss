@@ -1,63 +1,55 @@
-import { Option, OptionParser, OptionUsage } from "./Option";
-import { Positional, PositionalParser, PositionalUsage } from "./Positional";
+import { Option, OptionDecoder, OptionUsage } from "./Option";
+import { Positional, PositionalDecoder, PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
 
 /**
- * Options, positionals, and an async handler that together form the logic of a
- * CLI command.
+ * Options, positionals, and an async handler that together form the logic of a CLI command.
  *
  * Created with {@link operation} and passed to {@link command},
  * {@link commandWithSubcommands}, or {@link commandChained}.
  *
- * @typeParam Input - Context value the handler receives at execution time.
- * @typeParam Output - Value the handler produces.
+ * @typeParam Context - Injected at execution time; forwarded to handlers. Use to inject dependencies.
+ * @typeParam Result - Value produced on execution; typically `void` for leaf commands.
  */
-export type Operation<Input, Output> = {
+export type Operation<Context, Result> = {
   /**
    * Returns usage metadata without consuming any arguments.
    */
   generateUsage(): OperationUsage;
   /**
-   * Parses options and positionals from `readerArgs` and returns an
-   * {@link OperationFactory}. Parse errors are deferred to
-   * {@link OperationFactory.createInstance}.
-   *
-   * @param readerArgs - Shared argument reader.
+   * Consumes args from `readerArgs` and returns an {@link OperationDecoder}.
    */
-  createFactory(readerArgs: ReaderArgs): OperationFactory<Input, Output>;
+  consumeAndMakeDecoder(
+    readerArgs: ReaderArgs,
+  ): OperationDecoder<Context, Result>;
 };
 
 /**
- * Produced by {@link Operation.createFactory}. Creates a ready-to-execute
- * {@link OperationInstance}.
+ * Produced by {@link Operation.consumeAndMakeDecoder}.
  *
- * @typeParam Input - Context type. See {@link Operation}.
- * @typeParam Output - Result type. See {@link Operation}.
+ * @typeParam Context - See {@link Operation}.
+ * @typeParam Result - See {@link Operation}.
  */
-export type OperationFactory<Input, Output> = {
+export type OperationDecoder<Context, Result> = {
   /**
-   * Extracts parsed values and returns an {@link OperationInstance}.
+   * Creates a ready-to-execute {@link OperationInterpreter}.
    *
-   * @throws {@link TypoError} if any option or positional validation failed during
-   *   {@link Operation.createFactory}.
+   * @throws {@link TypoError} if parsing or decoding failed.
    */
-  createInstance(): OperationInstance<Input, Output>;
+  decodeAndMakeInterpreter(): OperationInterpreter<Context, Result>;
 };
 
 /**
- * A fully parsed, ready-to-execute operation.
+ * A fully parsed, decoded and ready-to-execute operation.
  *
- * @typeParam Input - Context value the caller must supply.
- * @typeParam Output - Value produced on successful execution.
+ * @typeParam Context - Caller-supplied context.
+ * @typeParam Result - Value produced on success.
  */
-export type OperationInstance<Input, Output> = {
+export type OperationInterpreter<Context, Result> = {
   /**
-   * Runs the handler with the given context and all parsed inputs.
-   *
-   * @param input - Context from the parent command or {@link runAndExit}.
-   * @returns Promise resolving to the handler's return value.
+   * Executes with the provided context.
    */
-  executeWithContext(input: Input): Promise<Output>;
+  executeWithContext(context: Context): Promise<Result>;
 };
 
 /**
@@ -144,25 +136,29 @@ export function operation<
       }
       return { options: optionsUsage, positionals: positionalsUsage };
     },
-    createFactory(readerArgs: ReaderArgs) {
-      const optionsGetters: Record<string, OptionParser<any>> = {};
+    consumeAndMakeDecoder(readerArgs: ReaderArgs) {
+      const optionsDecoders: Record<string, OptionDecoder<any>> = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
-        optionsGetters[optionKey] = optionInput.createParser(readerArgs);
+        optionsDecoders[optionKey] =
+          optionInput.registerAndMakeDecoder(readerArgs);
       }
-      const positionalsParsers: Array<PositionalParser<any>> = [];
+      const positionalsDecoders: Array<PositionalDecoder<any>> = [];
       for (const positionalInput of inputs.positionals) {
-        positionalsParsers.push(positionalInput.createParser(readerArgs));
+        positionalsDecoders.push(
+          positionalInput.consumeAndMakeDecoder(readerArgs),
+        );
       }
       return {
-        createInstance() {
+        decodeAndMakeInterpreter() {
           const optionsValues: any = {};
-          for (const optionKey in optionsGetters) {
-            optionsValues[optionKey] = optionsGetters[optionKey]!.parseValue();
+          for (const optionKey in optionsDecoders) {
+            optionsValues[optionKey] =
+              optionsDecoders[optionKey]!.getAndDecodeValue();
           }
           const positionalsValues: any = [];
-          for (const positionalParser of positionalsParsers) {
-            positionalsValues.push(positionalParser.parseValue());
+          for (const positionalDecoder of positionalsDecoders) {
+            positionalsValues.push(positionalDecoder.decodeValue());
           }
           return {
             executeWithContext(context: Context) {

@@ -12,11 +12,11 @@ import {
 
 /**
  * A CLI command — parses arguments and executes within a given context.
- * Created with {@link command}, {@link commandWithSubcommands}, or {@link commandChained};
- * passed to {@link runAndExit} to run.
+ * Created with {@link command}, {@link commandWithSubcommands}, or {@link commandChained}.
+ * Usually passed through {@link runAndExit} to run.
  *
- * @typeParam Context - Injected at execution time; flows from {@link runAndExit} down the chain.
- * @typeParam Result - Value produced on execution; typically `void` for roots.
+ * @typeParam Context - Injected at execution time; forwarded to handlers. Use to inject dependencies.
+ * @typeParam Result - Value produced on execution; typically `void` for leaf commands.
  */
 export type Command<Context, Result> = {
   /**
@@ -24,45 +24,42 @@ export type Command<Context, Result> = {
    */
   getInformation(): CommandInformation;
   /**
-   * Parses `readerArgs` and returns a {@link CommandFactory}.
-   * Errors are deferred — never thrown here; they surface in {@link CommandFactory.createInstance}.
+   * Consumes args in a `readerArgs` and returns a {@link CommandDecoder}.
    */
-  createFactory(readerArgs: ReaderArgs): CommandFactory<Context, Result>;
+  consumeAndMakeDecoder(
+    readerArgs: ReaderArgs,
+  ): CommandDecoder<Context, Result>;
 };
 
 /**
- * Produced by {@link Command.createFactory}. Provides usage generation (always safe)
- * and instance creation (throws on parse error).
+ * Produced by {@link Command.consumeAndMakeDecoder}.
  *
  * @typeParam Context - See {@link Command}.
  * @typeParam Result - See {@link Command}.
  */
-export type CommandFactory<Context, Result> = {
+export type CommandDecoder<Context, Result> = {
   /**
    * Builds the {@link CommandUsage} for the current command path.
    * Used for `--help` and `usageOnError`.
    */
   generateUsage(): CommandUsage;
   /**
-   * Creates a ready-to-execute {@link CommandInstance}.
+   * Creates a ready-to-execute {@link CommandInterpreter}.
    *
-   * @throws {@link TypoError} if parsing failed during {@link Command.createFactory}.
+   * @throws {@link TypoError} if parsing or decoding failed.
    */
-  createInstance(): CommandInstance<Context, Result>;
+  decodeAndMakeInterpreter(): CommandInterpreter<Context, Result>;
 };
 
 /**
- * A fully parsed, ready-to-execute command.
+ * A fully parsed, decoded and ready-to-execute command.
  *
  * @typeParam Context - Caller-supplied context.
  * @typeParam Result - Value produced on success.
  */
-export type CommandInstance<Context, Result> = {
+export type CommandInterpreter<Context, Result> = {
   /**
-   * Executes the command with the provided context.
-   *
-   * @param context - Caller context (see {@link runAndExit}).
-   * @returns Promise resolving to the command's result.
+   * Executes with the provided context.
    */
   executeWithContext(context: Context): Promise<Result>;
 };
@@ -87,15 +84,16 @@ export type CommandInformation = {
 };
 
 /**
- * Full usage/help model produced by {@link CommandFactory.generateUsage},
- * consumed by {@link usageToStyledLines}.
+ * Full usage/help model.
+ * Produced by {@link CommandDecoder.generateUsage},
+ * Consumed by {@link usageToStyledLines}.
  */
 export type CommandUsage = {
   /**
-   * Breadcrumb segments forming the usage line
+   * Segments forming the usage line
    * (e.g. `my-cli <POSITIONAL> subcommand <ANOTHER_POSITIONAL>`).
    */
-  breadcrumbs: Array<CommandUsageBreadcrumb>;
+  segments: Array<CommandUsageSegment>;
   /**
    * Command's static metadata.
    */
@@ -105,7 +103,7 @@ export type CommandUsage = {
    */
   positionals: Array<PositionalUsage>;
   /**
-   * Available subcommands; non-empty when subcommand selection failed or on `--help`.
+   * Available subcommands. Non-empty when subcommand was not specified.
    */
   subcommands: Array<CommandUsageSubcommand>;
   /**
@@ -115,12 +113,9 @@ export type CommandUsage = {
 };
 
 /**
- * One element in the usage breadcrumb trail.
- * `{ positional }` — placeholder like `<NAME>`; `{ command }` — literal token like `deploy`.
+ * One element in the usage segment trail.
  */
-export type CommandUsageBreadcrumb =
-  | { positional: string }
-  | { command: string };
+export type CommandUsageSegment = { positional: string } | { command: string };
 
 /**
  * Subcommand entry shown in the `Subcommands:` section of the usage output.
@@ -142,13 +137,12 @@ export type CommandUsageSubcommand = {
 
 /**
  * Creates a leaf command that directly executes an {@link Operation}.
- * Any unexpected trailing positional causes a {@link TypoError} (deferred to {@link CommandFactory.createInstance}).
  *
  * @typeParam Context - Context forwarded to the handler.
  * @typeParam Result - Value returned by the handler.
  *
- * @param information - Command metadata.
- * @param operation - Defines options, positionals, and the handler.
+ * @param information - Command metadata (description, hint, details).
+ * @param operation - Defines: options, positionals, and the handler.
  * @returns A {@link Command}.
  *
  * @example
@@ -170,21 +164,9 @@ export function command<Context, Result>(
     getInformation() {
       return information;
     },
-    createFactory(readerArgs: ReaderArgs) {
-      function generateUsage(): CommandUsage {
-        const operationUsage = operation.generateUsage();
-        return {
-          breadcrumbs: operationUsage.positionals.map((positional) =>
-            breadcrumbPositional(positional.label),
-          ),
-          information: information,
-          positionals: operationUsage.positionals,
-          subcommands: [],
-          options: operationUsage.options,
-        };
-      }
+    consumeAndMakeDecoder(readerArgs: ReaderArgs) {
       try {
-        const operationFactory = operation.createFactory(readerArgs);
+        const operationDecoder = operation.consumeAndMakeDecoder(readerArgs);
         const endPositional = readerArgs.consumePositional();
         if (endPositional !== undefined) {
           throw new TypoError(
@@ -195,20 +177,21 @@ export function command<Context, Result>(
           );
         }
         return {
-          generateUsage,
-          createInstance() {
-            const operationInstance = operationFactory.createInstance();
+          generateUsage: () => generateUsageShallow(information, operation),
+          decodeAndMakeInterpreter() {
+            const operationInterpreter =
+              operationDecoder.decodeAndMakeInterpreter();
             return {
               async executeWithContext(context: Context) {
-                return await operationInstance.executeWithContext(context);
+                return await operationInterpreter.executeWithContext(context);
               },
             };
           },
         };
       } catch (error) {
         return {
-          generateUsage,
-          createInstance() {
+          generateUsage: () => generateUsageShallow(information, operation),
+          decodeAndMakeInterpreter() {
             throw error;
           },
         };
@@ -218,15 +201,14 @@ export function command<Context, Result>(
 }
 
 /**
- * Creates a command that runs an {@link Operation} to produce a `Payload`, then
- * dispatches to a named subcommand based on the next positional token.
- * A missing or unrecognised subcommand defers a {@link TypoError} to {@link CommandFactory.createInstance}.
+ * Creates a command that runs an {@link Operation} to produce a `Payload`,
+ * then dispatches to a named subcommand based on the next positional token.
  *
  * @typeParam Context - Context accepted by `operation`.
  * @typeParam Payload - Output of `operation`; becomes the subcommand's context.
  * @typeParam Result - Value produced by the selected subcommand.
  *
- * @param information - Metadata shown when no valid subcommand was selected.
+ * @param information - Command metadata (description, hint, details).
  * @param operation - Always runs first; its output becomes the subcommand's context.
  * @param subcommands - Map of subcommand names to their {@link Command}s.
  * @returns A {@link Command} that dispatches to one of the provided subcommands.
@@ -252,9 +234,9 @@ export function commandWithSubcommands<Context, Payload, Result>(
     getInformation() {
       return information;
     },
-    createFactory(readerArgs: ReaderArgs) {
+    consumeAndMakeDecoder(readerArgs: ReaderArgs) {
       try {
-        const operationFactory = operation.createFactory(readerArgs);
+        const operationDecoder = operation.consumeAndMakeDecoder(readerArgs);
         const subcommandName = readerArgs.consumePositional();
         if (subcommandName === undefined) {
           throw new TypoError(
@@ -275,31 +257,29 @@ export function commandWithSubcommands<Context, Payload, Result>(
             ),
           );
         }
-        const subcommandFactory = subcommandInput.createFactory(readerArgs);
+        const subcommandDecoder =
+          subcommandInput.consumeAndMakeDecoder(readerArgs);
         return {
           generateUsage() {
-            const operationUsage = operation.generateUsage();
-            const subcommandUsage = subcommandFactory.generateUsage();
-            return {
-              breadcrumbs: operationUsage.positionals
-                .map((positional) => breadcrumbPositional(positional.label))
-                .concat([breadcrumbCommand(subcommandName)])
-                .concat(subcommandUsage.breadcrumbs),
-              information: subcommandUsage.information,
-              positionals: operationUsage.positionals.concat(
-                subcommandUsage.positionals,
-              ),
-              subcommands: subcommandUsage.subcommands,
-              options: operationUsage.options.concat(subcommandUsage.options),
-            };
+            const subcommandUsage = subcommandDecoder.generateUsage();
+            const currentUsage = generateUsageShallow(information, operation);
+            currentUsage.segments.push(segmentCommand(subcommandName));
+            currentUsage.segments.push(...subcommandUsage.segments);
+            currentUsage.information = subcommandUsage.information;
+            currentUsage.positionals.push(...subcommandUsage.positionals);
+            currentUsage.subcommands = subcommandUsage.subcommands;
+            currentUsage.options.push(...subcommandUsage.options);
+            return currentUsage;
           },
-          createInstance() {
-            const operationInstance = operationFactory.createInstance();
-            const subcommandInstance = subcommandFactory.createInstance();
+          decodeAndMakeInterpreter() {
+            const operationInterpreter =
+              operationDecoder.decodeAndMakeInterpreter();
+            const subcommandInterpreter =
+              subcommandDecoder.decodeAndMakeInterpreter();
             return {
               async executeWithContext(context: Context) {
-                return await subcommandInstance.executeWithContext(
-                  await operationInstance.executeWithContext(context),
+                return await subcommandInterpreter.executeWithContext(
+                  await operationInterpreter.executeWithContext(context),
                 );
               },
             };
@@ -308,25 +288,15 @@ export function commandWithSubcommands<Context, Payload, Result>(
       } catch (error) {
         return {
           generateUsage() {
-            const operationUsage = operation.generateUsage();
-            return {
-              breadcrumbs: operationUsage.positionals
-                .map((positional) => breadcrumbPositional(positional.label))
-                .concat([breadcrumbPositional("<SUBCOMMAND>")]),
-              information: information,
-              positionals: operationUsage.positionals,
-              subcommands: Object.entries(subcommands).map((subcommand) => {
-                const metadata = subcommand[1].getInformation();
-                return {
-                  name: subcommand[0],
-                  description: metadata.description,
-                  hint: metadata.hint,
-                };
-              }),
-              options: operationUsage.options,
-            };
+            const currentUsage = generateUsageShallow(information, operation);
+            currentUsage.segments.push(segmentPositional("<SUBCOMMAND>"));
+            for (const [name, subcommand] of Object.entries(subcommands)) {
+              const { description, hint } = subcommand.getInformation();
+              currentUsage.subcommands.push({ name, description, hint });
+            }
+            return currentUsage;
           },
-          createInstance() {
+          decodeAndMakeInterpreter() {
             throw error;
           },
         };
@@ -337,16 +307,15 @@ export function commandWithSubcommands<Context, Payload, Result>(
 
 /**
  * Chains an {@link Operation} and a {@link Command}: `operation` runs first, its
- * output becomes `nextCommand`'s context. No token is consumed for routing.
- * Both stages' usage is merged; `nextCommand`'s `information` takes precedence.
+ * output becomes `subcommand`'s context. No token is consumed for routing.
  *
  * @typeParam Context - Context accepted by `operation`.
- * @typeParam Payload - Output of `operation`; becomes `nextCommand`'s context.
- * @typeParam Result - Value produced by `nextCommand`.
+ * @typeParam Payload - Output of `operation`; becomes `subcommand`'s context.
+ * @typeParam Result - Value produced by `subcommand`.
  *
- * @param information - Fallback metadata used on parse error.
- * @param operation - First stage; its output is passed as `nextCommand`'s context.
- * @param nextCommand - Second stage, executed after `operation`.
+ * @param information - Command metadata (description, hint, details).
+ * @param operation - First stage; its output is passed as `subcommand`'s context.
+ * @param subcommand - Second stage, executed after `operation`.
  * @returns A {@link Command} transparently composing the two stages.
  *
  * @example
@@ -364,39 +333,36 @@ export function commandWithSubcommands<Context, Payload, Result>(
 export function commandChained<Context, Payload, Result>(
   information: CommandInformation,
   operation: Operation<Context, Payload>,
-  nextCommand: Command<Payload, Result>,
+  subcommand: Command<Payload, Result>,
 ): Command<Context, Result> {
   return {
     getInformation() {
       return information;
     },
-    createFactory(readerArgs: ReaderArgs) {
+    consumeAndMakeDecoder(readerArgs: ReaderArgs) {
       try {
-        const operationFactory = operation.createFactory(readerArgs);
-        const nextCommandFactory = nextCommand.createFactory(readerArgs);
+        const operationDecoder = operation.consumeAndMakeDecoder(readerArgs);
+        const subcommandDecoder = subcommand.consumeAndMakeDecoder(readerArgs);
         return {
           generateUsage() {
-            const operationUsage = operation.generateUsage();
-            const nextCommandUsage = nextCommandFactory.generateUsage();
-            return {
-              breadcrumbs: operationUsage.positionals
-                .map((positional) => breadcrumbPositional(positional.label))
-                .concat(nextCommandUsage.breadcrumbs),
-              information: nextCommandUsage.information,
-              positionals: operationUsage.positionals.concat(
-                nextCommandUsage.positionals,
-              ),
-              subcommands: nextCommandUsage.subcommands,
-              options: operationUsage.options.concat(nextCommandUsage.options),
-            };
+            const subcommandUsage = subcommandDecoder.generateUsage();
+            const currentUsage = generateUsageShallow(information, operation);
+            currentUsage.segments.push(...subcommandUsage.segments);
+            currentUsage.information = subcommandUsage.information;
+            currentUsage.positionals.push(...subcommandUsage.positionals);
+            currentUsage.subcommands = subcommandUsage.subcommands;
+            currentUsage.options.push(...subcommandUsage.options);
+            return currentUsage;
           },
-          createInstance() {
-            const operationInstance = operationFactory.createInstance();
-            const nextCommandInstance = nextCommandFactory.createInstance();
+          decodeAndMakeInterpreter() {
+            const operationInterpreter =
+              operationDecoder.decodeAndMakeInterpreter();
+            const subcommandInterpreter =
+              subcommandDecoder.decodeAndMakeInterpreter();
             return {
               async executeWithContext(context: Context) {
-                return await nextCommandInstance.executeWithContext(
-                  await operationInstance.executeWithContext(context),
+                return await subcommandInterpreter.executeWithContext(
+                  await operationInterpreter.executeWithContext(context),
                 );
               },
             };
@@ -405,18 +371,11 @@ export function commandChained<Context, Payload, Result>(
       } catch (error) {
         return {
           generateUsage() {
-            const operationUsage = operation.generateUsage();
-            return {
-              breadcrumbs: operationUsage.positionals
-                .map((positional) => breadcrumbPositional(positional.label))
-                .concat([breadcrumbPositional("[REST]...")]),
-              information: information,
-              positionals: operationUsage.positionals,
-              subcommands: [],
-              options: operationUsage.options,
-            };
+            const currentUsage = generateUsageShallow(information, operation);
+            currentUsage.segments.push(segmentPositional("[REST]..."));
+            return currentUsage;
           },
-          createInstance() {
+          decodeAndMakeInterpreter() {
             throw error;
           },
         };
@@ -425,10 +384,26 @@ export function commandChained<Context, Payload, Result>(
   };
 }
 
-function breadcrumbPositional(value: string): CommandUsageBreadcrumb {
+function segmentPositional(value: string): CommandUsageSegment {
   return { positional: value };
 }
 
-function breadcrumbCommand(value: string): CommandUsageBreadcrumb {
+function segmentCommand(value: string): CommandUsageSegment {
   return { command: value };
+}
+
+function generateUsageShallow(
+  information: CommandInformation,
+  operation: Operation<any, any>,
+): CommandUsage {
+  const { positionals, options } = operation.generateUsage();
+  return {
+    segments: positionals.map((positional) =>
+      segmentPositional(positional.label),
+    ),
+    information,
+    positionals,
+    subcommands: [],
+    options,
+  };
 }

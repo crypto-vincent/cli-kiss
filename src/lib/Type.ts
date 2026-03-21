@@ -12,7 +12,7 @@ import {
  *
  * Built-in: {@link typeString}, {@link typeBoolean}, {@link typeNumber},
  * {@link typeInteger}, {@link typeDate}, {@link typeUrl}.
- * Composite: {@link typeOneOf}, {@link typeConverted}, {@link typeTuple}, {@link typeList}.
+ * Composite: {@link typeOneOf}, {@link typeMapped}, {@link typeTuple}, {@link typeList}.
  *
  * @typeParam Value - Type produced by the decoder.
  */
@@ -24,11 +24,11 @@ export type Type<Value> = {
   /**
    * Converts a raw CLI string into `Value`.
    *
-   * @param value - Raw string from the command line.
+   * @param input - Raw string from the command line.
    * @returns The decoded value.
    * @throws {@link TypoError} on invalid input.
    */
-  decoder(value: string): Value;
+  decoder(input: string): Value;
 };
 
 /**
@@ -44,18 +44,18 @@ export type Type<Value> = {
  */
 export const typeBoolean: Type<boolean> = {
   content: "Boolean",
-  decoder(value: string) {
-    const lowerValue = value.toLowerCase();
-    if (lowerValue === "true" || lowerValue === "yes") {
+  decoder(input: string) {
+    const lower = input.toLowerCase();
+    if (lower === "true" || lower === "yes") {
       return true;
     }
-    if (lowerValue === "false" || lowerValue === "no") {
+    if (lower === "false" || lower === "no") {
       return false;
     }
     throw new TypoError(
       new TypoText(
         new TypoString(`Invalid value: `),
-        new TypoString(`"${value}"`, typoStyleQuote),
+        new TypoString(`"${input}"`, typoStyleQuote),
       ),
     );
   },
@@ -74,9 +74,9 @@ export const typeBoolean: Type<boolean> = {
  */
 export const typeDate: Type<Date> = {
   content: "Date",
-  decoder(value: string) {
+  decoder(input: string) {
     try {
-      const timestampMs = Date.parse(value);
+      const timestampMs = Date.parse(input);
       if (isNaN(timestampMs)) {
         throw new Error();
       }
@@ -85,7 +85,7 @@ export const typeDate: Type<Date> = {
       throw new TypoError(
         new TypoText(
           new TypoString(`Not a valid ISO_8601: `),
-          new TypoString(`"${value}"`, typoStyleQuote),
+          new TypoString(`"${input}"`, typoStyleQuote),
         ),
       );
     }
@@ -105,9 +105,9 @@ export const typeDate: Type<Date> = {
  */
 export const typeNumber: Type<number> = {
   content: "Number",
-  decoder(value: string) {
+  decoder(input: string) {
     try {
-      const parsed = Number(value);
+      const parsed = Number(input);
       if (isNaN(parsed)) {
         throw new Error();
       }
@@ -116,7 +116,7 @@ export const typeNumber: Type<number> = {
       throw new TypoError(
         new TypoText(
           new TypoString(`Unable to parse: `),
-          new TypoString(`"${value}"`, typoStyleQuote),
+          new TypoString(`"${input}"`, typoStyleQuote),
         ),
       );
     }
@@ -136,14 +136,14 @@ export const typeNumber: Type<number> = {
  */
 export const typeInteger: Type<bigint> = {
   content: "Integer",
-  decoder(value: string) {
+  decoder(input: string) {
     try {
-      return BigInt(value);
+      return BigInt(input);
     } catch {
       throw new TypoError(
         new TypoText(
           new TypoString(`Unable to parse: `),
-          new TypoString(`"${value}"`, typoStyleQuote),
+          new TypoString(`"${input}"`, typoStyleQuote),
         ),
       );
     }
@@ -162,14 +162,14 @@ export const typeInteger: Type<bigint> = {
  */
 export const typeUrl: Type<URL> = {
   content: "Url",
-  decoder(value: string) {
+  decoder(input: string) {
     try {
-      return new URL(value);
+      return new URL(input);
     } catch {
       throw new TypoError(
         new TypoText(
           new TypoString(`Unable to parse: `),
-          new TypoString(`"${value}"`, typoStyleQuote),
+          new TypoString(`"${input}"`, typoStyleQuote),
         ),
       );
     }
@@ -187,8 +187,8 @@ export const typeUrl: Type<URL> = {
  */
 export const typeString: Type<string> = {
   content: "String",
-  decoder(value: string) {
-    return value;
+  decoder(input: string) {
+    return input;
   },
 };
 
@@ -207,7 +207,7 @@ export const typeString: Type<string> = {
  *
  * @example
  * ```ts
- * const typePort = typeConverted(typeNumber, {
+ * const typePort = typeMapped(typeNumber, {
  *   content: "Port",
  *   decoder: (n) => {
  *     if (n < 1 || n > 65535) throw new Error("Out of range");
@@ -218,16 +218,16 @@ export const typeString: Type<string> = {
  * // "--port 99999"  →  TypoError: --port: <PORT>: Port: Out of range
  * ```
  */
-export function typeConverted<Before, After>(
+export function typeMapped<Before, After>(
   before: Type<Before>,
   after: { content: string; decoder: (value: Before) => After },
 ): Type<After> {
   return {
     content: after.content,
-    decoder: (value: string) => {
+    decoder: (input: string) => {
       return after.decoder(
         TypoError.tryWithContext(
-          () => before.decoder(value),
+          () => before.decoder(input),
           () =>
             new TypoText(
               new TypoString("from: "),
@@ -242,7 +242,6 @@ export function typeConverted<Before, After>(
 /**
  * Creates a {@link Type}`<string>` accepting only a fixed set of string values.
  * Out-of-set inputs throw a {@link TypoError} listing up to 5 valid options.
- * Combine with {@link typeConverted} to map strings to a richer type.
  *
  * @param content - Name shown in help and errors (e.g. `"Environment"`).
  * @param values - Ordered list of accepted values.
@@ -255,16 +254,17 @@ export function typeConverted<Before, After>(
  * typeEnv.decoder("unknown") // throws TypoError: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
  * ```
  */
-export function typeOneOf(
+export function typeOneOf<const Value extends string>(
   content: string,
-  values: Array<string>,
-): Type<string> {
-  const valuesSet = new Set(values);
+  values: Array<Value>,
+): Type<Value> {
   return {
     content: content,
-    decoder(value: string) {
-      if (valuesSet.has(value)) {
-        return value;
+    decoder(input: string) {
+      for (const value of values) {
+        if (input === value) {
+          return value;
+        }
       }
       const valuesPreview = [];
       for (const value of values) {
@@ -280,7 +280,7 @@ export function typeOneOf(
       throw new TypoError(
         new TypoText(
           new TypoString(`Invalid value: `),
-          new TypoString(`"${value}"`, typoStyleQuote),
+          new TypoString(`"${input}"`, typoStyleQuote),
           new TypoString(` (expected one of: `),
           ...valuesPreview,
           new TypoString(`)`),
@@ -369,8 +369,8 @@ export function typeList<Value>(
 ): Type<Array<Value>> {
   return {
     content: `${elementType.content}[${separator}${elementType.content}]...`,
-    decoder(value: string) {
-      const splits = value.split(separator);
+    decoder(input: string) {
+      const splits = input.split(separator);
       return splits.map((split, index) =>
         TypoError.tryWithContext(
           () => elementType.decoder(split),
