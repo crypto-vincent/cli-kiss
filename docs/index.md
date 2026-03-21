@@ -21,12 +21,15 @@ hero:
 
 features:
   - title: Zero dependencies
+    icon: 📦
     details:
       Ships with no runtime dependencies.<br/>Pure TypeScript, 5kb bundled.
   - title: Fully typed
+    icon: 🧠
     details:
       TypeScript first.<br/>Options and positionals inputs strongly typed.
   - title: Composable
+    icon: 🧩
     details:
       Easily create nested subcommands.<br/>Build complex CLIs by nesting logic.
 ---
