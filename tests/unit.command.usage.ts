@@ -209,6 +209,7 @@ it("run", async () => {
     rootCommand,
   );
 
+  /*
   console.log(usage1.join("\n"));
   console.log(usage2.join("\n"));
   console.log(usage3.join("\n"));
@@ -216,7 +217,6 @@ it("run", async () => {
   console.log(usage5.join("\n"));
   console.log(usage6.join("\n"));
   console.log(usage7.join("\n"));
-  /*
    */
 
   const usageRoot = [
@@ -233,8 +233,8 @@ it("run", async () => {
     "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*  boolean-flag description",
     "",
     "{{Examples:}@darkGreen}+",
-    "  {{# Example usage of the root command}-}*",
-    "  {{my-cli}@darkCyan}+ {{42}@darkBlue}+ {{-b}@darkCyan}+",
+    " {{# Example usage of the root command}-}*",
+    " {{my-cli}@darkCyan}+ {{42}@darkBlue}+ {{-b}@darkCyan}+",
     "",
   ];
   const usageMid = [
@@ -258,8 +258,8 @@ it("run", async () => {
     "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  complex-option description",
     "",
     "{{Examples:}@darkGreen}+",
-    "  {{# Example usage of the mid command}-}*",
-    "  {{my-cli}@darkCyan}+ {{42}@darkBlue}+ {{-b}@darkCyan}+ {{43}@darkBlue}+",
+    " {{# Example usage of the mid command}-}*",
+    " {{my-cli}@darkCyan}+ {{42}@darkBlue}+ {{-b}@darkCyan}+ {{43}@darkBlue}+",
     "",
   ];
   const usageSub1 = [
@@ -280,8 +280,8 @@ it("run", async () => {
     "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  complex-option description",
     "",
     "{{Examples:}@darkGreen}+",
-    "  {{# Example usage of subcommand 1}-}*",
-    "  {{my-cli}@darkCyan}+ {{-b}@darkCyan}+ {{42}@darkBlue}+ {{43}@darkBlue}+ {{sub1}@darkCyan}+ {{valid}@darkBlue}+",
+    " {{# Example usage of subcommand 1}-}*",
+    " {{my-cli}@darkCyan}+ {{-b}@darkCyan}+ {{42}@darkBlue}+ {{43}@darkBlue}+ {{sub1}@darkCyan}+ {{valid}@darkBlue}+",
     "",
   ];
   const usageSub2 = [
@@ -305,8 +305,8 @@ it("run", async () => {
     "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description {{(Dudu option hint)}-}*",
     "",
     "{{Examples:}@darkGreen}+",
-    "  {{# Example usage of subcommand 2}-}*",
-    "  {{my-cli}@darkCyan}+ {{40}@darkBlue}+ {{41}@darkBlue}+ {{sub2}@darkCyan}+ {{--dudu}@darkCyan}+{{=}-}*{{hello}@darkBlue}+ {{50}@darkBlue}+",
+    " {{# Example usage of subcommand 2}-}*",
+    " {{my-cli}@darkCyan}+ {{40}@darkBlue}+ {{41}@darkBlue}+ {{sub2}@darkCyan}+ {{--dudu}@darkCyan}+{{=}-}*{{hello}@darkBlue}+ {{50}@darkBlue}+",
     "",
   ];
 
@@ -339,6 +339,6 @@ async function getUsage<Context, Result>(
   return usageToStyledLines({
     cliName: "my-cli",
     commandUsage: commandDecoder.generateUsage(),
-    typoSupport: TypoSupport.tty(),
+    typoSupport: TypoSupport.mock(),
   });
 }
