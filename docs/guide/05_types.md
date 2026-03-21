@@ -1,7 +1,6 @@
 # Types
 
-A `Type<Value>` is a pair of a human-readable `content` string and a `decoder`
-function. It tells cli-kiss how to convert a raw CLI string into a typed value.
+A `Type<Value>` converts a raw CLI string into a typed value: a `content` label paired with a `decoder`.
 
 ## Built-in types
 
@@ -34,7 +33,7 @@ typeUrl.decoder("https://example.com/path"); // → URL object
 
 ## `typeOneOf` — string enum
 
-Accept only a fixed set of strings:
+Accepts only a fixed set of strings:
 
 ```ts
 import { typeOneOf } from "cli-kiss";
@@ -64,12 +63,11 @@ const typePort = typeMapped(typeNumber, {
 // "--port 99999"  →  Error: --port: <PORT>: Port: Out of range
 ```
 
-Errors from the `before` decoder are automatically prefixed with
-`from: <content>` for easy debugging.
+Errors from the `before` decoder are prefixed with `from: <content>`.
 
 ## `typeTuple` — fixed-length delimited value
 
-Split a single string into a fixed-length typed tuple:
+Splits a string into a fixed-length typed tuple:
 
 ```ts
 import { typeTuple, typeNumber } from "cli-kiss";
@@ -89,7 +87,7 @@ typeTuple([typeString, typeNumber], ":");
 
 ## `typeList` — variable-length delimited value
 
-Split a single string into an array of homogeneous values:
+Splits a string into an array of typed values:
 
 ```ts
 import { typeList, typeNumber } from "cli-kiss";

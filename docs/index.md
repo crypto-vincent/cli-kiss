@@ -5,9 +5,9 @@ hero:
   name: CLI-kiss
   text: CLI for TypeScript.
   tagline:
-    No bloat, no dependency. Only what you need.</br>Standard expected behaviour
-    that users are used to.</br><span>K</span>eep <span>I</span>t
-    <span>S</span>imple and <span>S</span>tupid, it just does the job.
+    No bloat, no dependencies.<br/>Standard behavior users expect.<br/><span>K</span>eep
+    <span>I</span>t <span>S</span>imple and <span>S</span>tupid, it just does the
+    job.
 
   actions:
     - theme: brand

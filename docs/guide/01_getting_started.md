@@ -8,7 +8,7 @@ npm install cli-kiss
 
 ## Your first CLI
 
-Here is a minimal "greet" CLI that takes:
+Minimal "greet" CLI with:
 
 - a required `NAME` positional
 - optional `--loud` flag:
@@ -60,7 +60,7 @@ greet Alice
 Hello, Alice!
 ```
 
-Pass some flags:
+Pass a flag:
 
 ```sh
 greet --loud Alice
@@ -70,7 +70,7 @@ greet --loud Alice
 HELLO, ALICE!
 ```
 
-Get some help (built-in)
+Help (built-in):
 
 ```sh
 greet --help
@@ -88,7 +88,7 @@ Options:
   --loud[=no]  Print in uppercase
 ```
 
-Get the version (built-in)
+Version (built-in):
 
 ```sh
 greet --version
