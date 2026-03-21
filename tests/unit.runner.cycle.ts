@@ -218,13 +218,43 @@ it("run", async () => {
     1,
   );
 
-  // Test invalid positional type value
+  // Test invalid positional type value (should keep parsing best-effort even on invalid values)
+  await testCase(
+    ["invalid"],
+    [],
+    [rootUsage, "Error: <SUBCOMMAND>: Is required, but was not provided"],
+    1,
+  );
+  await testCase(
+    ["invalid", "subcommand"],
+    [],
+    [subcommandUsage, "Error: <REQUIRED2>: Is required, but was not provided"],
+    1,
+  );
+  await testCase(
+    ["invalid", "subcommand", "required2"],
+    [],
+    [
+      subcommandUsage,
+      'Error: <REQUIRED1>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+    ],
+    1,
+  );
   await testCase(
     ["required1", "subcommand", "invalid"],
     [],
     [
       subcommandUsage,
       'Error: <REQUIRED2>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
+    ],
+    1,
+  );
+  await testCase(
+    ["invalid", "subcommand", "invalid"],
+    [],
+    [
+      subcommandUsage,
+      'Error: <REQUIRED1>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
     ],
     1,
   );
@@ -336,7 +366,7 @@ async function testCase(
         },
         positionals: [
           positionalRequired({
-            type: typeString,
+            type: typeOneOf("STRING-ENUM", ["required1", "required1-bis"]),
             label: "REQUIRED1",
             description: "Required1 positional description",
           }),
