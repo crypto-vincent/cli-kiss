@@ -7,44 +7,33 @@ import {
 } from "./Typo";
 
 /**
- * Describes how to decode a raw CLI string token into a typed TypeScript value.
+ * Decodes a raw CLI string into a typed value.
+ * A pair of a human-readable `content` name (e.g. `"Number"`) and a `decoder` function.
  *
- * A `Type` is a pair of:
- * - a `content` string — a human-readable name shown in help/error messages (e.g.
- *   `"String"`, `"Number"`, `"Url"`).
- * - a `decoder` function — converts the raw string or throws a {@link TypoError} on
- *   invalid input.
- *
- * Built-in types: {@link typeString}, {@link typeBoolean}, {@link typeNumber},
+ * Built-in: {@link typeString}, {@link typeBoolean}, {@link typeNumber},
  * {@link typeInteger}, {@link typeDate}, {@link typeUrl}.
+ * Composite: {@link typeOneOf}, {@link typeConverted}, {@link typeTuple}, {@link typeList}.
  *
- * Composite types: {@link typeOneOf}, {@link typeConverted}, {@link typeTuple},
- * {@link typeList}.
- *
- * @typeParam Value - The TypeScript type that the decoder produces.
+ * @typeParam Value - Type produced by the decoder.
  */
 export type Type<Value> = {
   /**
-   * Human-readable name for this type, used in help text and error messages.
-   * Examples: `"String"`, `"Number"`, `"Url"`.
+   * Human-readable name shown in help and error messages (e.g. `"String"`, `"Number"`).
    */
   content: string;
   /**
-   * Decodes a raw string token into a `Value`.
+   * Converts a raw CLI string into `Value`.
    *
-   * @param value - The raw string from the command line.
+   * @param value - Raw string from the command line.
    * @returns The decoded value.
-   * @throws {@link TypoError} if the value cannot be decoded.
+   * @throws {@link TypoError} on invalid input.
    */
   decoder(value: string): Value;
 };
 
 /**
- * A {@link Type} that decodes `"true"` / `"yes"` to `true` and `"false"` / `"no"` to
- * `false` (case-insensitive). Any other value throws a {@link TypoError}.
- *
- * Primarily used internally by {@link optionFlag} for the `--flag=<value>` syntax, but
- * can also be used in positionals or valued options.
+ * Decodes `"true"` / `"yes"` → `true` and `"false"` / `"no"` → `false` (case-insensitive).
+ * Used internally by {@link optionFlag} for the `--flag=<value>` syntax.
  *
  * @example
  * ```ts
@@ -73,13 +62,8 @@ export const typeBoolean: Type<boolean> = {
 };
 
 /**
- * A {@link Type} that parses a date/time string using `Date.parse`.
- *
- * Accepts any format supported by the JavaScript `Date.parse` API, including ISO 8601
- * strings (e.g. `"2024-01-15"`, `"2024-01-15T10:30:00Z"`). Non-parseable values throw
- * a {@link TypoError}.
- *
- * Produces a `Date` object. The decoded value is the result of `new Date(Date.parse(value))`.
+ * Parses a date/time string via `Date.parse` into a `Date` object.
+ * Accepts any format supported by `Date.parse`, including ISO 8601.
  *
  * @example
  * ```ts
@@ -109,11 +93,8 @@ export const typeDate: Type<Date> = {
 };
 
 /**
- * A {@link Type} that parses a string into a JavaScript `number` using the `Number()`
- * constructor.
- *
- * Accepts integers, floating-point values, and scientific notation (e.g. `"3.14"`,
- * `"-1"`, `"1e10"`). Values that produce `NaN` throw a {@link TypoError}.
+ * Parses a string into a `number` via `Number()`.
+ * Accepts integers, floats, and scientific notation; `NaN` throws a {@link TypoError}.
  *
  * @example
  * ```ts
@@ -143,11 +124,8 @@ export const typeNumber: Type<number> = {
 };
 
 /**
- * A {@link Type} that parses a string into a JavaScript `bigint` using the `BigInt()`
- * constructor.
- *
- * Only accepts valid integer strings (e.g. `"42"`, `"-100"`, `"9007199254740993"`).
- * Floating-point strings or non-numeric values throw a {@link TypoError}.
+ * Parses an integer string into a `bigint` via `BigInt()`.
+ * Floats and non-numeric strings throw a {@link TypoError}.
  *
  * @example
  * ```ts
@@ -173,10 +151,8 @@ export const typeInteger: Type<bigint> = {
 };
 
 /**
- * A {@link Type} that parses a string into a `URL` object using the `URL` constructor.
- *
- * The string must be a valid absolute URL (e.g. `"https://example.com/path?q=1"`).
- * Relative URLs and malformed strings throw a {@link TypoError}.
+ * Parses an absolute URL string into a `URL` object.
+ * Relative or malformed URLs throw a {@link TypoError}.
  *
  * @example
  * ```ts
@@ -201,9 +177,7 @@ export const typeUrl: Type<URL> = {
 };
 
 /**
- * A {@link Type} that passes the raw string through unchanged (identity decoder).
- *
- * This is the simplest type and accepts any string value without validation.
+ * Identity decoder — passes the raw string through unchanged.
  *
  * @example
  * ```ts
@@ -219,24 +193,17 @@ export const typeString: Type<string> = {
 };
 
 /**
- * Creates a new {@link Type} by chaining a `before` type decoder with an `after`
- * transformation.
+ * Creates a {@link Type} by chaining `before`'s decoder with an `after` transformation.
+ * `before` errors are prefixed with `"from: <content>"` for traceability.
  *
- * The raw string is first decoded by `before`; the result is then passed to
- * `after.decoder`. Errors from `before` are prefixed with `"from: <content>"` for
- * traceability in error messages.
+ * @typeParam Before - Intermediate type from `before.decoder`.
+ * @typeParam After - Final type from `after.decoder`.
  *
- * Use this to map an existing type (e.g. {@link typeString}, {@link typeOneOf}) to a
- * richer TypeScript type.
- *
- * @typeParam Before - The intermediate type produced by `before.decoder`.
- * @typeParam After - The final type produced by `after.decoder`.
- *
- * @param before - The base type that decodes the raw CLI string.
- * @param after - The transformation applied to the `Before` value.
- * @param after.content - Human-readable name for the resulting type (shown in errors).
- * @param after.decoder - Function that converts a `Before` value into `After`.
- * @returns A new {@link Type}`<After>` whose `content` is `after.content`.
+ * @param before - Base decoder for the raw string.
+ * @param after - Transformation applied to the decoded value.
+ * @param after.content - Name for the resulting type (shown in errors).
+ * @param after.decoder - Converts a `Before` value to `After`.
+ * @returns A {@link Type}`<After>`.
  *
  * @example
  * ```ts
@@ -273,18 +240,13 @@ export function typeConverted<Before, After>(
 }
 
 /**
- * Creates a {@link Type}`<string>` that only accepts a fixed set of string values.
+ * Creates a {@link Type}`<string>` accepting only a fixed set of string values.
+ * Out-of-set inputs throw a {@link TypoError} listing up to 5 valid options.
+ * Combine with {@link typeConverted} to map strings to a richer type.
  *
- * The decoder performs an exact (case-sensitive) lookup in `values`. If the input is
- * not in the set, a {@link TypoError} is thrown listing up to 5 of the valid options.
- *
- * Combine with {@link typeConverted} to map the accepted strings to a richer type.
- *
- * @param content - Human-readable name for this type shown in help text and error
- *   messages (e.g. `"Environment"`, `"LogLevel"`).
- * @param values - The ordered list of accepted string values. The order is preserved in
- *   the error message preview.
- * @returns A {@link Type}`<string>` that validates membership in `values`.
+ * @param content - Name shown in help and errors (e.g. `"Environment"`).
+ * @param values - Ordered list of accepted values.
+ * @returns A {@link Type}`<string>`.
  *
  * @example
  * ```ts
@@ -329,21 +291,14 @@ export function typeOneOf(
 }
 
 /**
- * Creates a {@link Type} that decodes a single delimited string into a fixed-length
- * tuple of typed elements.
+ * Splits a delimited string into a fixed-length typed tuple.
+ * Each part is decoded by the corresponding element type; wrong count or decode failure throws {@link TypoError}.
  *
- * The raw string is split on `separator` into exactly `elementTypes.length` parts;
- * each part is decoded by its corresponding element type. A wrong number of parts or
- * a failed element decode throws a {@link TypoError} with the index and type context.
- * The `content` is the element types' names joined by `separator`
- * (e.g. `"Number,String"`).
+ * @typeParam Elements - Tuple of decoded value types (inferred from `elementTypes`).
  *
- * @typeParam Elements - The tuple type of decoded element values (inferred from
- *   `elementTypes`).
- *
- * @param elementTypes - An ordered array of {@link Type}s, one per tuple element.
- * @param separator - The string used to split the raw value (default: `","`).
- * @returns A {@link Type}`<Elements>` tuple type.
+ * @param elementTypes - One {@link Type} per tuple element, in order.
+ * @param separator - Delimiter (default `","`).
+ * @returns A {@link Type}`<Elements>`.
  *
  * @example
  * ```ts
@@ -388,20 +343,14 @@ export function typeTuple<const Elements extends Array<any>>(
 }
 
 /**
- * Creates a {@link Type} that decodes a single delimited string into an array of
- * homogeneous typed elements.
+ * Splits a delimited string into a variable-length typed array.
+ * Each part is decoded by `elementType`; failed decodes throw {@link TypoError}.
+ * Note: splitting an empty string yields one empty element — prefer {@link optionRepeatable} for a zero-default.
  *
- * The raw string is split on `separator` and each part is decoded by `elementType`.
- * A failed element decode throws a {@link TypoError} with the index and type context.
- * Unlike {@link typeTuple}, the element count is not fixed. Note that splitting an
- * empty string yields one empty-string element — use {@link optionRepeatable} for a
- * naturally-empty default. The `content` is formatted as
- * `"<elementContent>[<sep><elementContent>]..."` to signal repeatability.
+ * @typeParam Value - Element type produced by `elementType.decoder`.
  *
- * @typeParam Value - The TypeScript element type produced by `elementType.decoder`.
- *
- * @param elementType - The {@link Type} used to decode each element.
- * @param separator - The string used to split the raw value (default: `","`).
+ * @param elementType - Decoder applied to each element.
+ * @param separator - Delimiter (default `","`).
  * @returns A {@link Type}`<Array<Value>>`.
  *
  * @example

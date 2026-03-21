@@ -18,7 +18,9 @@ import {
  * @typeParam Value - Parsed value type (`boolean`, `T`, or `Array<T>`).
  */
 export type Option<Value> = {
-  /** Returns metadata used to render the `Options:` section of help. */
+  /**
+   * Returns metadata used to render the `Options:` section of help.
+   */
   generateUsage(): OptionUsage;
   /**
    * Registers the option on `readerOptions` and returns an {@link OptionParser}.
@@ -49,29 +51,35 @@ export type OptionParser<Value> = {
  * of the help output produced by {@link usageToStyledLines}.
  */
 export type OptionUsage = {
-  /** Help text. */
+  /**
+   * Help text.
+   */
   description: string | undefined;
-  /** Short note shown in parentheses. */
+  /**
+   * Short note shown in parentheses.
+   */
   hint: string | undefined;
-  /** Long-form name without `--` (e.g. `"verbose"`). */
+  /**
+   * Long-form name without `--` (e.g. `"verbose"`).
+   */
   long: Lowercase<string>; // TODO - better type for long option names ?
-  /** Short-form name without `-` (e.g. `"v"`). */
+  /**
+   * Short-form name without `-` (e.g. `"v"`).
+   */
   short: string | undefined;
-  /** Value placeholder in help (e.g. `"<FILE>"`). `undefined` for flags. */
+  /**
+   * Value placeholder in help (e.g. `"<FILE>"`). `undefined` for flags.
+   */
   label: Uppercase<string> | undefined;
 };
 
 /**
- * Creates a boolean flag option — an option that the user passes without a value (e.g.
- * `--verbose`) to signal `true`, or can explicitly set with `--flag=true` / `--flag=no`.
+ * Creates a boolean flag option (`--verbose`, optionally `--flag=no`).
  *
- * **Parsing rules:**
- * - Absent → `false` (or the return value of `default()` when provided).
- * - `--flag` / `--flag=true` / `--flag=yes` → `true`.
- * - `--flag=false` / `--flag=no` → `false`.
- * - Specified more than once → {@link TypoError} ("Must not be set multiple times").
+ * Parsing: absent → `false`; `--flag` / `--flag=yes` → `true`; `--flag=no` → `false`;
+ * specified more than once → {@link TypoError}.
  *
- * @param definition - Configuration for the flag.
+ * @param definition - Flag configuration.
  * @param definition.long - Long-form name (without `--`).
  * @param definition.short - Short-form name (without `-`).
  * @param definition.description - Help text.
@@ -146,22 +154,14 @@ export function optionFlag(definition: {
 }
 
 /**
- * Creates an option that accepts exactly one value (e.g. `--output dist/` or
- * `--output=dist/`).
+ * Creates an option that accepts exactly one value (e.g. `--output dist/`).
  *
- * **Parsing rules:**
- * - Absent → `definition.default()` is called. If the default factory throws, a
- *   {@link TypoError} is produced.
- * - Specified once → the value is decoded with `definition.type`.
- * - Specified more than once → {@link TypoError} ("Requires a single value, but got
- *   multiple").
+ * Parsing: absent → `default()`; once → decoded with `type`; more than once → {@link TypoError}.
+ * Value syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
  *
- * **Value syntax:** `--long value`, `--long=value`, or (if `short` is set) `-s value`,
- * `-s=value`, or `-svalue`.
+ * @typeParam Value - Type produced by the decoder.
  *
- * @typeParam Value - The TypeScript type produced by the type decoder.
- *
- * @param definition - Configuration for the option.
+ * @param definition - Option configuration.
  * @param definition.long - Long-form name (without `--`).
  * @param definition.short - Short-form name (without `-`).
  * @param definition.description - Help text.
@@ -248,22 +248,14 @@ export function optionSingleValue<Value>(definition: {
 }
 
 /**
- * Creates an option that can be specified any number of times, collecting all provided
- * values into an array (e.g. `--file a.ts --file b.ts`).
+ * Creates an option that collects every occurrence into an array (e.g. `--file a.ts --file b.ts`).
  *
- * **Parsing rules:**
- * - Absent → empty array `[]`.
- * - Specified N times → array of N decoded values, in the order they appear on the
- *   command line.
- * - Each occurrence is decoded independently with `definition.type`.
+ * Parsing: absent → `[]`; N occurrences → array of N decoded values in order.
+ * Value syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
  *
- * **Value syntax:** `--long value`, `--long=value`, or (if `short` is set) `-s value`,
- * `-s=value`, or `-svalue`.
+ * @typeParam Value - Type produced by the decoder for each occurrence.
  *
- * @typeParam Value - The TypeScript type produced by the type decoder for each
- *   occurrence.
- *
- * @param definition - Configuration for the option.
+ * @param definition - Option configuration.
  * @param definition.long - Long-form name (without `--`).
  * @param definition.short - Short-form name (without `-`).
  * @param definition.description - Help text.

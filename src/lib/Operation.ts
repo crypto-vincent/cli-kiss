@@ -13,7 +13,9 @@ import { ReaderArgs } from "./Reader";
  * @typeParam Output - Value the handler produces.
  */
 export type Operation<Input, Output> = {
-  /** Returns usage metadata without consuming any arguments. */
+  /**
+   * Returns usage metadata without consuming any arguments.
+   */
   generateUsage(): OperationUsage;
   /**
    * Parses options and positionals from `readerArgs` and returns an
@@ -63,9 +65,13 @@ export type OperationInstance<Input, Output> = {
  * Consumed when building {@link CommandUsage}.
  */
 export type OperationUsage = {
-  /** Usage descriptors for all registered options. */
+  /**
+   * Usage descriptors for all registered options.
+   */
   options: Array<OptionUsage>;
-  /** Usage descriptors for all declared positionals, in order. */
+  /**
+   * Usage descriptors for all declared positionals, in order.
+   */
   positionals: Array<PositionalUsage>;
 };
 

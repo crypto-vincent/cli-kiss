@@ -18,7 +18,9 @@ import {
  * @typeParam Value - Parsed value type.
  */
 export type Positional<Value> = {
-  /** Returns metadata used to render the `Positionals:` section of help. */
+  /**
+   * Returns metadata used to render the `Positionals:` section of help.
+   */
   generateUsage(): PositionalUsage;
   /**
    * Consumes the next positional token from `readerPositionals` and returns a parser
@@ -53,9 +55,13 @@ export type PositionalParser<Value> = {
  * `Positionals:` section of the help output produced by {@link usageToStyledLines}.
  */
 export type PositionalUsage = {
-  /** Help text. */
+  /**
+   * Help text.
+   */
   description: string | undefined;
-  /** Short note shown in parentheses. */
+  /**
+   * Short note shown in parentheses.
+   */
   hint: string | undefined;
   /**
    * Placeholder label shown in the usage line and the `Positionals:` section.
@@ -65,21 +71,16 @@ export type PositionalUsage = {
 };
 
 /**
- * Creates a required positional argument — one that must be present on the command line.
+ * Creates a required positional — missing token throws {@link TypoError}.
+ * Label defaults to uppercased `type.content` in angle brackets (e.g. `<STRING>`).
  *
- * Consumes the next available positional token and decodes it with `definition.type`.
- * If no token is available a {@link TypoError} is thrown inside
- * {@link Operation.createFactory}. The usage label defaults to the uppercased
- * `type.content` wrapped in angle brackets (e.g. `<STRING>`); supply `label` to
- * override.
+ * @typeParam Value - Type produced by the decoder.
  *
- * @typeParam Value - TypeScript type produced by the decoder.
- *
- * @param definition - Configuration for the positional.
+ * @param definition - Positional configuration.
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
- * @param definition.label - Label (without brackets). Defaults to uppercased `type.content`.
- * @param definition.type - Decoder for the raw string token.
+ * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
+ * @param definition.type - Decoder for the raw token.
  * @returns A {@link Positional}`<Value>`.
  *
  * @example
@@ -127,22 +128,16 @@ export function positionalRequired<Value>(definition: {
 }
 
 /**
- * Creates an optional positional argument — one that may or may not appear on the
- * command line.
+ * Creates an optional positional — absent token falls back to `default()`.
+ * Label defaults to uppercased `type.content` in square brackets (e.g. `[STRING]`).
  *
- * Consumes the next available positional token. If no token is available,
- * `definition.default()` supplies the fallback value (a throwing factory makes the
- * positional effectively required). The usage label defaults to the uppercased
- * `type.content` wrapped in square brackets (e.g. `[STRING]`); supply `label` to
- * override.
+ * @typeParam Value - Type produced by the decoder (or the default).
  *
- * @typeParam Value - TypeScript type produced by the decoder (or the default).
- *
- * @param definition - Configuration for the positional.
+ * @param definition - Positional configuration.
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
- * @param definition.label - Label (without brackets). Defaults to uppercased `type.content`.
- * @param definition.type - Decoder for the raw string token.
+ * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
+ * @param definition.type - Decoder for the raw token.
  * @param definition.default - Value when absent. Throw to make it required.
  * @returns A {@link Positional}`<Value>`.
  *
@@ -199,22 +194,16 @@ export function positionalOptional<Value>(definition: {
 }
 
 /**
- * Creates a variadic positional argument that collects zero or more remaining
- * positional tokens into an array.
+ * Creates a variadic positional that collects zero or more remaining tokens into an array.
+ * Stops at `endDelimiter` (consumed, not included). Label: `[TYPE]...` notation.
  *
- * Greedily consumes tokens until the list is exhausted or the optional
- * `endDelimiter` sentinel is encountered (consumed but excluded from the result).
- * Each token is decoded independently with `definition.type`. Returns `[]` when
- * absent. The usage label defaults to the uppercased `type.content` wrapped in
- * `[...]...` notation (e.g. `[STRING]...`); supply `label` to override.
+ * @typeParam Value - Type produced by the decoder for each token.
  *
- * @typeParam Value - TypeScript type produced by the decoder for each token.
- *
- * @param definition - Configuration for the variadic positional.
+ * @param definition - Positional configuration.
  * @param definition.endDelimiter - Sentinel token that stops collection (consumed, not included).
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
- * @param definition.label - Label (without brackets). Defaults to uppercased `type.content`.
+ * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
  * @param definition.type - Decoder applied to each token.
  * @returns A {@link Positional}`<Array<Value>>`.
  *

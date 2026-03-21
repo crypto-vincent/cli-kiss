@@ -38,11 +38,10 @@ import {
  * Column alignment within each section is handled by {@link TypoGrid}: the widest entry
  * in each column sets the width for the entire section.
  *
- * @param params.cliName - The CLI program name shown at the start of the usage line.
- * @param params.commandUsage - The usage model produced by {@link CommandFactory.generateUsage}.
- * @param params.typoSupport - Controls color/styling of the output.
- * @returns An ordered array of strings, one per output line (including a trailing
- *   empty string for the blank line at the end).
+ * @param params.cliName - Program name for the usage line.
+ * @param params.commandUsage - From {@link CommandFactory.generateUsage}.
+ * @param params.typoSupport - Rendering mode.
+ * @returns One string per output line; trailing empty string for the blank line at the end.
  *
  * @example
  * ```ts
