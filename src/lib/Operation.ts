@@ -3,50 +3,38 @@ import { Positional, PositionalParser, PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
 
 /**
- * Describes an operation — the combination of options, positional arguments, and an
- * async execution handler that together form the core logic of a CLI command.
+ * Options, positionals, and an async handler that together form the logic of a
+ * CLI command.
  *
- * An `Operation` is created with {@link operation} and passed to
- * {@link command}, {@link commandWithSubcommands}, or {@link commandChained} to build
- * a full {@link Command}.
+ * Created with {@link operation} and passed to {@link command},
+ * {@link commandWithSubcommands}, or {@link commandChained}.
  *
- * @typeParam Input - The context value the handler receives at execution time (forwarded
- *   from the parent command's context or from a preceding chained operation).
- * @typeParam Output - The value the handler produces. For leaf operations this is
- *   typically `void`; for intermediate stages it is the payload forwarded to the next
- *   command in a chain.
+ * @typeParam Input - Context value the handler receives at execution time.
+ * @typeParam Output - Value the handler produces.
  */
 export type Operation<Input, Output> = {
-  /**
-   * Returns usage metadata (options and positionals) without consuming any arguments.
-   * Called by the parent command factory when building the help/usage output.
-   */
+  /** Returns usage metadata without consuming any arguments. */
   generateUsage(): OperationUsage;
   /**
    * Parses options and positionals from `readerArgs` and returns an
-   * {@link OperationFactory} that can create a ready-to-execute
-   * {@link OperationInstance}.
+   * {@link OperationFactory}. Parse errors are deferred to
+   * {@link OperationFactory.createInstance}.
    *
-   * Any parse error (unknown option, type mismatch, etc.) is captured and re-thrown
-   * when {@link OperationFactory.createInstance} is called.
-   *
-   * @param readerArgs - The shared argument reader. Options are registered on it and
-   *   positionals are consumed in declaration order.
+   * @param readerArgs - Shared argument reader.
    */
   createFactory(readerArgs: ReaderArgs): OperationFactory<Input, Output>;
 };
 
 /**
- * Produced by {@link Operation.createFactory} after argument parsing.
- * Instantiating it finalises value extraction and produces an {@link OperationInstance}.
+ * Produced by {@link Operation.createFactory}. Creates a ready-to-execute
+ * {@link OperationInstance}.
  *
  * @typeParam Input - Context type. See {@link Operation}.
  * @typeParam Output - Result type. See {@link Operation}.
  */
 export type OperationFactory<Input, Output> = {
   /**
-   * Extracts the final parsed values for all options and returns an
-   * {@link OperationInstance} ready for execution.
+   * Extracts parsed values and returns an {@link OperationInstance}.
    *
    * @throws {@link TypoError} if any option or positional validation failed during
    *   {@link Operation.createFactory}.
@@ -57,53 +45,46 @@ export type OperationFactory<Input, Output> = {
 /**
  * A fully parsed, ready-to-execute operation.
  *
- * @typeParam Input - The value the caller must supply as context.
- * @typeParam Output - The value produced on successful execution.
+ * @typeParam Input - Context value the caller must supply.
+ * @typeParam Output - Value produced on successful execution.
  */
 export type OperationInstance<Input, Output> = {
   /**
-   * Runs the operation handler with the provided input context and the parsed
-   * option/positional values.
+   * Runs the handler with the given context and all parsed inputs.
    *
-   * @param input - Context from the parent command (or the root context supplied to
-   *   {@link runAndExit}).
-   * @returns A promise resolving to the handler's return value.
+   * @param input - Context from the parent command or {@link runAndExit}.
+   * @returns Promise resolving to the handler's return value.
    */
   executeWithContext(input: Input): Promise<Output>;
 };
 
 /**
- * Collected usage metadata produced by {@link Operation.generateUsage}.
- * Consumed by the parent command factory when building {@link CommandUsage}.
+ * Usage metadata produced by {@link Operation.generateUsage}.
+ * Consumed when building {@link CommandUsage}.
  */
 export type OperationUsage = {
-  /** Usage descriptors for all options registered by this operation. */
+  /** Usage descriptors for all registered options. */
   options: Array<OptionUsage>;
-  /** Usage descriptors for all positionals declared by this operation, in order. */
+  /** Usage descriptors for all declared positionals, in order. */
   positionals: Array<PositionalUsage>;
 };
 
 /**
- * Creates an {@link Operation} from a set of options, positionals, and an
- * async handler function.
+ * Creates an {@link Operation} from options, positionals, and an async handler.
  *
  * The `handler` receives the parent `context` and an `inputs` object with
  * `options` (keyed by the same names declared in `inputs.options`) and
  * `positionals` (a tuple in declaration order).
  *
- * @typeParam Context - The context type accepted by the handler.
- * @typeParam Result - The return type of the handler.
- * @typeParam Options - Object type mapping option keys to their parsed value types.
- * @typeParam Positionals - Tuple type of parsed positional value types, in order.
+ * @typeParam Context - Context type accepted by the handler.
+ * @typeParam Result - Return type of the handler.
+ * @typeParam Options - Map of option keys to parsed value types.
+ * @typeParam Positionals - Tuple of parsed positional value types, in order.
  *
- * @param inputs - Declares the options and positionals this operation accepts.
- * @param inputs.options - A map from arbitrary keys to {@link Option} descriptors.
- *   The same keys appear in `handler`'s `inputs.options` argument.
- * @param inputs.positionals - An ordered array of {@link Positional} descriptors.
- *   Their parsed values appear in `handler`'s `inputs.positionals` argument, in the
- *   same order.
- * @param handler - The async function that implements the command logic. Receives the
- *   execution context and all parsed inputs.
+ * @param inputs - Options and positionals this operation accepts.
+ * @param inputs.options - Map of keys to {@link Option} descriptors.
+ * @param inputs.positionals - Ordered array of {@link Positional} descriptors.
+ * @param handler - Async function implementing the command logic.
  * @returns An {@link Operation} ready to be composed into a command.
  *
  * @example

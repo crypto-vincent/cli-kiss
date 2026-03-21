@@ -10,70 +10,54 @@ import {
 } from "./Typo";
 
 /**
- * Describes a single CLI option (a flag or a valued option) together with its parsing
- * and usage-generation logic.
+ * A CLI option (flag or valued) with its parsing and usage-generation logic.
  *
- * Options are created with {@link optionFlag}, {@link optionSingleValue}, or
- * {@link optionRepeatable} and are passed via the `options` map of {@link operation}.
+ * Created with {@link optionFlag}, {@link optionSingleValue}, or
+ * {@link optionRepeatable} and passed via the `options` map of {@link operation}.
  *
- * @typeParam Value - The TypeScript type of the parsed option value.
- *   - `boolean` for flags created with {@link optionFlag}.
- *   - `T` for single-value options created with {@link optionSingleValue}.
- *   - `Array<T>` for repeatable options created with {@link optionRepeatable}.
+ * @typeParam Value - Parsed value type (`boolean`, `T`, or `Array<T>`).
  */
 export type Option<Value> = {
-  /** Returns human-readable metadata used to render the `Options:` section of help. */
+  /** Returns metadata used to render the `Options:` section of help. */
   generateUsage(): OptionUsage;
   /**
-   * Registers the option on `readerOptions` so the argument reader recognises it, and
-   * returns an {@link OptionParser} that can later retrieve the parsed value(s).
+   * Registers the option on `readerOptions` and returns an {@link OptionParser}.
    *
-   * @param readerOptions - The shared {@link ReaderArgs} that will parse the raw
-   *   command-line tokens.
+   * @param readerOptions - Shared argument reader.
    */
   createParser(readerOptions: ReaderOptions): OptionParser<Value>;
 };
 
 /**
- * Retrieves the parsed value for a registered option after argument parsing is complete.
+ * Retrieves the parsed value for a registered option.
  *
- * Returned by {@link Option.createParser} and called by {@link OperationFactory.createInstance}.
+ * Returned by {@link Option.createParser}, called by {@link OperationFactory.createInstance}.
  *
- * @typeParam Value - The TypeScript type of the parsed value.
+ * @typeParam Value - Parsed value type.
  */
 export type OptionParser<Value> = {
   /**
+   * Returns the decoded option value.
+   *
    * @throws {@link TypoError} if validation failed during {@link Option.createParser}.
    */
   parseValue(): Value;
 };
 
 /**
- * Human-readable metadata for a single CLI option, used to render the `Options:` section
+ * Human-readable metadata for a single option, used to render the `Options:` section
  * of the help output produced by {@link usageToStyledLines}.
  */
 export type OptionUsage = {
-  /** Short description of what the option does. */
+  /** Help text. */
   description: string | undefined;
-  /**
-   * Optional supplementary note shown in parentheses next to the description.
-   * Suitable for short caveats such as `"required"` or `"defaults to 42"`.
-   */
+  /** Short note shown in parentheses. */
   hint: string | undefined;
-  /**
-   * The primary long-form name of the option, without the `--` prefix (e.g. `"verbose"`).
-   * The user passes this as `--verbose` on the command line.
-   */
+  /** Long-form name without `--` (e.g. `"verbose"`). */
   long: Lowercase<string>; // TODO - better type for long option names ?
-  /**
-   * The optional short-form name of the option, without the `-` prefix (e.g. `"v"`).
-   * The user passes this as `-v` on the command line.
-   */
+  /** Short-form name without `-` (e.g. `"v"`). */
   short: string | undefined;
-  /**
-   * The value placeholder label shown after the long option name in the help output
-   * (e.g. `"<FILE>"`). `undefined` for flags that take no value.
-   */
+  /** Value placeholder in help (e.g. `"<FILE>"`). `undefined` for flags. */
   label: Uppercase<string> | undefined;
 };
 
@@ -88,14 +72,12 @@ export type OptionUsage = {
  * - Specified more than once → {@link TypoError} ("Must not be set multiple times").
  *
  * @param definition - Configuration for the flag.
- * @param definition.long - Primary long-form name (without `--`). Must be lowercase.
- * @param definition.short - Optional short-form name (without `-`).
- * @param definition.description - Human-readable description for the help output.
- * @param definition.hint - Optional supplementary note shown in parentheses.
- * @param definition.aliases - Additional long/short names that the parser also
- *   recognises as this flag.
- * @param definition.default - Factory for the default value when the flag is absent.
- *   Defaults to `() => false` when omitted.
+ * @param definition.long - Long-form name (without `--`).
+ * @param definition.short - Short-form name (without `-`).
+ * @param definition.description - Help text.
+ * @param definition.hint - Short note shown in parentheses.
+ * @param definition.aliases - Additional names.
+ * @param definition.default - Default when absent. Defaults to `() => false`.
  * @returns An {@link Option}`<boolean>`.
  *
  * @example
@@ -180,16 +162,14 @@ export function optionFlag(definition: {
  * @typeParam Value - The TypeScript type produced by the type decoder.
  *
  * @param definition - Configuration for the option.
- * @param definition.long - Primary long-form name (without `--`). Must be lowercase.
- * @param definition.short - Optional short-form name (without `-`).
- * @param definition.description - Human-readable description for the help output.
- * @param definition.hint - Optional supplementary note shown in parentheses.
- * @param definition.aliases - Additional long/short names the parser also recognises.
- * @param definition.label - Custom label shown in the help output (e.g. `"FILE"`).
- *   Defaults to the uppercased `type.content`.
- * @param definition.type - The {@link Type} used to decode the raw string value.
- * @param definition.default - Factory for the default value when the option is absent.
- *   Throw an error from this factory to make the option effectively required.
+ * @param definition.long - Long-form name (without `--`).
+ * @param definition.short - Short-form name (without `-`).
+ * @param definition.description - Help text.
+ * @param definition.hint - Short note shown in parentheses.
+ * @param definition.aliases - Additional names.
+ * @param definition.label - Value placeholder in help. Defaults to uppercased `type.content`.
+ * @param definition.type - Decoder for the raw string value.
+ * @param definition.default - Default when absent. Throw to make the option required.
  * @returns An {@link Option}`<Value>`.
  *
  * @example
@@ -284,14 +264,13 @@ export function optionSingleValue<Value>(definition: {
  *   occurrence.
  *
  * @param definition - Configuration for the option.
- * @param definition.long - Primary long-form name (without `--`). Must be lowercase.
- * @param definition.short - Optional short-form name (without `-`).
- * @param definition.description - Human-readable description for the help output.
- * @param definition.hint - Optional supplementary note shown in parentheses.
- * @param definition.aliases - Additional long/short names the parser also recognises.
- * @param definition.label - Custom label shown in the help output (e.g. `"FILE"`).
- *   Defaults to the uppercased `type.content`.
- * @param definition.type - The {@link Type} used to decode each raw string value.
+ * @param definition.long - Long-form name (without `--`).
+ * @param definition.short - Short-form name (without `-`).
+ * @param definition.description - Help text.
+ * @param definition.hint - Short note shown in parentheses.
+ * @param definition.aliases - Additional names.
+ * @param definition.label - Value placeholder in help. Defaults to uppercased `type.content`.
+ * @param definition.type - Decoder applied to each raw string value.
  * @returns An {@link Option}`<Array<Value>>`.
  *
  * @example
