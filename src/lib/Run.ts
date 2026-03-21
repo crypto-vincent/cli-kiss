@@ -7,7 +7,9 @@ import { usageToStyledLines } from "./Usage";
  * Main entry point: parses CLI arguments, executes the matched command, and exits.
  * Handles `--help`, `--version`, usage-on-error, and exit codes.
  *
- * Exit codes: `0` on success / `--help` / `--version`; `1` on parse or execution error.
+ * Exit codes:
+ *  - `0` on success / `--help` / `--version`
+ *  - `1` on parse error or execution error.
  *
  * @typeParam Context - Passed unchanged to the command handler; use to inject dependencies.
  *

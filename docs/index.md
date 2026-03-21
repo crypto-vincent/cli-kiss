@@ -4,10 +4,12 @@ layout: home
 hero:
   name: CLI-kiss
   text: CLI for TypeScript.
+
   tagline:
-    No bloat, no dependencies.<br/>Standard behavior users expect.<br/><span>K</span>eep
-    <span>I</span>t <span>S</span>imple and <span>S</span>tupid, it just does the
-    job.
+    No bloat, no dependencies.<br/>Standard behavior users expect.<br/>Keep It Simple and Stupid, it just does the job.
+
+  image:
+    src: /hero.png
 
   actions:
     - theme: brand
@@ -19,12 +21,15 @@ hero:
 
 features:
   - title: Zero dependencies
+    icon: 📦
     details:
       Ships with no runtime dependencies.<br/>Pure TypeScript, 5kb bundled.
   - title: Fully typed
+    icon: 🧠
     details:
       TypeScript first.<br/>Options and positionals inputs strongly typed.
   - title: Composable
+    icon: 🧩
     details:
       Easily create nested subcommands.<br/>Build complex CLIs by nesting logic.
 ---

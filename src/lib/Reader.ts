@@ -233,8 +233,8 @@ export class ReaderArgs {
       }
       throw new TypoError(
         new TypoText(
-          new TypoString(`-${arg.slice(shortIndexStart)}`, typoStyleConstants),
-          new TypoString(`: Unexpected unknown option`),
+          new TypoString(`Unexpected unknown option(s): `),
+          new TypoString(`-${arg.slice(shortIndexStart)}`, typoStyleQuote),
         ),
       );
     }
@@ -256,8 +256,8 @@ export class ReaderArgs {
     }
     throw new TypoError(
       new TypoText(
-        new TypoString(constant, typoStyleConstants),
-        new TypoString(`: Unexpected unknown option`),
+        new TypoString(`Unexpected unknown option: `),
+        new TypoString(constant, typoStyleQuote),
       ),
     );
   }

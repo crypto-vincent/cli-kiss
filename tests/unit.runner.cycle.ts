@@ -101,7 +101,7 @@ it("run", async () => {
   await testCase(
     ["--invalid1", "--invalid2", "required1", "--invalid3"],
     [],
-    [rootUsage, "Error: --invalid1: Unexpected unknown option"],
+    [rootUsage, "Error: Unexpected unknown option: --invalid1"],
     1,
   );
   await testCase(
@@ -135,13 +135,13 @@ it("run", async () => {
   await testCase(
     ["--url", "https://example.com"],
     [],
-    [rootUsage, "Error: --url: Unexpected unknown option"],
+    [rootUsage, "Error: Unexpected unknown option: --url"],
     1,
   );
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
-    [rootUsage, "Error: --url: Unexpected unknown option"],
+    [rootUsage, "Error: Unexpected unknown option: --url"],
     1,
   );
   await testCase(
@@ -187,13 +187,13 @@ it("run", async () => {
   await testCase(
     ["--invalid", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, "Error: --invalid: Unexpected unknown option"],
+    [rootUsage, "Error: Unexpected unknown option: --invalid"],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--nope"],
     [],
-    [subcommandUsage, "Error: --nope: Unexpected unknown option"],
+    [subcommandUsage, "Error: Unexpected unknown option: --nope"],
     1,
   );
   await testCase(
@@ -283,7 +283,7 @@ it("run", async () => {
   await testCase(
     ["--url", "not-a-url", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, "Error: --url: Unexpected unknown option"],
+    [rootUsage, "Error: Unexpected unknown option: --url"],
     1,
   );
   await testCase(
