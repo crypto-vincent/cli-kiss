@@ -1,4 +1,4 @@
-import { OperationDescriptor } from "./Operation";
+import { Operation } from "./Operation";
 import { OptionUsage } from "./Option";
 import { PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
@@ -14,17 +14,19 @@ import {
  * Describes a CLI command: how to parse its arguments from raw CLI input and how to
  * execute it within a given context.
  *
- * A `CommandDescriptor` is the central building block of a `cli-kiss` CLI. You create
- * one with {@link command}, {@link commandWithSubcommands}, or {@link commandChained},
- * and pass it to {@link runAndExit} to run your CLI.
+ * A `Command` is the central building block of a `cli-kiss` CLI.
+ * You create one with {@link command}, {@link commandWithSubcommands},
+ * or {@link commandChained}, and pass it to {@link runAndExit} to run your CLI.
  *
  * @typeParam Context - The value passed into the command when it is executed. It flows
  *   from {@link runAndExit}'s `context` argument down through the command chain.
  * @typeParam Result - The value produced by executing the command. For root commands
  *   passed to {@link runAndExit} this is always `void`.
  */
-export type CommandDescriptor<Context, Result> = {
-  /** Returns the static metadata (description, hint, details) for this command. */
+export type Command<Context, Result> = {
+  /**
+   * Returns the static metadata information about this command.
+   */
   getInformation(): CommandInformation;
   /**
    * Parses `readerArgs` and returns a {@link CommandFactory} that can generate usage
@@ -38,14 +40,14 @@ export type CommandDescriptor<Context, Result> = {
 };
 
 /**
- * Produced by {@link CommandDescriptor.createFactory} after the raw CLI arguments have
+ * Produced by {@link Command.createFactory} after the raw CLI arguments have
  * been parsed. Provides two capabilities:
  *
  * 1. **Usage generation** — always available, even when parsing failed.
  * 2. **Instance creation** — throws a {@link TypoError} if parsing failed.
  *
- * @typeParam Context - Forwarded from the parent {@link CommandDescriptor}.
- * @typeParam Result - Forwarded from the parent {@link CommandDescriptor}.
+ * @typeParam Context - Input passed to the command {@link Command}.
+ * @typeParam Result - Result of the command's logic {@link Command}.
  */
 export type CommandFactory<Context, Result> = {
   /**
@@ -58,7 +60,7 @@ export type CommandFactory<Context, Result> = {
    * Creates a {@link CommandInstance} that is ready to execute.
    *
    * @throws {@link TypoError} if the argument parsing that occurred during
-   *   {@link CommandDescriptor.createFactory} encountered an error (e.g. unknown
+   *   {@link Command.createFactory} encountered an error (e.g. unknown
    *   option, missing required positional, invalid type).
    */
   createInstance(): CommandInstance<Context, Result>;
@@ -162,7 +164,7 @@ export type CommandUsageSubcommand = {
 
 /**
  * Creates a leaf command — a command that has no subcommands and directly executes
- * an {@link OperationDescriptor}.
+ * an {@link Operation}.
  *
  * During parsing, `command` reads all positionals and options consumed by `operation`,
  * then asserts that no extra positionals remain. Any unexpected trailing positional
@@ -175,7 +177,7 @@ export type CommandUsageSubcommand = {
  * @param information - Static metadata (description, hint, details) for the command.
  * @param operation - The operation that defines options, positionals, and the execution
  *   handler for this command.
- * @returns A {@link CommandDescriptor} suitable for passing to {@link runAndExit}
+ * @returns A {@link Command} suitable for passing to {@link runAndExit}
  *   or composing with {@link commandWithSubcommands} / {@link commandChained}.
  *
  * @example
@@ -191,8 +193,8 @@ export type CommandUsageSubcommand = {
  */
 export function command<Context, Result>(
   information: CommandInformation,
-  operation: OperationDescriptor<Context, Result>,
-): CommandDescriptor<Context, Result> {
+  operation: Operation<Context, Result>,
+): Command<Context, Result> {
   return {
     getInformation() {
       return information;
@@ -245,7 +247,7 @@ export function command<Context, Result>(
 }
 
 /**
- * Creates a command that first runs an {@link OperationDescriptor} to produce an
+ * Creates a command that first runs an {@link Operation} to produce an
  * intermediate `Payload`, then dispatches execution to one of several named subcommands
  * based on the next positional argument.
  *
@@ -270,8 +272,8 @@ export function command<Context, Result>(
  * @param operation - The operation that is always executed first, before the
  *   subcommand. Its output becomes the subcommand's context.
  * @param subcommands - A map of lowercase subcommand names to their
- *   {@link CommandDescriptor}s. The keys are the literal tokens the user types.
- * @returns A {@link CommandDescriptor} that dispatches to one of the provided
+ *   {@link Command}s. The keys are the literal tokens the user types.
+ * @returns A {@link Command} that dispatches to one of the provided
  *   subcommands.
  *
  * @example
@@ -288,11 +290,9 @@ export function command<Context, Result>(
  */
 export function commandWithSubcommands<Context, Payload, Result>(
   information: CommandInformation,
-  operation: OperationDescriptor<Context, Payload>,
-  subcommands: {
-    [subcommand: Lowercase<string>]: CommandDescriptor<Payload, Result>;
-  },
-): CommandDescriptor<Context, Result> {
+  operation: Operation<Context, Payload>,
+  subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
+): Command<Context, Result> {
   return {
     getInformation() {
       return information;
@@ -382,7 +382,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
 
 /**
  * Creates a command that chains two command stages by piping the output of an
- * {@link OperationDescriptor} directly into a {@link CommandDescriptor} as its context.
+ * {@link Operation} directly into a {@link Command} as its context.
  *
  * Unlike {@link commandWithSubcommands}, there is no runtime token consumed for routing;
  * the `nextCommand` is always the continuation. This is useful for splitting a complex
@@ -410,7 +410,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
  * @param operation - The first stage operation. Its output becomes `nextCommand`'s
  *   context.
  * @param nextCommand - The second stage command, executed after `operation` succeeds.
- * @returns A {@link CommandDescriptor} that transparently composes the two stages.
+ * @returns A {@link Command} that transparently composes the two stages.
  *
  * @example
  * ```ts
@@ -426,9 +426,9 @@ export function commandWithSubcommands<Context, Payload, Result>(
  */
 export function commandChained<Context, Payload, Result>(
   information: CommandInformation,
-  operation: OperationDescriptor<Context, Payload>,
-  nextCommand: CommandDescriptor<Payload, Result>,
-): CommandDescriptor<Context, Result> {
+  operation: Operation<Context, Payload>,
+  nextCommand: Command<Payload, Result>,
+): Command<Context, Result> {
   return {
     getInformation() {
       return information;

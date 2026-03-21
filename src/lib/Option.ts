@@ -26,12 +26,23 @@ export type Option<Value> = {
   generateUsage(): OptionUsage;
   /**
    * Registers the option on `readerOptions` so the argument reader recognises it, and
-   * returns an {@link OptionGetter} that can later retrieve the parsed value(s).
+   * returns an {@link OptionParser} that can later retrieve the parsed value(s).
    *
    * @param readerOptions - The shared {@link ReaderArgs} that will parse the raw
    *   command-line tokens.
    */
-  createGetter(readerOptions: ReaderOptions): OptionGetter<Value>;
+  createParser(readerOptions: ReaderOptions): OptionParser<Value>;
+};
+
+/**
+ * Retrieves the parsed value for a registered option after argument parsing is complete.
+ *
+ * Returned by {@link Option.createParser} and called by {@link OperationFactory.createInstance}.
+ *
+ * @typeParam Value - The TypeScript type of the parsed value.
+ */
+export type OptionParser<Value> = {
+  parseValue(): Value;
 };
 
 /**
@@ -61,23 +72,6 @@ export type OptionUsage = {
    * (e.g. `"<FILE>"`). `undefined` for flags that take no value.
    */
   label: Uppercase<string> | undefined;
-};
-
-/**
- * Retrieves the parsed value for a registered option after argument parsing is complete.
- *
- * Returned by {@link Option.createGetter} and called by {@link OperationFactory.createInstance}.
- *
- * @typeParam Value - The TypeScript type of the parsed value.
- */
-export type OptionGetter<Value> = {
-  /**
-   * Returns the fully decoded and validated value for the option.
-   *
-   * @throws {@link TypoError} if the option appeared more times than allowed, the value
-   *   failed type decoding, or a required default could not be computed.
-   */
-  getValue(): Value;
 };
 
 /**
@@ -129,13 +123,13 @@ export function optionFlag(definition: {
         label: undefined,
       };
     },
-    createGetter(readerOptions: ReaderOptions) {
+    createParser(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
         ...definition,
         valued: false,
       });
       return {
-        getValue() {
+        parseValue() {
           const optionValues = readerOptions.getOptionValues(key);
           if (optionValues.length > 1) {
             throw new TypoError(
@@ -228,13 +222,13 @@ export function optionSingleValue<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    createGetter(readerOptions: ReaderOptions) {
+    createParser(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
         ...definition,
         valued: true,
       });
       return {
-        getValue() {
+        parseValue() {
           const optionValues = readerOptions.getOptionValues(key);
           if (optionValues.length > 1) {
             throw new TypoError(
@@ -330,13 +324,13 @@ export function optionRepeatable<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    createGetter(readerOptions: ReaderOptions) {
+    createParser(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
         ...definition,
         valued: true,
       });
       return {
-        getValue() {
+        parseValue() {
           const optionValues = readerOptions.getOptionValues(key);
           return optionValues.map((optionValue) =>
             decodeValue(definition.long, label, definition.type, optionValue),

@@ -14,7 +14,7 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 | `cliName` | `Lowercase<string>`                | Program name used in help and `--version` output  |
 | `cliArgs` | `ReadonlyArray<string>`            | Raw arguments — typically `process.argv.slice(2)` |
 | `context` | `Context`                          | Value forwarded to every command handler          |
-| `command` | `CommandDescriptor<Context, void>` | The root command                                  |
+| `command` | `Command<Context, void>`           | The root command                                  |
 | `options` | `object?`                          | See below                                         |
 
 ### Options
@@ -100,7 +100,7 @@ await runAndExit("my-cli", process.argv.slice(2), undefined, rootCmd, {
 Check it
 
 ```sh
-$ my-cli --help
+my-cli --help
 ```
 
 ```text
@@ -118,7 +118,7 @@ Options:
 Try it
 
 ```sh
-$ my-cli deploy --dry-run
+my-cli deploy --dry-run
 ```
 
 ```text

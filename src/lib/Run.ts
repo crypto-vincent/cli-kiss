@@ -1,4 +1,4 @@
-import { CommandDescriptor, CommandFactory } from "./Command";
+import { Command, CommandFactory } from "./Command";
 import { ReaderArgs } from "./Reader";
 import { TypoSupport } from "./Typo";
 import { usageToStyledLines } from "./Usage";
@@ -29,7 +29,7 @@ import { usageToStyledLines } from "./Usage";
  *   summary header and in the `--version` output.
  * @param cliArgs - The raw command-line arguments to parse, typically `process.argv.slice(2)`.
  * @param context - The context value forwarded to the command's execution handler.
- * @param command - The root {@link CommandDescriptor} that describes how to parse and execute
+ * @param command - The root {@link Command} that describes how to parse and execute
  *   the CLI.
  * @param options - Optional configuration for the runner.
  * @param options.useTtyColors - Controls terminal color output in styled messages.
@@ -75,7 +75,7 @@ export async function runAndExit<Context>(
   cliName: Lowercase<string>,
   cliArgs: ReadonlyArray<string>,
   context: Context,
-  command: CommandDescriptor<Context, void>,
+  command: Command<Context, void>,
   options?: {
     useTtyColors?: boolean | undefined | "mock";
     usageOnHelp?: boolean | undefined;

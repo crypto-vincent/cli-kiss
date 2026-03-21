@@ -90,7 +90,7 @@ await runAndExit("deploy-cli", process.argv.slice(2), undefined, rootCmd);
 Check it:
 
 ```sh
-$ deploy-cli --help
+deploy-cli --help
 ```
 
 ```text

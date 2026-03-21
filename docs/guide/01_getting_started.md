@@ -53,7 +53,7 @@ await runAndExit("greet", process.argv.slice(2), undefined, greetCommand, {
 Run it:
 
 ```sh
-$ greet Alice
+greet Alice
 ```
 
 ```text
@@ -63,7 +63,7 @@ Hello, Alice!
 Pass some flags:
 
 ```sh
-$ greet --loud Alice
+greet --loud Alice
 ```
 
 ```text
@@ -73,7 +73,7 @@ HELLO, ALICE!
 Get some help (built-in)
 
 ```sh
-$ greet --help
+greet --help
 ```
 
 ```text
@@ -91,7 +91,7 @@ Options:
 Get the version (built-in)
 
 ```sh
-$ greet --version
+greet --version
 ```
 
 ```text
@@ -102,7 +102,7 @@ greet 1.0.0
 
 A typical `cli-kiss` project looks like this:
 
-```
+```text
 my-cli/
 ├── src/
 │   ├── index.ts        ← entry point: calls runAndExit

@@ -1,14 +1,14 @@
-import { Option, OptionUsage } from "./Option";
-import { Positional, PositionalUsage } from "./Positional";
+import { Option, OptionParser, OptionUsage } from "./Option";
+import { Positional, PositionalParser, PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
 
 /**
  * Describes an operation — the combination of options, positional arguments, and an
  * async execution handler that together form the core logic of a CLI command.
  *
- * An `OperationDescriptor` is created with {@link operation} and passed to
+ * An `Operation` is created with {@link operation} and passed to
  * {@link command}, {@link commandWithSubcommands}, or {@link commandChained} to build
- * a full {@link CommandDescriptor}.
+ * a full {@link Command}.
  *
  * @typeParam Input - The context value the handler receives at execution time (forwarded
  *   from the parent command's context or from a preceding chained operation).
@@ -16,7 +16,7 @@ import { ReaderArgs } from "./Reader";
  *   typically `void`; for intermediate stages it is the payload forwarded to the next
  *   command in a chain.
  */
-export type OperationDescriptor<Input, Output> = {
+export type Operation<Input, Output> = {
   /**
    * Returns usage metadata (options and positionals) without consuming any arguments.
    * Called by the parent command factory when building the help/usage output.
@@ -37,11 +37,11 @@ export type OperationDescriptor<Input, Output> = {
 };
 
 /**
- * Produced by {@link OperationDescriptor.createFactory} after argument parsing.
+ * Produced by {@link Operation.createFactory} after argument parsing.
  * Instantiating it finalises value extraction and produces an {@link OperationInstance}.
  *
- * @typeParam Input - Forwarded from the parent {@link OperationDescriptor}.
- * @typeParam Output - Forwarded from the parent {@link OperationDescriptor}.
+ * @typeParam Input - operation instance input type {@link Operation}.
+ * @typeParam Output - operation instance output type {@link Operation}.
  */
 export type OperationFactory<Input, Output> = {
   /**
@@ -49,7 +49,7 @@ export type OperationFactory<Input, Output> = {
    * {@link OperationInstance} ready for execution.
    *
    * @throws {@link TypoError} if any option or positional validation failed during
-   *   {@link OperationDescriptor.createFactory}.
+   *   {@link Operation.createFactory}.
    */
   createInstance(): OperationInstance<Input, Output>;
 };
@@ -73,7 +73,7 @@ export type OperationInstance<Input, Output> = {
 };
 
 /**
- * Collected usage metadata produced by {@link OperationDescriptor.generateUsage}.
+ * Collected usage metadata produced by {@link Operation.generateUsage}.
  * Consumed by the parent command factory when building {@link CommandUsage}.
  */
 export type OperationUsage = {
@@ -84,12 +84,11 @@ export type OperationUsage = {
 };
 
 /**
- * Creates an {@link OperationDescriptor} from a set of options, positionals, and an
+ * Creates an {@link Operation} from a set of options, positionals, and an
  * async handler function.
  *
  * The `handler` receives:
- * - `context` — the value passed down from the parent command (or from
- *   {@link runAndExit}).
+ * - `context` — the value passed down from the parent command.
  * - `inputs.options` — an object whose keys match those declared in `inputs.options` and whose values are
  *   the parsed option values.
  * - `inputs.positionals` — a tuple whose elements match `inputs.positionals` and whose
@@ -108,7 +107,7 @@ export type OperationUsage = {
  *   same order.
  * @param handler - The async function that implements the command logic. Receives the
  *   execution context and all parsed inputs.
- * @returns An {@link OperationDescriptor} ready to be composed into a command.
+ * @returns An {@link Operation} ready to be composed into a command.
  *
  * @example
  * ```ts
@@ -140,9 +139,12 @@ export function operation<
   },
   handler: (
     context: Context,
-    inputs: { options: Options; positionals: Positionals },
+    inputs: {
+      options: Options;
+      positionals: Positionals;
+    },
   ) => Promise<Result>,
-): OperationDescriptor<Context, Result> {
+): Operation<Context, Result> {
   return {
     generateUsage() {
       const optionsUsage = new Array<OptionUsage>();
@@ -159,20 +161,24 @@ export function operation<
       return { options: optionsUsage, positionals: positionalsUsage };
     },
     createFactory(readerArgs: ReaderArgs) {
-      const optionsGetters: any = {};
+      const optionsGetters: Record<string, OptionParser<any>> = {};
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
-        optionsGetters[optionKey] = optionInput.createGetter(readerArgs);
+        optionsGetters[optionKey] = optionInput.createParser(readerArgs);
       }
-      const positionalsValues: any = [];
+      const positionalsParsers: Array<PositionalParser<any>> = [];
       for (const positionalInput of inputs.positionals) {
-        positionalsValues.push(positionalInput.consumePositionals(readerArgs));
+        positionalsParsers.push(positionalInput.createParser(readerArgs));
       }
       return {
         createInstance() {
           const optionsValues: any = {};
           for (const optionKey in optionsGetters) {
-            optionsValues[optionKey] = optionsGetters[optionKey]!.getValue();
+            optionsValues[optionKey] = optionsGetters[optionKey]!.parseValue();
+          }
+          const positionalsValues: any = [];
+          for (const positionalParser of positionalsParsers) {
+            positionalsValues.push(positionalParser.parseValue());
           }
           return {
             executeWithContext(context: Context) {

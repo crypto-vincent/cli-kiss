@@ -218,13 +218,24 @@ it("run", async () => {
     1,
   );
 
-  // Test invalid input values type decoding errors
+  // Test invalid positional type value
   await testCase(
     ["required1", "subcommand", "invalid"],
     [],
     [
       subcommandUsage,
       'Error: <REQUIRED2>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
+    ],
+    1,
+  );
+
+  // Test root command option invalid values (must not block parsing)
+  await testCase(
+    ["--single-value=dodo", "required1", "subcommand", "required2"],
+    [],
+    [
+      subcommandUsage,
+      'Error: --single-value: <NUMBER-ENUM>: NUMBER-ENUM: from: STRING-ENUM: Invalid value: "dodo" (expected one of: "42" | "43")',
     ],
     1,
   );
@@ -235,6 +246,14 @@ it("run", async () => {
       subcommandUsage,
       'Error: --single-value: <NUMBER-ENUM>: NUMBER-ENUM: from: STRING-ENUM: Invalid value: "44" (expected one of: "42" | "43")',
     ],
+    1,
+  );
+
+  // Test subcommand-only option failures
+  await testCase(
+    ["--url", "not-a-url", "required1", "subcommand", "required2"],
+    [],
+    [rootUsage, "Error: --url: Unexpected unknown option"],
     1,
   );
   await testCase(

@@ -22,15 +22,29 @@ export type Positional<Value> = {
   /** Returns human-readable metadata used to render the `Positionals:` section of help. */
   generateUsage(): PositionalUsage;
   /**
-   * Consumes the next positional token(s) from `readerPositionals` and returns the
-   * decoded value.
+   * Consumes the positional from `readerPositionals` and then returns a parser that produces the final decoded value.
    *
-   * @param readerPositionals - The shared {@link ReaderArgs} that manages the queue of
-   *   remaining positional tokens.
-   * @throws {@link TypoError} if the positional is required but absent, or if the raw
-   *   value fails type decoding.
+   * The parser is created during {@link Operation.createFactory} and may throw a
+   * {@link TypoError} if the positional is missing (when required) or if decoding fails.
+   * @param readerPositionals - The source of positional arguments to be consumed.
    */
-  consumePositionals(readerPositionals: ReaderPositionals): Value;
+  createParser(readerPositionals: ReaderPositionals): PositionalParser<Value>;
+};
+
+/**
+ * Retrieves the parsed value for a positional argument after parsing is complete.
+ *
+ * Returned by {@link Positional.createParser} and called by {@link OperationFactory.createInstance}.
+ *
+ * @typeParam Value - The TypeScript type of the parsed value.
+ */
+export type PositionalParser<Value> = {
+  /**
+   * Returns the fully decoded and validated value for the positional
+   *
+   * @throws {@link TypoError} if the positional was missing (when required) or if decoding failed.
+   */
+  parseValue(): Value;
 };
 
 /**
@@ -59,7 +73,7 @@ export type PositionalUsage = {
  *
  * The parser consumes the next available positional token and decodes it with
  * `definition.type`. If no token is available, a {@link TypoError} is thrown immediately
- * during parsing (i.e. inside {@link OperationDescriptor.createFactory}).
+ * during parsing (i.e. inside {@link Operation.createFactory}).
  *
  * The label displayed in the usage line defaults to the uppercased `type.content`
  * wrapped in angle brackets (e.g. `<STRING>`). Supply `label` to override.
@@ -99,7 +113,7 @@ export function positionalRequired<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    consumePositionals(readerPositionals: ReaderPositionals) {
+    createParser(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
         throw new TypoError(
@@ -109,7 +123,11 @@ export function positionalRequired<Value>(definition: {
           ),
         );
       }
-      return decodeValue(label, definition.type, positional);
+      return {
+        parseValue() {
+          return decodeValue(label, definition.type, positional);
+        },
+      };
     },
   };
 }
@@ -165,22 +183,26 @@ export function positionalOptional<Value>(definition: {
         label: label as Uppercase<string>,
       };
     },
-    consumePositionals(readerPositionals: ReaderPositionals) {
+    createParser(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
-      if (positional === undefined) {
-        try {
-          return definition.default();
-        } catch (error) {
-          throw new TypoError(
-            new TypoText(
-              new TypoString(label, typoStyleUserInput),
-              new TypoString(`: Failed to get default value`),
-            ),
-            error,
-          );
-        }
-      }
-      return decodeValue(label, definition.type, positional);
+      return {
+        parseValue() {
+          if (positional === undefined) {
+            try {
+              return definition.default();
+            } catch (error) {
+              throw new TypoError(
+                new TypoText(
+                  new TypoString(label, typoStyleUserInput),
+                  new TypoString(`: Failed to get default value`),
+                ),
+                error,
+              );
+            }
+          }
+          return decodeValue(label, definition.type, positional);
+        },
+      };
     },
   };
 }
@@ -243,8 +265,8 @@ export function positionalVariadics<Value>(definition: {
             : "")) as Uppercase<string>,
       };
     },
-    consumePositionals(readerPositionals: ReaderPositionals) {
-      const positionals: Array<Value> = [];
+    createParser(readerPositionals: ReaderPositionals) {
+      const positionals = new Array<string>();
       while (true) {
         const positional = readerPositionals.consumePositional();
         if (
@@ -253,9 +275,15 @@ export function positionalVariadics<Value>(definition: {
         ) {
           break;
         }
-        positionals.push(decodeValue(label, definition.type, positional));
+        positionals.push(positional);
       }
-      return positionals;
+      return {
+        parseValue() {
+          return positionals.map((positional) => {
+            return decodeValue(label, definition.type, positional);
+          });
+        },
+      };
     },
   };
 }
