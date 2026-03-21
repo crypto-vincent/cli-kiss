@@ -2,6 +2,7 @@ import { expect, it } from "@jest/globals";
 import {
   command,
   Command,
+  commandChained,
   commandWithSubcommands,
   operation,
   optionFlag,
@@ -16,64 +17,69 @@ import {
   typeString,
 } from "../src";
 
-const rootCommand = commandWithSubcommands<string, any, any>(
-  { description: "Root command description" },
+const rootCommand = commandChained(
+  { description: "?" },
   operation(
     {
-      options: {
-        booleanFlag: optionFlag({
-          long: "boolean-flag",
-          default: () => false,
-        }),
-        stringOption: optionSingleValue({
-          long: "string-option",
-          type: typeString,
-          default: () => undefined,
-        }),
-        numberOption: optionRepeatable({
-          long: "number-option",
-          type: typeList(typeNumber),
-        }),
-      },
-      positionals: [
-        positionalRequired({ type: typeNumber }),
-        positionalRequired({ type: typeNumber }),
-      ],
+      options: { flag: optionFlag({ short: "b", long: "boolean-flag" }) },
+      positionals: [positionalRequired({ label: "POS-1", type: typeNumber })],
     },
     async (context, inputs) => {
       return { at: "root", context, inputs };
     },
   ),
-  {
-    sub1: command(
-      { description: "Subcommand 1 description" },
-      operation(
-        {
-          options: {},
-          positionals: [positionalRequired({ type: typeString })],
+  commandWithSubcommands<any, any, any>(
+    { description: "?" },
+    operation(
+      {
+        options: {
+          string: optionSingleValue({
+            long: "string-option",
+            type: typeString,
+            default: () => undefined,
+          }),
+          number: optionRepeatable({
+            long: "number-option",
+            type: typeList(typeNumber),
+          }),
         },
-        async (context, inputs) => {
-          return { at: "sub1", context, inputs };
-        },
-      ),
+        positionals: [positionalRequired({ type: typeNumber })],
+      },
+      async (context, inputs) => {
+        return { at: "mid", context, inputs };
+      },
     ),
-    sub2: command(
-      { description: "Subcommand 2 description" },
-      operation(
-        {
-          options: {},
-          positionals: [
-            positionalRequired({ type: typeNumber }),
-            positionalOptional({ type: typeString, default: () => "42" }),
-            positionalVariadics({ type: typeString }),
-          ],
-        },
-        async (context, inputs) => {
-          return { at: "sub2", context, inputs };
-        },
+    {
+      sub1: command(
+        { description: "?" },
+        operation(
+          {
+            options: {},
+            positionals: [positionalRequired({ type: typeString })],
+          },
+          async (context, inputs) => {
+            return { at: "sub1", context, inputs };
+          },
+        ),
       ),
-    ),
-  },
+      sub2: command(
+        { description: "?" },
+        operation(
+          {
+            options: {},
+            positionals: [
+              positionalRequired({ type: typeNumber }),
+              positionalOptional({ type: typeString, default: () => "42" }),
+              positionalVariadics({ type: typeString }),
+            ],
+          },
+          async (context, inputs) => {
+            return { at: "sub2", context, inputs };
+          },
+        ),
+      ),
+    },
+  ),
 );
 
 it("run", async () => {
@@ -83,23 +89,26 @@ it("run", async () => {
     rootCommand,
   );
   expect(res1).toStrictEqual({
+    at: "sub1",
     context: {
-      context: "Run Context Input",
-      inputs: {
-        options: {
-          booleanFlag: false,
-          stringOption: undefined,
-          numberOption: [],
+      at: "mid",
+      context: {
+        at: "root",
+        context: "Run Context Input",
+        inputs: {
+          options: { flag: false },
+          positionals: [50],
         },
-        positionals: [50, 51],
       },
-      at: "root",
+      inputs: {
+        options: { string: undefined, number: [] },
+        positionals: [51],
+      },
     },
     inputs: {
       options: {},
       positionals: ["final"],
     },
-    at: "sub1",
   });
 
   const res2 = await executeInterpreted(
@@ -121,23 +130,26 @@ it("run", async () => {
     rootCommand,
   );
   expect(res2).toStrictEqual({
+    at: "sub2",
     context: {
-      context: "Run Context Input",
-      inputs: {
-        options: {
-          booleanFlag: true,
-          stringOption: "hello",
-          numberOption: [[123.1, 123.2], [123.3]],
+      at: "mid",
+      context: {
+        at: "root",
+        context: "Run Context Input",
+        inputs: {
+          options: { flag: true },
+          positionals: [40],
         },
-        positionals: [40, 41],
       },
-      at: "root",
+      inputs: {
+        options: { string: "hello", number: [[123.1, 123.2], [123.3]] },
+        positionals: [41],
+      },
     },
     inputs: {
       options: {},
       positionals: [88.88, "a,b", ["final"]],
     },
-    at: "sub2",
   });
 });
 

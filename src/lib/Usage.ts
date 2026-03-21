@@ -32,6 +32,10 @@ import {
  * Options:
  *   -s, --long <LABEL>  <description> (<hint>)
  *
+ * Examples:
+ *   <description>
+ *   <command line>
+ *
  * ```
  * Sections that have no entries are omitted. The trailing empty line is always included.
  *
@@ -88,7 +92,6 @@ export function usageToStyledLines(params: {
     introText.pushString(textSubtleInfo(`(${commandUsage.information.hint})`));
   }
   lines.push(introText.computeStyledString(typoSupport));
-
   for (const detail of commandUsage.information.details ?? []) {
     const detailText = new TypoText();
     detailText.pushString(textSubtleInfo(detail));
@@ -166,6 +169,44 @@ export function usageToStyledLines(params: {
     lines.push(
       ...typoGrid.computeStyledGrid(typoSupport).map((row) => row.join("")),
     );
+  }
+
+  if (commandUsage.information.examples) {
+    lines.push("");
+    lines.push(textBlockTitle("Examples:").computeStyledString(typoSupport));
+    for (const example of commandUsage.information.examples) {
+      const exampleExplanationText = new TypoText();
+      exampleExplanationText.pushString(textDelimiter(" "));
+      exampleExplanationText.pushString(
+        textSubtleInfo(`# ${example.explanation}`),
+      );
+      lines.push(exampleExplanationText.computeStyledString(typoSupport));
+      const commandLineText = new TypoText();
+      commandLineText.pushString(textDelimiter(" "));
+      commandLineText.pushString(textConstants(cliName));
+      for (const commandArg of example.commandArgs) {
+        commandLineText.pushString(textDelimiter(" "));
+        if (typeof commandArg === "string") {
+          commandLineText.pushString(commandArg);
+        } else if ("positional" in commandArg) {
+          commandLineText.pushString(textUserInput(commandArg.positional));
+        } else if ("subcommand" in commandArg) {
+          commandLineText.pushString(textConstants(commandArg.subcommand));
+        } else if ("option" in commandArg) {
+          const option = commandArg.option;
+          if ("short" in option) {
+            commandLineText.pushString(textConstants(`-${option.short}`));
+          } else {
+            commandLineText.pushString(textConstants(`--${option.long}`));
+          }
+          if (option.value !== undefined) {
+            commandLineText.pushString(textSubtleInfo("="));
+            commandLineText.pushString(textUserInput(option.value));
+          }
+        }
+      }
+      lines.push(commandLineText.computeStyledString(typoSupport));
+    }
   }
 
   lines.push("");

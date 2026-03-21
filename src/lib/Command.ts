@@ -80,7 +80,28 @@ export type CommandInformation = {
    * Extra lines printed below the description.
    */
   details?: Array<string>;
-  // TODO - printable examples ?
+  /**
+   * Examples shown in the `Examples:` section of the usage output.
+   */
+  examples?: Array<{
+    /**
+     * Explanation shown above the example.
+     */
+    explanation: string;
+    /**
+     * Command line args to show as an example of usage.
+     */
+    commandArgs: Array<
+      | string
+      | { positional: string }
+      | { subcommand: string }
+      | {
+          option:
+            | { long: string; value?: string }
+            | { short: string; value?: string };
+        }
+    >;
+  }>;
 };
 
 /**

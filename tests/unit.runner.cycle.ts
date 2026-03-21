@@ -16,8 +16,6 @@ import {
   typeUrl,
 } from "../src";
 
-// TODO - unit test for chained commands
-
 it("run", async () => {
   const rootUsage = [
     "Usage: my-cli <REQUIRED1> <SUBCOMMAND>",

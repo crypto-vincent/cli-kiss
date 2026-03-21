@@ -171,17 +171,25 @@ export class TypoText {
    *
    * @param typoString - Segment to append.
    */
-  pushString(typoString: TypoString) {
-    this.#typoStrings.push(typoString);
+  pushString(typoString: TypoString | string) {
+    if (typeof typoString === "string") {
+      this.#typoStrings.push(new TypoString(typoString));
+    } else {
+      this.#typoStrings.push(typoString);
+    }
   }
   /**
    * Appends all segments from another {@link TypoText} (shallow copy).
    *
    * @param typoText - Source text.
    */
-  pushText(typoText: TypoText) {
-    for (const typoString of typoText.#typoStrings) {
-      this.#typoStrings.push(typoString);
+  pushText(typoText: TypoText | string) {
+    if (typeof typoText === "string") {
+      this.pushString(typoText);
+    } else {
+      for (const typoString of typoText.#typoStrings) {
+        this.#typoStrings.push(typoString);
+      }
     }
   }
   /**
