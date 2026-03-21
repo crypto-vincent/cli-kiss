@@ -78,7 +78,7 @@ const args = positionalVariadics({
   endDelimiter: "STOP",
   description: "Arguments (end with STOP)",
 });
-// my-cli foo bar STOP ignored   →  ["foo", "bar"]
+// my-cli foo bar STOP   →  ["foo", "bar"]
 ```
 
 | Parameter      | Type                 | Description                          |
