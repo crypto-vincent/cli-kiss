@@ -14,12 +14,7 @@ export default defineConfig({
     ],
   ],
   themeConfig: {
-    search: {
-      provider: "local",
-      options: {
-        detailedView: true,
-      },
-    },
+    search: { provider: "local", options: { detailedView: true } },
     nav: [
       { text: "Guide", link: "/guide/01_getting_started" },
       { text: "npm", link: "https://www.npmjs.com/package/cli-kiss" },

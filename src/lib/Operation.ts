@@ -126,9 +126,7 @@ export function operation<
       const optionsUsage = new Array<OptionUsage>();
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
-        if (optionInput) {
-          optionsUsage.push(optionInput.generateUsage());
-        }
+        optionsUsage.push(optionInput.generateUsage());
       }
       const positionalsUsage = new Array<PositionalUsage>();
       for (const positionalInput of inputs.positionals) {

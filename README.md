@@ -10,4 +10,4 @@ npm install cli-kiss
 
 ## Cookbook
 
-Documentation and examples: **https://crypto-vincent.github.io/cli-kiss/** 💋
+Documentation and examples: **<https://crypto-vincent.github.io/cli-kiss/>** 💋

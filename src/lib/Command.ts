@@ -198,7 +198,7 @@ export function command<Context, Result>(
           );
         }
         return {
-          generateUsage: () => generateUsageShallow(information, operation),
+          generateUsage: () => generateUsageLeaf(information, operation),
           decodeAndMakeInterpreter() {
             const operationInterpreter =
               operationDecoder.decodeAndMakeInterpreter();
@@ -211,7 +211,7 @@ export function command<Context, Result>(
         };
       } catch (error) {
         return {
-          generateUsage: () => generateUsageShallow(information, operation),
+          generateUsage: () => generateUsageLeaf(information, operation),
           decodeAndMakeInterpreter() {
             throw error;
           },
@@ -283,7 +283,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         return {
           generateUsage() {
             const subcommandUsage = subcommandDecoder.generateUsage();
-            const currentUsage = generateUsageShallow(information, operation);
+            const currentUsage = generateUsageLeaf(information, operation);
             currentUsage.segments.push(segmentCommand(subcommandName));
             currentUsage.segments.push(...subcommandUsage.segments);
             currentUsage.information = subcommandUsage.information;
@@ -309,7 +309,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
       } catch (error) {
         return {
           generateUsage() {
-            const currentUsage = generateUsageShallow(information, operation);
+            const currentUsage = generateUsageLeaf(information, operation);
             currentUsage.segments.push(segmentPositional("<SUBCOMMAND>"));
             for (const [name, subcommand] of Object.entries(subcommands)) {
               const { description, hint } = subcommand.getInformation();
@@ -367,7 +367,7 @@ export function commandChained<Context, Payload, Result>(
         return {
           generateUsage() {
             const subcommandUsage = subcommandDecoder.generateUsage();
-            const currentUsage = generateUsageShallow(information, operation);
+            const currentUsage = generateUsageLeaf(information, operation);
             currentUsage.segments.push(...subcommandUsage.segments);
             currentUsage.information = subcommandUsage.information;
             currentUsage.positionals.push(...subcommandUsage.positionals);
@@ -392,7 +392,7 @@ export function commandChained<Context, Payload, Result>(
       } catch (error) {
         return {
           generateUsage() {
-            const currentUsage = generateUsageShallow(information, operation);
+            const currentUsage = generateUsageLeaf(information, operation);
             currentUsage.segments.push(segmentPositional("[REST]..."));
             return currentUsage;
           },
@@ -413,7 +413,7 @@ function segmentCommand(value: string): CommandUsageSegment {
   return { command: value };
 }
 
-function generateUsageShallow(
+function generateUsageLeaf(
   information: CommandInformation,
   operation: Operation<any, any>,
 ): CommandUsage {
