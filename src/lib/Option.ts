@@ -8,6 +8,7 @@ import {
   typoStyleUserInput,
   TypoText,
 } from "./Typo";
+import { UsageOption } from "./Usage";
 
 /**
  * A CLI option. Created with {@link optionFlag}, {@link optionSingleValue},
@@ -19,7 +20,7 @@ export type Option<Value> = {
   /**
    * Returns metadata for the `Options:` section.
    */
-  generateUsage(): OptionUsage;
+  generateUsage(): UsageOption;
   /**
    * Registers the option on `readerOptions` and returns an {@link OptionDecoder}.
    */
@@ -38,36 +39,6 @@ export type OptionDecoder<Value> = {
    * @throws {@link TypoError} if decoding failed.
    */
   getAndDecodeValue(): Value;
-};
-
-/**
- * Option metadata for the `Options:` section of help.
- */
-export type OptionUsage = {
-  /**
-   * Short-form name without `-` (e.g. `"v"`).
-   */
-  short: string | undefined;
-  /**
-   * Long-form name without `--` (e.g. `"verbose"`).
-   */
-  long: Lowercase<string>;
-  /**
-   * Extra annotation appended to the option label in help (e.g. `[=no]`, ` [*]`).
-   */
-  annotation: string | undefined;
-  /**
-   * Help text.
-   */
-  description: string | undefined;
-  /**
-   * Short note shown in parentheses.
-   */
-  hint: string | undefined;
-  /**
-   * Value placeholder in help (e.g. `"<FILE>"`). `undefined` for flags.
-   */
-  label: Uppercase<string> | undefined;
 };
 
 /**

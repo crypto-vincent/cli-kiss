@@ -1,6 +1,7 @@
-import { Option, OptionDecoder, OptionUsage } from "./Option";
-import { Positional, PositionalDecoder, PositionalUsage } from "./Positional";
+import { Option, OptionDecoder } from "./Option";
+import { Positional, PositionalDecoder } from "./Positional";
 import { ReaderArgs } from "./Reader";
+import { UsageOperation, UsageOption, UsagePositional } from "./Usage";
 
 /**
  * Options, positionals, and an async handler that together form the logic of a CLI command.
@@ -15,7 +16,7 @@ export type Operation<Context, Result> = {
   /**
    * Returns usage metadata without consuming any arguments.
    */
-  generateUsage(): OperationUsage;
+  generateUsage(): UsageOperation;
   /**
    * Consumes args from `readerArgs` and returns an {@link OperationDecoder}.
    */
@@ -50,20 +51,6 @@ export type OperationInterpreter<Context, Result> = {
    * Executes with the provided context.
    */
   executeWithContext(context: Context): Promise<Result>;
-};
-
-/**
- * Usage metadata. Produced by {@link Operation.generateUsage}, consumed when building {@link CommandUsage}.
- */
-export type OperationUsage = {
-  /**
-   * Registered options.
-   */
-  options: Array<OptionUsage>;
-  /**
-   * Declared positionals, in order.
-   */
-  positionals: Array<PositionalUsage>;
 };
 
 /**
@@ -120,12 +107,12 @@ export function operation<
 ): Operation<Context, Result> {
   return {
     generateUsage() {
-      const optionsUsage = new Array<OptionUsage>();
+      const optionsUsage = new Array<UsageOption>();
       for (const optionKey in inputs.options) {
         const optionInput = inputs.options[optionKey]!;
         optionsUsage.push(optionInput.generateUsage());
       }
-      const positionalsUsage = new Array<PositionalUsage>();
+      const positionalsUsage = new Array<UsagePositional>();
       for (const positionalInput of inputs.positionals) {
         positionalsUsage.push(positionalInput.generateUsage());
       }

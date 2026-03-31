@@ -338,7 +338,7 @@ async function getUsage<Context, Result>(
     */
   return usageToStyledLines({
     cliName: "my-cli",
-    commandUsage: commandDecoder.generateUsage(),
+    usage: commandDecoder.generateUsage(),
     typoSupport: TypoSupport.mock(),
   });
 }

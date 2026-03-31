@@ -152,7 +152,7 @@ function computeUsageString<Context, Result>(
 ) {
   return usageToStyledLines({
     cliName,
-    commandUsage: commandDecoder.generateUsage(),
+    usage: commandDecoder.generateUsage(),
     typoSupport,
   }).join("\n");
 }

@@ -7,6 +7,7 @@ import {
   typoStyleUserInput,
   TypoText,
 } from "./Typo";
+import { UsagePositional } from "./Usage";
 
 /**
  * A positional argument. Created with {@link positionalRequired}, {@link positionalOptional},
@@ -18,7 +19,7 @@ export type Positional<Value> = {
   /**
    * Returns metadata for the `Positionals:` section.
    */
-  generateUsage(): PositionalUsage;
+  generateUsage(): UsagePositional;
   /**
    * Consumes the next positional token from `readerPositionals`.
    * Returns a decoder that produces the final value.
@@ -40,25 +41,6 @@ export type PositionalDecoder<Value> = {
    * @throws {@link TypoError} if decoding failed.
    */
   decodeValue(): Value;
-};
-
-/**
- * Positional metadata for the `Positionals:` section of help.
- */
-export type PositionalUsage = {
-  /**
-   * Help text.
-   */
-  description: string | undefined;
-  /**
-   * Short note shown in parentheses.
-   */
-  hint: string | undefined;
-  /**
-   * Placeholder label shown in the usage line and the `Positionals:` section.
-   * Required: `<NAME>`, optional: `[NAME]`, variadic: `[NAME]...`.
-   */
-  label: Uppercase<string>;
 };
 
 /**

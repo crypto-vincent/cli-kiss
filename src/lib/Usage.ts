@@ -1,4 +1,4 @@
-import { CommandUsage } from "./Command";
+import { CommandInformation } from "./Command";
 import {
   TypoGrid,
   TypoString,
@@ -13,7 +13,120 @@ import {
 } from "./Typo";
 
 /**
- * Converts a {@link CommandUsage} model into an array of styled lines ready to be
+ * Usage model. Produced by {@link CommandDecoder.generateUsage}, consumed by {@link usageToStyledLines}.
+ */
+export type UsageCommand = {
+  /**
+   * Segments of the usage line
+   * (e.g. `my-cli <POSITIONAL> subcommand <ANOTHER_POSITIONAL>`).
+   */
+  segments: Array<UsageSegment>;
+  /**
+   * Command metadata.
+   */
+  information: CommandInformation;
+  /**
+   * Positionals in declaration order.
+   */
+  positionals: Array<UsagePositional>;
+  /**
+   * Subcommands, populated when none was selected.
+   */
+  subcommands: Array<UsageSubcommand>;
+  /**
+   * Options in registration order.
+   */
+  options: Array<UsageOption>;
+};
+
+/**
+ * One segment of the usage line.
+ */
+export type UsageSegment = { positional: string } | { subcommand: string };
+
+/**
+ * Usage metadata. Produced by {@link Operation.generateUsage}, consumed when building {@link UsageCommand}.
+ */
+export type UsageOperation = {
+  /**
+   * Registered options.
+   */
+  options: Array<UsageOption>;
+  /**
+   * Declared positionals, in order.
+   */
+  positionals: Array<UsagePositional>;
+};
+
+/**
+ * Positional metadata for the `Positionals:` section of help.
+ */
+export type UsagePositional = {
+  /**
+   * Help text.
+   */
+  description: string | undefined;
+  /**
+   * Short note shown in parentheses.
+   */
+  hint: string | undefined;
+  /**
+   * Placeholder label shown in the usage line and the `Positionals:` section.
+   * Required: `<NAME>`, optional: `[NAME]`, variadic: `[NAME]...`.
+   */
+  label: Uppercase<string>;
+};
+
+/**
+ * Entry in the `Subcommands:` section.
+ */
+export type UsageSubcommand = {
+  /**
+   * Token the user types (e.g. `"deploy"`).
+   */
+  name: string;
+  /**
+   * From {@link CommandInformation.description}.
+   */
+  description: string | undefined;
+  /**
+   * From {@link CommandInformation.hint}.
+   */
+  hint: string | undefined;
+};
+
+/**
+ * Option metadata for the `Options:` section of help.
+ */
+export type UsageOption = {
+  /**
+   * Short-form name without `-` (e.g. `"v"`).
+   */
+  short: string | undefined;
+  /**
+   * Long-form name without `--` (e.g. `"verbose"`).
+   */
+  long: Lowercase<string>;
+  /**
+   * Extra annotation appended to the option label in help (e.g. `[=no]`, ` [*]`).
+   */
+  annotation: string | undefined;
+  /**
+   * Help text.
+   */
+  description: string | undefined;
+  /**
+   * Short note shown in parentheses.
+   */
+  hint: string | undefined;
+  /**
+   * Value placeholder in help (e.g. `"<FILE>"`). `undefined` for flags.
+   */
+  label: Uppercase<string> | undefined;
+};
+
+/**
+ * Converts a {@link UsageCommand} model into an array of styled lines ready to be
  * joined with `"\n"` and printed to the terminal.
  *
  * The output format is:
@@ -42,7 +155,7 @@ import {
  * Column alignment per section via {@link TypoGrid}.
  *
  * @param params.cliName - Program name for the usage line.
- * @param params.commandUsage - From {@link CommandDecoder.generateUsage}.
+ * @param params.usage - From {@link CommandDecoder.generateUsage}.
  * @param params.typoSupport - Rendering mode.
  * @returns Styled lines; includes a trailing empty string.
  *
@@ -50,7 +163,7 @@ import {
  * ```ts
  * const lines = usageToStyledLines({
  *   cliName: "my-cli",
- *   commandUsage: commandDecoder.generateUsage(),
+ *   usage: commandDecoder.generateUsage(),
  *   typoSupport: TypoSupport.tty(),
  * });
  * process.stdout.write(lines.join("\n"));
@@ -58,10 +171,10 @@ import {
  */
 export function usageToStyledLines(params: {
   cliName: Lowercase<string>;
-  commandUsage: CommandUsage;
+  usage: UsageCommand;
   typoSupport: TypoSupport;
 }) {
-  const { cliName, commandUsage, typoSupport } = params;
+  const { cliName, usage, typoSupport } = params;
 
   const lines = new Array<string>();
 
@@ -69,7 +182,7 @@ export function usageToStyledLines(params: {
   segmentsText.push(textUsageHero("Usage:"));
   segmentsText.push(textDelimiter(" "));
   segmentsText.push(textConstants(cliName));
-  for (const segment of commandUsage.segments) {
+  for (const segment of usage.segments) {
     segmentsText.push(textDelimiter(" "));
     if ("positional" in segment) {
       segmentsText.push(textUserInput(segment.positional));
@@ -82,23 +195,23 @@ export function usageToStyledLines(params: {
 
   lines.push("");
   const introText = new TypoText();
-  introText.push(textUsageText(commandUsage.information.description));
-  if (commandUsage.information.hint) {
+  introText.push(textUsageText(usage.information.description));
+  if (usage.information.hint) {
     introText.push(textDelimiter(" "));
-    introText.push(textSubtleInfo(`(${commandUsage.information.hint})`));
+    introText.push(textSubtleInfo(`(${usage.information.hint})`));
   }
   lines.push(introText.computeStyledString(typoSupport));
-  for (const detail of commandUsage.information.details ?? []) {
+  for (const detail of usage.information.details ?? []) {
     const detailText = new TypoText();
     detailText.push(textSubtleInfo(detail));
     lines.push(detailText.computeStyledString(typoSupport));
   }
 
-  if (commandUsage.positionals.length > 0) {
+  if (usage.positionals.length > 0) {
     lines.push("");
     lines.push(textBlockTitle("Positionals:").computeStyledString(typoSupport));
     const typoGrid = new TypoGrid();
-    for (const positionalUsage of commandUsage.positionals) {
+    for (const positionalUsage of usage.positionals) {
       const typoGridRow = new Array<TypoText>();
       typoGridRow.push(new TypoText(textDelimiter("  ")));
       typoGridRow.push(new TypoText(textUserInput(positionalUsage.label)));
@@ -108,11 +221,11 @@ export function usageToStyledLines(params: {
     lines.push(...typoGrid.computeStyledLines(typoSupport));
   }
 
-  if (commandUsage.subcommands.length > 0) {
+  if (usage.subcommands.length > 0) {
     lines.push("");
     lines.push(textBlockTitle("Subcommands:").computeStyledString(typoSupport));
     const typoGrid = new TypoGrid();
-    for (const subcommandUsage of commandUsage.subcommands) {
+    for (const subcommandUsage of usage.subcommands) {
       const typoGridRow = new Array<TypoText>();
       typoGridRow.push(new TypoText(textDelimiter("  ")));
       typoGridRow.push(new TypoText(textConstants(subcommandUsage.name)));
@@ -122,11 +235,11 @@ export function usageToStyledLines(params: {
     lines.push(...typoGrid.computeStyledLines(typoSupport));
   }
 
-  if (commandUsage.options.length > 0) {
+  if (usage.options.length > 0) {
     lines.push("");
     lines.push(textBlockTitle("Options:").computeStyledString(typoSupport));
     const typoGrid = new TypoGrid();
-    for (const optionUsage of commandUsage.options) {
+    for (const optionUsage of usage.options) {
       const typoGridRow = new Array<TypoText>();
       typoGridRow.push(new TypoText(textDelimiter("  ")));
       if (optionUsage.short) {
@@ -156,10 +269,10 @@ export function usageToStyledLines(params: {
     lines.push(...typoGrid.computeStyledLines(typoSupport));
   }
 
-  if (commandUsage.information.examples) {
+  if (usage.information.examples) {
     lines.push("");
     lines.push(textBlockTitle("Examples:").computeStyledString(typoSupport));
-    for (const example of commandUsage.information.examples) {
+    for (const example of usage.information.examples) {
       const exampleExplanationText = new TypoText();
       exampleExplanationText.push(textDelimiter(" "));
       exampleExplanationText.push(textSubtleInfo(`# ${example.explanation}`));

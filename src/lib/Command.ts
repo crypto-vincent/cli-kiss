@@ -1,6 +1,4 @@
 import { Operation } from "./Operation";
-import { OptionUsage } from "./Option";
-import { PositionalUsage } from "./Positional";
 import { ReaderArgs } from "./Reader";
 import {
   TypoError,
@@ -9,6 +7,7 @@ import {
   typoStyleUserInput,
   TypoText,
 } from "./Typo";
+import { UsageCommand, UsageSegment } from "./Usage";
 
 /**
  * A CLI command. Created with {@link command}, {@link commandWithSubcommands}, or {@link commandChained}.
@@ -37,9 +36,9 @@ export type Command<Context, Result> = {
  */
 export type CommandDecoder<Context, Result> = {
   /**
-   * Returns {@link CommandUsage} for the current command path.
+   * Returns {@link UsageCommand} for the current command path.
    */
-  generateUsage(): CommandUsage;
+  generateUsage(): UsageCommand;
   /**
    * Creates a ready-to-execute {@link CommandInterpreter}.
    *
@@ -99,59 +98,6 @@ export type CommandInformation = {
         }
     >;
   }>;
-};
-
-/**
- * Usage model. Produced by {@link CommandDecoder.generateUsage},
- * consumed by {@link usageToStyledLines}.
- */
-export type CommandUsage = {
-  /**
-   * Segments of the usage line
-   * (e.g. `my-cli <POSITIONAL> subcommand <ANOTHER_POSITIONAL>`).
-   */
-  segments: Array<CommandUsageSegment>;
-  /**
-   * Command metadata.
-   */
-  information: CommandInformation;
-  /**
-   * Positionals in declaration order.
-   */
-  positionals: Array<PositionalUsage>;
-  /**
-   * Subcommands, populated when none was selected.
-   */
-  subcommands: Array<CommandUsageSubcommand>;
-  /**
-   * Options in registration order.
-   */
-  options: Array<OptionUsage>;
-};
-
-/**
- * One segment of the usage line.
- */
-export type CommandUsageSegment =
-  | { positional: string }
-  | { subcommand: string };
-
-/**
- * Entry in the `Subcommands:` section.
- */
-export type CommandUsageSubcommand = {
-  /**
-   * Token the user types (e.g. `"deploy"`).
-   */
-  name: string;
-  /**
-   * From {@link CommandInformation.description}.
-   */
-  description: string | undefined;
-  /**
-   * From {@link CommandInformation.hint}.
-   */
-  hint: string | undefined;
 };
 
 /**
@@ -402,18 +348,18 @@ export function commandChained<Context, Payload, Result>(
   };
 }
 
-function segmentPositional(value: string): CommandUsageSegment {
+function segmentPositional(value: string): UsageSegment {
   return { positional: value };
 }
 
-function segmentSubcommand(value: string): CommandUsageSegment {
+function segmentSubcommand(value: string): UsageSegment {
   return { subcommand: value };
 }
 
 function generateUsageLeaf(
   information: CommandInformation,
   operation: Operation<any, any>,
-): CommandUsage {
+): UsageCommand {
   const { positionals, options } = operation.generateUsage();
   return {
     segments: positionals.map((positional) =>
