@@ -11,11 +11,11 @@ import { usageToStyledLines } from "./Usage";
  *  - `0` on success / `--help` / `--version`
  *  - `1` on parse error or execution error.
  *
- * @typeParam Context - Passed unchanged to the command handler; use to inject dependencies.
+ * @typeParam Context - Forwarded unchanged to the handler.
  *
  * @param cliName - Program name used in usage and `--version` output.
  * @param cliArgs - Raw arguments, typically `process.argv.slice(2)`.
- * @param context - Forwarded to the command handler, injected dependencies.
+ * @param context - Forwarded to the handler.
  * @param command - Root {@link Command}.
  * @param options.useTtyColors - Color mode: `true` (always), `false` (never),
  *   `"mock"` (snapshot-friendly), `undefined` (auto-detect from env).

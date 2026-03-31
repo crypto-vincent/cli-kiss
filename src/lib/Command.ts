@@ -11,20 +11,18 @@ import {
 } from "./Typo";
 
 /**
- * A CLI command — parses arguments and executes within a given context.
- * Created with {@link command}, {@link commandWithSubcommands}, or {@link commandChained}.
- * Usually passed through {@link runAndExit} to run.
+ * A CLI command. Created with {@link command}, {@link commandWithSubcommands}, or {@link commandChained}.
  *
- * @typeParam Context - Injected at execution time; forwarded to handlers. Use to inject dependencies.
- * @typeParam Result - Value produced on execution; typically `void` for leaf commands.
+ * @typeParam Context - Injected at execution; forwarded to handlers.
+ * @typeParam Result - Produced on execution; typically `void`.
  */
 export type Command<Context, Result> = {
   /**
-   * Returns the command's static metadata.
+   * Returns static metadata.
    */
   getInformation(): CommandInformation;
   /**
-   * Consumes args in a `readerArgs` and returns a {@link CommandDecoder}.
+   * Registers options/positionals on `readerArgs`; returns a {@link CommandDecoder}.
    */
   consumeAndMakeDecoder(
     readerArgs: ReaderArgs,
@@ -39,8 +37,7 @@ export type Command<Context, Result> = {
  */
 export type CommandDecoder<Context, Result> = {
   /**
-   * Builds the {@link CommandUsage} for the current command path.
-   * Used for `--help` and `usageOnError`.
+   * Returns {@link CommandUsage} for the current command path.
    */
   generateUsage(): CommandUsage;
   /**
@@ -54,7 +51,7 @@ export type CommandDecoder<Context, Result> = {
 /**
  * A fully parsed, decoded and ready-to-execute command.
  *
- * @typeParam Context - Caller-supplied context.
+ * @typeParam Context - Context passed to the handler.
  * @typeParam Result - Value produced on success.
  */
 export type CommandInterpreter<Context, Result> = {
@@ -65,15 +62,15 @@ export type CommandInterpreter<Context, Result> = {
 };
 
 /**
- * Static metadata for a command, shown in `--help` output via {@link usageToStyledLines}.
+ * Command metadata shown in `--help` output.
  */
 export type CommandInformation = {
   /**
-   * Short description shown in the usage header.
+   * Shown in the usage header.
    */
   description: string;
   /**
-   * Short note shown in parentheses (e.g. `"deprecated"`, `"experimental"`).
+   * Shown in parentheses, e.g. `"deprecated"`, `"experimental"`.
    */
   hint?: string;
   /**
@@ -81,15 +78,15 @@ export type CommandInformation = {
    */
   details?: Array<string>;
   /**
-   * Examples shown in the `Examples:` section of the usage output.
+   * Shown in the `Examples:` section.
    */
   examples?: Array<{
     /**
-     * Explanation text shown above the example.
+     * Explanation shown above the example.
      */
     explanation: string;
     /**
-     * Command line args to show as an example of usage.
+     * Example command args.
      */
     commandArgs: Array<
       | string
@@ -105,18 +102,17 @@ export type CommandInformation = {
 };
 
 /**
- * Full usage/help model.
- * Produced by {@link CommandDecoder.generateUsage},
- * Consumed by {@link usageToStyledLines}.
+ * Usage model. Produced by {@link CommandDecoder.generateUsage},
+ * consumed by {@link usageToStyledLines}.
  */
 export type CommandUsage = {
   /**
-   * Segments forming the usage line
+   * Segments of the usage line
    * (e.g. `my-cli <POSITIONAL> subcommand <ANOTHER_POSITIONAL>`).
    */
   segments: Array<CommandUsageSegment>;
   /**
-   * Command's static metadata.
+   * Command metadata.
    */
   information: CommandInformation;
   /**
@@ -124,7 +120,7 @@ export type CommandUsage = {
    */
   positionals: Array<PositionalUsage>;
   /**
-   * Available subcommands. Non-empty when subcommand was not specified.
+   * Subcommands, populated when none was selected.
    */
   subcommands: Array<CommandUsageSubcommand>;
   /**
@@ -134,26 +130,26 @@ export type CommandUsage = {
 };
 
 /**
- * One element in the usage segment trail.
+ * One segment of the usage line.
  */
 export type CommandUsageSegment =
   | { positional: string }
   | { subcommand: string };
 
 /**
- * Subcommand entry shown in the `Subcommands:` section of the usage output.
+ * Entry in the `Subcommands:` section.
  */
 export type CommandUsageSubcommand = {
   /**
-   * Literal token the user types (e.g. `"deploy"`).
+   * Token the user types (e.g. `"deploy"`).
    */
   name: string;
   /**
-   * Short description from the subcommand's {@link CommandInformation}.
+   * From {@link CommandInformation.description}.
    */
   description: string | undefined;
   /**
-   * Hint from the subcommand's {@link CommandInformation}.
+   * From {@link CommandInformation.hint}.
    */
   hint: string | undefined;
 };
@@ -164,8 +160,8 @@ export type CommandUsageSubcommand = {
  * @typeParam Context - Context forwarded to the handler.
  * @typeParam Result - Value returned by the handler.
  *
- * @param information - Command metadata (description, hint, details).
- * @param operation - Defines: options, positionals, and the handler.
+ * @param information - Command metadata.
+ * @param operation - Options, positionals, and handler.
  * @returns A {@link Command}.
  *
  * @example
@@ -224,17 +220,16 @@ export function command<Context, Result>(
 }
 
 /**
- * Creates a command that runs an {@link Operation} to produce a `Payload`,
- * then dispatches to a named subcommand based on the next positional token.
+ * Creates a command that runs `operation` first, then dispatches to a named subcommand.
  *
  * @typeParam Context - Context accepted by `operation`.
  * @typeParam Payload - Output of `operation`; becomes the subcommand's context.
  * @typeParam Result - Value produced by the selected subcommand.
  *
- * @param information - Command metadata (description, hint, details).
- * @param operation - Always runs first; its output becomes the subcommand's context.
+ * @param information - Command metadata.
+ * @param operation - Runs first; output becomes the subcommand's context.
  * @param subcommands - Map of subcommand names to their {@link Command}s.
- * @returns A {@link Command} that dispatches to one of the provided subcommands.
+ * @returns A dispatching {@link Command}.
  *
  * @example
  * ```ts
@@ -336,10 +331,10 @@ export function commandWithSubcommands<Context, Payload, Result>(
  * @typeParam Payload - Output of `operation`; becomes `subcommand`'s context.
  * @typeParam Result - Value produced by `subcommand`.
  *
- * @param information - Command metadata (description, hint, details).
- * @param operation - First stage; its output is passed as `subcommand`'s context.
- * @param subcommand - Second stage, executed after `operation`.
- * @returns A {@link Command} transparently composing the two stages.
+ * @param information - Command metadata.
+ * @param operation - Runs first; output becomes `subcommand`'s context.
+ * @param subcommand - Runs after `operation`.
+ * @returns A {@link Command} composing both stages.
  *
  * @example
  * ```ts

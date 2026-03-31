@@ -19,7 +19,7 @@ import {
  */
 export type Positional<Value> = {
   /**
-   * Returns metadata used to render the `Positionals:` section of help.
+   * Returns metadata for the `Positionals:` section.
    */
   generateUsage(): PositionalUsage;
   /**
@@ -46,8 +46,7 @@ export type PositionalDecoder<Value> = {
 };
 
 /**
- * Human-readable metadata for a single positional argument, used to render the
- * `Positionals:` section of the help output produced by {@link usageToStyledLines}.
+ * Positional metadata for the `Positionals:` section of help.
  */
 export type PositionalUsage = {
   /**

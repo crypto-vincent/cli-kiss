@@ -18,11 +18,11 @@ import {
  */
 export type Type<Value> = {
   /**
-   * Human-readable name shown in help and error messages (e.g. `"String"`, `"Number"`).
+   * Human-readable name shown in help and errors (e.g. `"String"`, `"Number"`).
    */
   content: string;
   /**
-   * Converts a raw CLI string into `Value`.
+   * Decodes a raw CLI string into `Value`.
    *
    * @param input - Raw string from the command line.
    * @returns The decoded value.
@@ -32,8 +32,8 @@ export type Type<Value> = {
 };
 
 /**
- * Decodes a string into a `boolean` on a best effort basis (case-insensitive).
- * Used internally by {@link optionFlag} for the `--flag=<value>` syntax.
+ * Decodes a string to `boolean` (case-insensitive).
+ * Used by {@link optionFlag} for `--flag=<value>`.
  *
  * @example
  * ```ts
@@ -67,7 +67,7 @@ const booleanValuesTrue = new Set(["true", "yes", "on", "1", "y", "t"]);
 const booleanValuesFalse = new Set(["false", "no", "off", "0", "n", "f"]);
 
 /**
- * Parses a date/time string via `Date.parse` into a `Date` object.
+ * Parses a date/time string via `Date.parse`.
  * Accepts any format supported by `Date.parse`, including ISO 8601.
  *
  * @example
@@ -98,8 +98,7 @@ export const typeDate: Type<Date> = {
 };
 
 /**
- * Parses a string into a `number` via `Number()`.
- * Accepts integers, floats, and scientific notation; `NaN` throws a {@link TypoError}.
+ * Parses a string to `number` via `Number()`; `NaN` throws {@link TypoError}.
  *
  * @example
  * ```ts
@@ -129,8 +128,8 @@ export const typeNumber: Type<number> = {
 };
 
 /**
- * Parses an integer string into a `bigint` via `BigInt()`.
- * Floats and non-numeric strings throw a {@link TypoError}.
+ * Parses an integer string to `bigint` via `BigInt()`.
+ * Floats and non-numeric strings throw {@link TypoError}.
  *
  * @example
  * ```ts
@@ -156,8 +155,8 @@ export const typeInteger: Type<bigint> = {
 };
 
 /**
- * Parses an absolute URL string into a `URL` object.
- * Relative or malformed URLs throw a {@link TypoError}.
+ * Parses an absolute URL string to a `URL` object.
+ * Relative or malformed URLs throw {@link TypoError}.
  *
  * @example
  * ```ts
@@ -198,7 +197,7 @@ export const typeString: Type<string> = {
 };
 
 /**
- * Creates a {@link Type} by chaining `before`'s decoder with an `after` transformation.
+ * Chains `before`'s decoder with an `after` transformation.
  * `before` errors are prefixed with `"from: <content>"` for traceability.
  *
  * @typeParam Before - Intermediate type from `before.decoder`.
@@ -245,8 +244,8 @@ export function typeMapped<Before, After>(
 }
 
 /**
- * Creates a {@link Type}`<string>` accepting only a fixed set of string values.
- * Out-of-set inputs throw a {@link TypoError} listing up to 5 valid options.
+ * Creates a {@link Type}`<string>` that only accepts a fixed set of values.
+ * Out-of-set inputs throw {@link TypoError} listing up to 5 valid options.
  *
  * @param content - Name shown in help and errors (e.g. `"Environment"`).
  * @param values - Ordered list of accepted values.
@@ -296,7 +295,7 @@ export function typeOneOf<const Value extends string>(
 }
 
 /**
- * Splits a delimited string into a fixed-length typed tuple.
+ * Splits a delimited string into a typed tuple.
  * Each part is decoded by the corresponding element type; wrong count or decode failure throws {@link TypoError}.
  *
  * @typeParam Elements - Tuple of decoded value types (inferred from `elementTypes`).
@@ -348,7 +347,7 @@ export function typeTuple<const Elements extends Array<any>>(
 }
 
 /**
- * Splits a delimited string into a variable-length typed array.
+ * Splits a delimited string into a typed array.
  * Each part is decoded by `elementType`; failed decodes throw {@link TypoError}.
  * Note: splitting an empty string yields one empty element — prefer {@link optionRepeatable} for a zero-default.
  *
