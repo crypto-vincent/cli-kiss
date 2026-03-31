@@ -7,7 +7,7 @@ A `Type<Value>` converts a raw CLI string into a typed value: a `content` label 
 | Export        | TypeScript type | Accepts                                                    |
 | ------------- | --------------- | ---------------------------------------------------------- |
 | `typeString`  | `string`        | Any string                                                 |
-| `typeBoolean` | `boolean`       | `true`, `yes`, `false`, `no` (case-insensitive)            |
+| `typeBoolean` | `boolean`       | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
 | `typeNumber`  | `number`        | Integers, floats, scientific notation                      |
 | `typeInteger` | `bigint`        | Integer strings only                                       |
 | `typeDate`    | `Date`          | Any format accepted by `Date.parse` (ISO 8601 recommended) |

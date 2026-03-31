@@ -7,8 +7,7 @@ import {
 } from "./Typo";
 
 /**
- * Opaque key identifying a registered option within a {@link ReaderArgs} instance.
- * Returned by {@link ReaderArgs.registerOption}; passed to {@link ReaderArgs.getOptionValues}.
+ * Opaque key returned by {@link ReaderArgs.registerOption}.
  */
 export type ReaderOptionKey = (string | { __brand: "ReaderOptionKey" }) & {
   __brand: "ReaderOptionKey";
@@ -35,12 +34,11 @@ export type ReaderOptionValue = {
 };
 
 /**
- * Option registration and query interface, implemented by {@link ReaderArgs}.
- * Exposed separately from {@link ReaderPositionals} so parsers depend only on what they need.
+ * Option registration/query interface. Subset of {@link ReaderArgs}.
  */
 export type ReaderOptions = {
   /**
-   * Registers an option so the parser can recognise it.
+   * Registers an option; all `longs` and `shorts` share the same key.
    *
    * @param definition.longs - Long-form names (without `--`).
    * @param definition.shorts - Short-form names (without `-`).
@@ -53,11 +51,14 @@ export type ReaderOptions = {
     shorts: Array<string>;
     parsing: ReaderOptionParsing;
   }): ReaderOptionKey;
+  /**
+   * Returns all values collected for `key`.
+   */
   getOptionValues(key: ReaderOptionKey): Array<ReaderOptionValue>;
 };
 
 /**
- * Positional token consumption interface, implemented by {@link ReaderArgs}.
+ * Positional consumption interface. Subset of {@link ReaderArgs}.
  */
 export type ReaderPositionals = {
   /**
@@ -100,8 +101,7 @@ export class ReaderArgs {
 
   /**
    * Registers an option; all `longs` and `shorts` share the same key.
-   * Short names support stacking (e.g. `-abc`) and inline values (e.g. `-nvalue`),
-   * but must not be prefixes of one another.
+   * Short names must not be prefixes of one another.
    *
    * @param definition.longs - Long-form names (without `--`).
    * @param definition.shorts - Short-form names (without `-`).
@@ -164,10 +164,10 @@ export class ReaderArgs {
   }
 
   /**
-   * Returns all values collected for the option key.
+   * Returns all values collected for `key`.
    *
    * @param key - Key from {@link ReaderArgs.registerOption}.
-   * @returns String values, one per occurrence.
+   * @returns One entry per occurrence.
    * @throws `Error` if `key` was not registered.
    */
   getOptionValues(key: ReaderOptionKey): Array<ReaderOptionValue> {
@@ -179,8 +179,7 @@ export class ReaderArgs {
   }
 
   /**
-   * Returns the next bare positional token.
-   * Parse intervening options as side-effects.
+   * Returns the next positional token; parses intervening options as a side-effect.
    * All tokens after `--` are treated as positionals.
    *
    * @returns The next positional, or `undefined` when exhausted.

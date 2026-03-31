@@ -39,9 +39,9 @@ const rootCmd = commandWithSubcommands(
   { description: "My deployment CLI" },
   // This operation runs before the subcommand is selected.
   // Its return value becomes the subcommand's context.
-  operation({ options: {}, positionals: [] }, async function (_ctx) ({
-    db: "postgres://localhost/mydb",
-  })),
+  operation({ options: {}, positionals: [] }, async function (_ctx) {
+    return { db: "postgres://localhost/mydb" };
+  }),
   {
     deploy: command(
       { description: "Deploy the latest build" },

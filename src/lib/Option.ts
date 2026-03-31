@@ -10,16 +10,14 @@ import {
 } from "./Typo";
 
 /**
- * A CLI option with its parsing and usage-generation logic.
- *
- * Created with {@link optionFlag}, {@link optionSingleValue}, or
- * {@link optionRepeatable} and passed via the `options` map of {@link operation}.
+ * A CLI option. Created with {@link optionFlag}, {@link optionSingleValue},
+ * or {@link optionRepeatable}.
  *
  * @typeParam Value - Decoded value type.
  */
 export type Option<Value> = {
   /**
-   * Returns metadata used to render the `Options:` section of help.
+   * Returns metadata for the `Options:` section.
    */
   generateUsage(): OptionUsage;
   /**
@@ -43,8 +41,7 @@ export type OptionDecoder<Value> = {
 };
 
 /**
- * Human-readable metadata for a single option, used to render the `Options:` section
- * of the help output produced by {@link usageToStyledLines}.
+ * Option metadata for the `Options:` section of help.
  */
 export type OptionUsage = {
   /**
@@ -56,11 +53,11 @@ export type OptionUsage = {
    */
   long: Lowercase<string>;
   /**
-   * Extra value annotation
+   * Extra annotation appended to the option label in help (e.g. `[=no]`, ` [*]`).
    */
   annotation: string | undefined;
   /**
-   * Help text in usage.
+   * Help text.
    */
   description: string | undefined;
   /**

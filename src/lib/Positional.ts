@@ -9,17 +9,14 @@ import {
 } from "./Typo";
 
 /**
- * A bare (non-option) positional argument with its parsing and usage-generation logic.
- *
- * Created with {@link positionalRequired}, {@link positionalOptional}, or
- * {@link positionalVariadics} and passed via the `positionals` array of
- * {@link operation}, consumed in declaration order.
+ * A positional argument. Created with {@link positionalRequired}, {@link positionalOptional},
+ * or {@link positionalVariadics}.
  *
  * @typeParam Value - Decoded value type.
  */
 export type Positional<Value> = {
   /**
-   * Returns metadata used to render the `Positionals:` section of help.
+   * Returns metadata for the `Positionals:` section.
    */
   generateUsage(): PositionalUsage;
   /**
@@ -46,8 +43,7 @@ export type PositionalDecoder<Value> = {
 };
 
 /**
- * Human-readable metadata for a single positional argument, used to render the
- * `Positionals:` section of the help output produced by {@link usageToStyledLines}.
+ * Positional metadata for the `Positionals:` section of help.
  */
 export type PositionalUsage = {
   /**

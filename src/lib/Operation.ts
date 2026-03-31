@@ -8,8 +8,8 @@ import { ReaderArgs } from "./Reader";
  * Created with {@link operation} and passed to {@link command},
  * {@link commandWithSubcommands}, or {@link commandChained}.
  *
- * @typeParam Context - Injected at execution time; forwarded to handlers. Use to inject dependencies.
- * @typeParam Result - Value produced on execution; typically `void` for leaf commands.
+ * @typeParam Context - Injected at execution; forwarded to handlers.
+ * @typeParam Result - Value produced on execution; typically `void`.
  */
 export type Operation<Context, Result> = {
   /**
@@ -53,16 +53,15 @@ export type OperationInterpreter<Context, Result> = {
 };
 
 /**
- * Usage metadata produced by {@link Operation.generateUsage}.
- * Consumed when building {@link CommandUsage}.
+ * Usage metadata. Produced by {@link Operation.generateUsage}, consumed when building {@link CommandUsage}.
  */
 export type OperationUsage = {
   /**
-   * Usage descriptors for all registered options.
+   * Registered options.
    */
   options: Array<OptionUsage>;
   /**
-   * Usage descriptors for all declared positionals, in order.
+   * Declared positionals, in order.
    */
   positionals: Array<PositionalUsage>;
 };
@@ -70,9 +69,7 @@ export type OperationUsage = {
 /**
  * Creates an {@link Operation} from options, positionals, and an async handler.
  *
- * The `handler` receives the parent `context` and an `inputs` object with
- * `options` (keyed by the same names declared in `inputs.options`) and
- * `positionals` (a tuple in declaration order).
+ * The `handler` receives `context` and `inputs` with decoded `options` and `positionals`.
  *
  * @typeParam Context - Context type accepted by the handler.
  * @typeParam Result - Return type of the handler.
@@ -83,7 +80,7 @@ export type OperationUsage = {
  * @param inputs.options - Map of keys to {@link Option} descriptors.
  * @param inputs.positionals - Ordered array of {@link Positional} descriptors.
  * @param handler - Async function implementing the command logic.
- * @returns An {@link Operation} ready to be composed into a command.
+ * @returns An {@link Operation}.
  *
  * @example
  * ```ts

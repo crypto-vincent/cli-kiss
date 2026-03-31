@@ -39,13 +39,12 @@ import {
  * ```
  * Sections that have no entries are omitted. The trailing empty line is always included.
  *
- * Column alignment within each section is handled by {@link TypoGrid}: the widest entry
- * in each column sets the width for the entire section.
+ * Column alignment per section via {@link TypoGrid}.
  *
  * @param params.cliName - Program name for the usage line.
  * @param params.commandUsage - From {@link CommandDecoder.generateUsage}.
  * @param params.typoSupport - Rendering mode.
- * @returns One string per output line; trailing empty string for the blank line at the end.
+ * @returns Styled lines; includes a trailing empty string.
  *
  * @example
  * ```ts
