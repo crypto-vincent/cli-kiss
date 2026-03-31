@@ -10,10 +10,8 @@ import {
 } from "./Typo";
 
 /**
- * A CLI option with its parsing and usage-generation logic.
- *
- * Created with {@link optionFlag}, {@link optionSingleValue}, or
- * {@link optionRepeatable} and passed via the `options` map of {@link operation}.
+ * A CLI option. Created with {@link optionFlag}, {@link optionSingleValue},
+ * or {@link optionRepeatable}.
  *
  * @typeParam Value - Decoded value type.
  */

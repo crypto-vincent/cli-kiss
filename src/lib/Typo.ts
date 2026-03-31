@@ -115,7 +115,7 @@ export const typoStyleRegularWeaker: TypoStyle = {
 };
 
 /**
- * Immutable styled string segment. Compose into a {@link TypoText}; render with {@link TypoString.computeStyledString}.
+ * Immutable styled string segment. Compose into a {@link TypoText}.
  */
 export class TypoString {
   #value: string;
@@ -145,7 +145,7 @@ export class TypoString {
 }
 
 /**
- * Mutable sequence of {@link TypoString} segments. Render with {@link TypoText.computeStyledString}.
+ * Mutable sequence of {@link TypoString} segments.
  */
 export class TypoText {
   #typoStrings: Array<TypoString>;
@@ -345,7 +345,7 @@ export class TypoSupport {
     return new TypoSupport("tty");
   }
   /**
-   * Returns a `TypoSupport` with deterministic textual styling for snapshot tests.
+   * Deterministic textual styling for snapshot tests.
    * Style flags appear as suffixes: `{text}@color`, `{text}+` (bold), `{text}-` (dim),
    * `{text}*` (italic), `{text}_` (underline), `{text}~` (strikethrough).
    */

@@ -51,6 +51,9 @@ export type ReaderOptions = {
     shorts: Array<string>;
     parsing: ReaderOptionParsing;
   }): ReaderOptionKey;
+  /**
+   * Returns all values collected for `key`.
+   */
   getOptionValues(key: ReaderOptionKey): Array<ReaderOptionValue>;
 };
 

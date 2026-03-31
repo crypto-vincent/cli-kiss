@@ -8,8 +8,8 @@ import { ReaderArgs } from "./Reader";
  * Created with {@link operation} and passed to {@link command},
  * {@link commandWithSubcommands}, or {@link commandChained}.
  *
- * @typeParam Context - Injected at execution time; forwarded to handlers. Use to inject dependencies.
- * @typeParam Result - Value produced on execution; typically `void` for leaf commands.
+ * @typeParam Context - Injected at execution; forwarded to handlers.
+ * @typeParam Result - Value produced on execution; typically `void`.
  */
 export type Operation<Context, Result> = {
   /**

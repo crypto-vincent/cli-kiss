@@ -9,11 +9,8 @@ import {
 } from "./Typo";
 
 /**
- * A bare (non-option) positional argument with its parsing and usage-generation logic.
- *
- * Created with {@link positionalRequired}, {@link positionalOptional}, or
- * {@link positionalVariadics} and passed via the `positionals` array of
- * {@link operation}, consumed in declaration order.
+ * A positional argument. Created with {@link positionalRequired}, {@link positionalOptional},
+ * or {@link positionalVariadics}.
  *
  * @typeParam Value - Decoded value type.
  */
