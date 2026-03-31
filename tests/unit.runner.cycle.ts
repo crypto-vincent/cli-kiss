@@ -16,7 +16,7 @@ import {
   typeUrl,
 } from "../src";
 
-it("run", async () => {
+it("run", async function () {
   const rootUsage = [
     "Usage: my-cli <REQUIRED1> <SUBCOMMAND>",
     "",
@@ -30,7 +30,7 @@ it("run", async () => {
     "",
     "Options:",
     "  --flag[=no]                   Option flag description",
-    "  --repeatable <STRING>         Option repeatable description",
+    "  --repeatable <STRING> [*]     Option repeatable description",
     "  --single-value <NUMBER-ENUM>  Option single value description",
     "",
   ].join("\n");
@@ -47,9 +47,9 @@ it("run", async () => {
     "",
     "Options:",
     "  --flag[=no]                   Option flag description",
-    "  --repeatable <STRING>         Option repeatable description",
+    "  --repeatable <STRING> [*]     Option repeatable description",
     "  --single-value <NUMBER-ENUM>  Option single value description",
-    "  --url <URL>                   Option url description",
+    "  --url <URL> [*]               Option url description",
     "",
   ].join("\n");
 
@@ -372,7 +372,7 @@ async function testCase(
           }),
         ],
       },
-      async () => {
+      async function () {
         console.log("Has executed root command");
       },
     ),
@@ -407,7 +407,7 @@ async function testCase(
               }),
             ],
           },
-          async () => {
+          async function () {
             console.log("Has executed subcommand");
           },
         ),
@@ -435,7 +435,7 @@ function makeMocked<P, R>(returns: Array<R>) {
   const history = new Array<P>();
   return {
     history,
-    call: (p: P) => {
+    call(p: P) {
       history.push(p);
       if (history.length > returns.length) {
         throw new Error(

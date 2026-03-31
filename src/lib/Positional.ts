@@ -71,7 +71,6 @@ export type PositionalUsage = {
  *
  * @typeParam Value - Type produced by the decoder.
  *
- * @param definition - Positional configuration.
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
@@ -128,7 +127,6 @@ export function positionalRequired<Value>(definition: {
  *
  * @typeParam Value - Type produced by the decoder (or the default).
  *
- * @param definition - Positional configuration.
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
@@ -194,7 +192,6 @@ export function positionalOptional<Value>(definition: {
  *
  * @typeParam Value - Type produced by the decoder for each token.
  *
- * @param definition - Positional configuration.
  * @param definition.endDelimiter - Sentinel token that stops collection (consumed, not included).
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
@@ -228,7 +225,7 @@ export function positionalVariadics<Value>(definition: {
         hint: definition.hint,
         label: (`${label}...` +
           (definition.endDelimiter
-            ? `["${definition.endDelimiter}"]`
+            ? ` ["${definition.endDelimiter}"]`
             : "")) as Uppercase<string>,
       };
     },
@@ -246,9 +243,9 @@ export function positionalVariadics<Value>(definition: {
       }
       return {
         decodeValue() {
-          return positionals.map((positional) => {
-            return decodeValue(label, definition.type, positional);
-          });
+          return positionals.map((positional) =>
+            decodeValue(label, definition.type, positional),
+          );
         },
       };
     },

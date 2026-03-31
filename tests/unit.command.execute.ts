@@ -21,10 +21,21 @@ const rootCommand = commandChained(
   { description: "?" },
   operation(
     {
-      options: { flag: optionFlag({ short: "b", long: "boolean-flag" }) },
+      options: {
+        flagPositive: optionFlag({
+          short: "fp",
+          long: "flag-positive",
+          default: true,
+        }),
+        flagNegative: optionFlag({
+          short: "fn",
+          long: "flag-negative",
+          default: false,
+        }),
+      },
       positionals: [positionalRequired({ label: "POS-1", type: typeNumber })],
     },
-    async (context, inputs) => {
+    async function (context, inputs) {
       return { at: "root", context, inputs };
     },
   ),
@@ -45,7 +56,7 @@ const rootCommand = commandChained(
         },
         positionals: [positionalRequired({ type: typeNumber })],
       },
-      async (context, inputs) => {
+      async function (context, inputs) {
         return { at: "mid", context, inputs };
       },
     ),
@@ -57,7 +68,7 @@ const rootCommand = commandChained(
             options: {},
             positionals: [positionalRequired({ type: typeString })],
           },
-          async (context, inputs) => {
+          async function (context, inputs) {
             return { at: "sub1", context, inputs };
           },
         ),
@@ -73,7 +84,7 @@ const rootCommand = commandChained(
               positionalVariadics({ type: typeString }),
             ],
           },
-          async (context, inputs) => {
+          async function (context, inputs) {
             return { at: "sub2", context, inputs };
           },
         ),
@@ -82,13 +93,14 @@ const rootCommand = commandChained(
   ),
 );
 
-it("run", async () => {
-  const res1 = await executeInterpreted(
-    ["50", "51", "sub1", "final"],
-    "Run Context Input",
-    rootCommand,
-  );
-  expect(res1).toStrictEqual({
+it("run", async function () {
+  expect(
+    await executeInterpreted(
+      ["-fn=true", "-fp", "50", "51", "sub1", "final"],
+      "Run Context Input",
+      rootCommand,
+    ),
+  ).toStrictEqual({
     at: "sub1",
     context: {
       at: "mid",
@@ -96,7 +108,7 @@ it("run", async () => {
         at: "root",
         context: "Run Context Input",
         inputs: {
-          options: { flag: false },
+          options: { flagPositive: true, flagNegative: true },
           positionals: [50],
         },
       },
@@ -111,25 +123,13 @@ it("run", async () => {
     },
   });
 
-  const res2 = await executeInterpreted(
-    [
-      "40",
-      "41",
-      "sub2",
-      "--string-option=hello",
-      "--number-option",
-      "123.1,123.2",
-      "--number-option",
-      "123.3",
-      "88.88",
-      "a,b",
-      "final",
-      "--boolean-flag",
-    ],
-    "Run Context Input",
-    rootCommand,
-  );
-  expect(res2).toStrictEqual({
+  expect(
+    await executeInterpreted(
+      ["50", "51", "sub2", "9999.99"],
+      "Run Context Input",
+      rootCommand,
+    ),
+  ).toStrictEqual({
     at: "sub2",
     context: {
       at: "mid",
@@ -137,7 +137,50 @@ it("run", async () => {
         at: "root",
         context: "Run Context Input",
         inputs: {
-          options: { flag: true },
+          options: { flagPositive: true, flagNegative: false },
+          positionals: [50],
+        },
+      },
+      inputs: {
+        options: { string: undefined, number: [] },
+        positionals: [51],
+      },
+    },
+    inputs: {
+      options: {},
+      positionals: [9999.99, "42", []],
+    },
+  });
+
+  expect(
+    await executeInterpreted(
+      [
+        "40",
+        "41",
+        "sub2",
+        "--string-option=hello",
+        "--number-option",
+        "123.1,123.2",
+        "--number-option",
+        "123.3",
+        "88.88",
+        "a,b",
+        "final",
+        "--no-flag-positive",
+        "--no-flag-negative",
+      ],
+      "Run Context Input",
+      rootCommand,
+    ),
+  ).toStrictEqual({
+    at: "sub2",
+    context: {
+      at: "mid",
+      context: {
+        at: "root",
+        context: "Run Context Input",
+        inputs: {
+          options: { flagPositive: false, flagNegative: false },
           positionals: [40],
         },
       },

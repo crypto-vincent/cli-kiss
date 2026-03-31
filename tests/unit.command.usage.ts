@@ -48,7 +48,7 @@ const rootCommand = commandChained<any, any, any>(
         }),
       ],
     },
-    async (context, inputs) => {
+    async function (context, inputs) {
       return { at: "root", context, inputs };
     },
   ),
@@ -92,7 +92,7 @@ const rootCommand = commandChained<any, any, any>(
           }),
         ],
       },
-      async (context, inputs) => {
+      async function (context, inputs) {
         return { at: "root", context, inputs };
       },
     ),
@@ -128,7 +128,7 @@ const rootCommand = commandChained<any, any, any>(
               }),
             ],
           },
-          async (context, inputs) => {
+          async function (context, inputs) {
             return { at: "sub1", context, inputs };
           },
         ),
@@ -185,7 +185,7 @@ const rootCommand = commandChained<any, any, any>(
               }),
             ],
           },
-          async (context, inputs) => {
+          async function (context, inputs) {
             return { at: "sub2", context, inputs };
           },
         ),
@@ -194,7 +194,7 @@ const rootCommand = commandChained<any, any, any>(
   ),
 );
 
-it("run", async () => {
+it("run", async function () {
   const usage1 = await getUsage([], rootCommand);
   const usage2 = await getUsage(["50"], rootCommand);
   const usage3 = await getUsage(["50", "51"], rootCommand);
@@ -208,16 +208,6 @@ it("run", async () => {
     ["40", "41", "sub2", "not-a-number"],
     rootCommand,
   );
-
-  /*
-  console.log(usage1.join("\n"));
-  console.log(usage2.join("\n"));
-  console.log(usage3.join("\n"));
-  console.log(usage4.join("\n"));
-  console.log(usage5.join("\n"));
-  console.log(usage6.join("\n"));
-  console.log(usage7.join("\n"));
-   */
 
   const usageRoot = [
     "{{Usage:}@darkMagenta}+ {{my-cli}@darkCyan}+ {{<POS-1>}@darkBlue}+ {{[REST]...}@darkBlue}+",
@@ -253,9 +243,9 @@ it("run", async () => {
     "  {{sub2}@darkCyan}+  Subcommand 2 description {{(Subcommand 2 hint)}-}*",
     "",
     "{{Options:}@darkGreen}+",
-    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           boolean-flag description",
-    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  string-option description",
-    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  complex-option description",
+    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                               boolean-flag description",
+    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                      string-option description",
+    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+{{ [*]}-}*  complex-option description",
     "",
     "{{Examples:}@darkGreen}+",
     " {{# Example usage of the mid command}-}*",
@@ -275,9 +265,9 @@ it("run", async () => {
     "  {{<POS-STRING>}@darkBlue}+  Required positional string",
     "",
     "{{Options:}@darkGreen}+",
-    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           boolean-flag description",
-    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  string-option description",
-    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  complex-option description",
+    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                               boolean-flag description",
+    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                      string-option description",
+    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+{{ [*]}-}*  complex-option description",
     "",
     "{{Examples:}@darkGreen}+",
     " {{# Example usage of subcommand 1}-}*",
@@ -299,16 +289,26 @@ it("run", async () => {
     "  {{[VARIADIC]...}@darkBlue}+  Variadic positionals strings",
     "",
     "{{Options:}@darkGreen}+",
-    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                           boolean-flag description",
-    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                  string-option description",
-    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+  complex-option description",
-    "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                               Dudu option description {{(Dudu option hint)}-}*",
+    "  {{-b}@darkCyan}+, {{--boolean-flag}@darkCyan}+{{[=no]}-}*                               boolean-flag description",
+    "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<COOL-STUFF>}@darkBlue}+                      string-option description",
+    "      {{--complex-option}@darkCyan}+ {{<NUMBER,STRING[,STRING]...>}@darkBlue}+{{ [*]}-}*  complex-option description",
+    "      {{--dudu}@darkCyan}+ {{<STRING>}@darkBlue}+                                   Dudu option description {{(Dudu option hint)}-}*",
     "",
     "{{Examples:}@darkGreen}+",
     " {{# Example usage of subcommand 2}-}*",
     " {{my-cli}@darkCyan}+ {{40}@darkBlue}+ {{41}@darkBlue}+ {{sub2}@darkCyan}+ {{--dudu}@darkCyan}+{{=}-}*{{hello}@darkBlue}+ {{50}@darkBlue}+",
     "",
   ];
+
+  /*
+  console.log(usage1.join("\n"));
+  console.log(usage2.join("\n"));
+  console.log(usage3.join("\n"));
+  console.log(usage4.join("\n"));
+  console.log(usage5.join("\n"));
+  console.log(usage6.join("\n"));
+  console.log(usage7.join("\n"));
+   */
 
   expect(usage1).toStrictEqual(usageRoot);
   expect(usage2).toStrictEqual(usageMid);

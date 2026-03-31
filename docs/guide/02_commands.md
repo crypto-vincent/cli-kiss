@@ -16,7 +16,7 @@ const greet = command(
       options: {},
       positionals: [positionalRequired({ type: typeString, label: "NAME" })],
     },
-    async (_ctx, { positionals: [name] }) => {
+    async function (_ctx, { positionals: [name] }) {
       console.log(`Hello, ${name}!`);
     },
   ),
@@ -39,19 +39,19 @@ const rootCmd = commandWithSubcommands(
   { description: "My deployment CLI" },
   // This operation runs before the subcommand is selected.
   // Its return value becomes the subcommand's context.
-  operation({ options: {}, positionals: [] }, async (_ctx) => ({
+  operation({ options: {}, positionals: [] }, async function (_ctx) ({
     db: "postgres://localhost/mydb",
   })),
   {
     deploy: command(
       { description: "Deploy the latest build" },
-      operation({ options: {}, positionals: [] }, async (ctx) => {
+      operation({ options: {}, positionals: [] }, async function (ctx) {
         console.log(`Deploying with DB: ${ctx.db}`);
       }),
     ),
     rollback: command(
       { description: "Rollback to the previous release" },
-      operation({ options: {}, positionals: [] }, async (ctx) => {
+      operation({ options: {}, positionals: [] }, async function (ctx) {
         console.log(`Rolling back, DB: ${ctx.db}`);
       }),
     ),
@@ -104,7 +104,7 @@ const authenticatedDeploy = commandChained(
           long: "token",
           type: typeString,
           description: "API token",
-          default: () => {
+          default: function () {
             const t = process.env.API_TOKEN;
             if (!t) throw new Error("API_TOKEN env var is required");
             return t;
@@ -131,29 +131,29 @@ All stages share a single flat usage — users see one combined command.
 
 Every command accepts a metadata object:
 
-| Field         | Type        | Description                                       |
-| ------------- | ----------- | ------------------------------------------------- |
-| `description` | `string`    | Short description shown in help output            |
-| `hint`        | `string?`   | Note shown in parentheses next to the description |
-| `details`     | `string[]?` | Extra lines printed below the description         |
-| `examples`    | `Example[]?`| Usage examples shown in the `Examples:` section  |
+| Field         | Type         | Description                                       |
+| ------------- | ------------ | ------------------------------------------------- |
+| `description` | `string`     | Short description shown in help output            |
+| `hint`        | `string?`    | Note shown in parentheses next to the description |
+| `details`     | `string[]?`  | Extra lines printed below the description         |
+| `examples`    | `Example[]?` | Usage examples shown in the `Examples:` section   |
 
 Each `Example` entry has:
 
-| Field        | Type             | Description                                         |
-| ------------ | ---------------- | --------------------------------------------------- |
-| `explanation`| `string`         | Comment line shown above the example command        |
-| `commandArgs`| `CommandArg[]`   | Ordered list of arguments to render on the command line |
+| Field         | Type           | Description                                             |
+| ------------- | -------------- | ------------------------------------------------------- |
+| `explanation` | `string`       | Comment line shown above the example command            |
+| `commandArgs` | `CommandArg[]` | Ordered list of arguments to render on the command line |
 
 Each `CommandArg` is one of:
 
-| Shape                                        | Renders as              |
-| -------------------------------------------- | ----------------------- |
-| `string`                                     | literal text            |
-| `{ positional: string }`                     | positional value        |
-| `{ subcommand: string }`                     | subcommand name         |
-| `{ option: { long: string; value?: string } }`  | `--long[=value]`     |
-| `{ option: { short: string; value?: string } }` | `-s[=value]`         |
+| Shape                                           | Renders as       |
+| ----------------------------------------------- | ---------------- |
+| `string`                                        | literal text     |
+| `{ positional: string }`                        | positional label |
+| `{ subcommand: string }`                        | subcommand name  |
+| `{ option: { long: string; value?: string } }`  | `--long[=value]` |
+| `{ option: { short: string; value?: string } }` | `-s[=value]`     |
 
 ```ts
 command(
@@ -178,7 +178,8 @@ command(
 );
 ```
 
-The `Examples:` section in `--help` output renders each entry as a comment followed by the reconstructed command line:
+The `Examples:` section in `--help` output renders each entry as a comment
+followed by the reconstructed command line:
 
 ```text
 Examples:

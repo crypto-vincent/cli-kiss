@@ -15,6 +15,26 @@ export type ReaderOptionKey = (string | { __brand: "ReaderOptionKey" }) & {
 };
 
 /**
+ * Parsing behaviour for a registered option, passed to {@link ReaderArgs.registerOption}.
+ */
+export type ReaderOptionParsing = {
+  consumeShortGroup: boolean;
+  consumeNextArg: (
+    inlined: string | null,
+    separated: Array<string>,
+    next: string | undefined,
+  ) => boolean;
+};
+
+/**
+ * Result of parsing an option, including its inlined value and any following separated values.
+ */
+export type ReaderOptionValue = {
+  inlined: string | null;
+  separated: Array<string>;
+};
+
+/**
  * Option registration and query interface, implemented by {@link ReaderArgs}.
  * Exposed separately from {@link ReaderPositionals} so parsers depend only on what they need.
  */
@@ -24,23 +44,16 @@ export type ReaderOptions = {
    *
    * @param definition.longs - Long-form names (without `--`).
    * @param definition.shorts - Short-form names (without `-`).
-   * @param definition.valued - `true` if the option takes a value; `false` for flags.
+   * @param definition.parsing - Parsing behaviour.
    * @returns A {@link ReaderOptionKey} for later retrieval.
    * @throws `Error` if a name is already registered or short names overlap.
    */
   registerOption(definition: {
     longs: Array<string>;
     shorts: Array<string>;
-    valued: boolean;
+    parsing: ReaderOptionParsing;
   }): ReaderOptionKey;
-  /**
-   * Returns all values collected for the option identified by `key`.
-   *
-   * @param key - Key from {@link ReaderOptions.registerOption}.
-   * @returns Raw string values, one per occurrence; empty if never provided.
-   * @throws `Error` if `key` was not registered.
-   */
-  getOptionValues(key: ReaderOptionKey): Array<string>;
+  getOptionValues(key: ReaderOptionKey): Array<ReaderOptionValue>;
 };
 
 /**
@@ -69,10 +82,9 @@ export class ReaderArgs {
   #args: ReadonlyArray<string>;
   #parsedIndex: number;
   #parsedDouble: boolean;
-  #keyByLong: Map<string, ReaderOptionKey>;
-  #keyByShort: Map<string, ReaderOptionKey>;
-  #valuedByKey: Map<ReaderOptionKey, boolean>;
-  #resultByKey: Map<ReaderOptionKey, Array<string>>;
+  #optionContextByLong: Map<string, ReaderOptionContext>;
+  #optionContextByShort: Map<string, ReaderOptionContext>;
+  #optionContextByKey: Map<ReaderOptionKey, ReaderOptionContext>;
 
   /**
    * @param args - Raw CLI tokens (e.g. `process.argv.slice(2)`). Not mutated.
@@ -81,10 +93,9 @@ export class ReaderArgs {
     this.#args = args;
     this.#parsedIndex = 0;
     this.#parsedDouble = false;
-    this.#keyByLong = new Map();
-    this.#keyByShort = new Map();
-    this.#valuedByKey = new Map();
-    this.#resultByKey = new Map();
+    this.#optionContextByLong = new Map();
+    this.#optionContextByShort = new Map();
+    this.#optionContextByKey = new Map();
   }
 
   /**
@@ -94,14 +105,14 @@ export class ReaderArgs {
    *
    * @param definition.longs - Long-form names (without `--`).
    * @param definition.shorts - Short-form names (without `-`).
-   * @param definition.valued - `true` if the option takes a value; `false` for flags.
+   * @param definition.parsing - Parsing behaviour.
    * @returns A {@link ReaderOptionKey} for {@link ReaderArgs.getOptionValues}.
    * @throws `Error` if any name is already registered or short names overlap.
    */
   registerOption(definition: {
     longs: Array<string>;
     shorts: Array<string>;
-    valued: boolean;
+    parsing: ReaderOptionParsing;
   }) {
     const key = [
       ...definition.longs.map((long) => `--${long}`),
@@ -111,7 +122,7 @@ export class ReaderArgs {
       if (!this.#isValidOptionName(long)) {
         throw new Error(`Invalid option name: --${long}`);
       }
-      if (this.#keyByLong.has(long)) {
+      if (this.#optionContextByLong.has(long)) {
         throw new Error(`Option already registered: --${long}`);
       }
     }
@@ -119,18 +130,18 @@ export class ReaderArgs {
       if (!this.#isValidOptionName(short)) {
         throw new Error(`Invalid option name: -${short}`);
       }
-      if (this.#keyByShort.has(short)) {
+      if (this.#optionContextByShort.has(short)) {
         throw new Error(`Option already registered: -${short}`);
       }
       for (let i = 0; i < short.length; i++) {
         const shortSlice = short.slice(0, i);
-        if (this.#keyByShort.has(shortSlice)) {
+        if (this.#optionContextByShort.has(shortSlice)) {
           throw new Error(
             `Option -${short} overlap with shorter option: -${shortSlice}`,
           );
         }
       }
-      for (const shortOther of this.#keyByShort.keys()) {
+      for (const shortOther of this.#optionContextByShort.keys()) {
         if (shortOther.startsWith(short)) {
           throw new Error(
             `Option -${short} overlap with longer option: -${shortOther}`,
@@ -138,14 +149,17 @@ export class ReaderArgs {
         }
       }
     }
+    const optionContext = {
+      parsing: definition.parsing,
+      results: new Array<ReaderOptionValue>(),
+    };
     for (const long of definition.longs) {
-      this.#keyByLong.set(long, key);
+      this.#optionContextByLong.set(long, optionContext);
     }
     for (const short of definition.shorts) {
-      this.#keyByShort.set(short, key);
+      this.#optionContextByShort.set(short, optionContext);
     }
-    this.#valuedByKey.set(key, definition.valued);
-    this.#resultByKey.set(key, new Array<string>());
+    this.#optionContextByKey.set(key, optionContext);
     return key;
   }
 
@@ -156,12 +170,12 @@ export class ReaderArgs {
    * @returns String values, one per occurrence.
    * @throws `Error` if `key` was not registered.
    */
-  getOptionValues(key: ReaderOptionKey): Array<string> {
-    const optionResult = this.#resultByKey.get(key);
-    if (optionResult === undefined) {
+  getOptionValues(key: ReaderOptionKey): Array<ReaderOptionValue> {
+    const optionContext = this.#optionContextByKey.get(key);
+    if (optionContext === undefined) {
       throw new Error(`Unregistered option: ${key}`);
     }
-    return optionResult;
+    return optionContext.results;
   }
 
   /**
@@ -175,19 +189,19 @@ export class ReaderArgs {
   consumePositional(): string | undefined {
     while (true) {
       const arg = this.#consumeArg();
-      if (arg === null) {
+      if (arg === undefined) {
         return undefined;
       }
-      if (this.#processedAsPositional(arg)) {
+      if (!this.#tryConsumeAsOption(arg)) {
         return arg;
       }
     }
   }
 
-  #consumeArg(): string | null {
+  #consumeArg(): string | undefined {
     const arg = this.#args[this.#parsedIndex];
     if (arg === undefined) {
-      return null;
+      return undefined;
     }
     this.#parsedIndex++;
     if (!this.#parsedDouble) {
@@ -199,9 +213,9 @@ export class ReaderArgs {
     return arg;
   }
 
-  #processedAsPositional(arg: string): boolean {
+  #tryConsumeAsOption(arg: string): boolean {
     if (this.#parsedDouble) {
-      return true;
+      return false;
     }
     if (arg.startsWith("--")) {
       const valueIndexStart = arg.indexOf("=");
@@ -213,20 +227,19 @@ export class ReaderArgs {
           arg.slice(valueIndexStart + 1),
         );
       }
-      return false;
+      return true;
     }
     if (arg.startsWith("-")) {
       let shortIndexStart = 1;
       let shortIndexEnd = 2;
       while (shortIndexEnd <= arg.length) {
-        const result = this.#tryConsumeOptionShort(
-          arg.slice(shortIndexStart, shortIndexEnd),
-          arg.slice(shortIndexEnd),
-        );
-        if (result === true) {
-          return false;
-        }
-        if (result === false) {
+        const short = arg.slice(shortIndexStart, shortIndexEnd);
+        const optionContext = this.#optionContextByShort.get(short);
+        if (optionContext !== undefined) {
+          const rest = arg.slice(shortIndexEnd);
+          if (this.#tryConsumeOptionShort(optionContext, short, rest)) {
+            return true;
+          }
           shortIndexStart = shortIndexEnd;
         }
         shortIndexEnd++;
@@ -238,21 +251,14 @@ export class ReaderArgs {
         ),
       );
     }
-    return true;
+    return false;
   }
 
-  #consumeOptionLong(long: string, direct: string | null): void {
+  #consumeOptionLong(long: string, inlined: string | null): void {
     const constant = `--${long}`;
-    const key = this.#keyByLong.get(long);
-    if (key !== undefined) {
-      if (direct !== null) {
-        return this.#acknowledgeOption(key, direct);
-      }
-      const valued = this.#valuedByKey.get(key);
-      if (valued) {
-        return this.#acknowledgeOption(key, this.#consumeOptionValue(constant));
-      }
-      return this.#acknowledgeOption(key, "true");
+    const optionContext = this.#optionContextByLong.get(long);
+    if (optionContext !== undefined) {
+      return this.#consumeOptionValues(optionContext, constant, inlined);
     }
     throw new TypoError(
       new TypoText(
@@ -262,31 +268,49 @@ export class ReaderArgs {
     );
   }
 
-  #tryConsumeOptionShort(short: string, rest: string): boolean | null {
-    const key = this.#keyByShort.get(short);
-    if (key !== undefined) {
-      if (rest.startsWith("=")) {
-        this.#acknowledgeOption(key, rest.slice(1));
-        return true;
-      }
-      const valued = this.#valuedByKey.get(key);
-      if (valued) {
-        if (rest === "") {
-          this.#acknowledgeOption(key, this.#consumeOptionValue(`-${short}`));
-        } else {
-          this.#acknowledgeOption(key, rest);
-        }
-        return true;
-      }
-      this.#acknowledgeOption(key, "true");
-      return rest === "";
+  #tryConsumeOptionShort(
+    optionContext: ReaderOptionContext,
+    short: string,
+    rest: string,
+  ): boolean {
+    const constant = `-${short}`;
+    if (rest.startsWith("=")) {
+      this.#consumeOptionValues(optionContext, constant, rest.slice(1));
+      return true;
     }
-    return null;
+    if (rest.length === 0) {
+      this.#consumeOptionValues(optionContext, constant, null);
+      return true;
+    }
+    if (optionContext.parsing.consumeShortGroup) {
+      this.#consumeOptionValues(optionContext, constant, rest);
+      return true;
+    }
+    this.#consumeOptionValues(optionContext, constant, null);
+    return false;
   }
 
-  #consumeOptionValue(constant: string) {
+  #consumeOptionValues(
+    optionContext: ReaderOptionContext,
+    constant: string,
+    inlined: string | null,
+  ) {
+    const separated = new Array<string>();
+    while (
+      optionContext.parsing.consumeNextArg(
+        inlined,
+        separated,
+        this.#args[this.#parsedIndex],
+      )
+    ) {
+      separated.push(this.#consumeOptionValue(constant));
+    }
+    optionContext.results.push({ inlined, separated });
+  }
+
+  #consumeOptionValue(constant: string): string {
     const arg = this.#consumeArg();
-    if (arg === null) {
+    if (arg === undefined) {
       throw new TypoError(
         new TypoText(
           new TypoString(constant, typoStyleConstants),
@@ -316,11 +340,12 @@ export class ReaderArgs {
     return arg;
   }
 
-  #acknowledgeOption(key: ReaderOptionKey, value: string) {
-    this.getOptionValues(key).push(value);
-  }
-
   #isValidOptionName(name: string): boolean {
     return name.length > 0 && !name.includes("=");
   }
 }
+
+type ReaderOptionContext = {
+  parsing: ReaderOptionParsing;
+  results: Array<ReaderOptionValue>;
+};

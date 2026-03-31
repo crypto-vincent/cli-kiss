@@ -10,7 +10,7 @@ import {
   typeUrl,
 } from "../src";
 
-it("run", async () => {
+it("run", async function () {
   await testCase(
     ["hello"],
     '{{Error:}@darkRed}+ Unexpected argument: {{"hello"}@darkYellow}+',
@@ -22,6 +22,18 @@ it("run", async () => {
   await testCase(
     ["--flag", "--flag"],
     "{{Error:}@darkRed}+ {{--flag}@darkCyan}+: Must not be set multiple times",
+  );
+  await testCase(
+    ["--flag", "--no-flag"],
+    "{{Error:}@darkRed}+ {{--flag}@darkCyan}+: Must not be set in combination with: {{--no-flag}@darkCyan}+",
+  );
+  await testCase(
+    ["--no-flag", "--no-flag"],
+    "{{Error:}@darkRed}+ {{--no-flag}@darkCyan}+: Must not be set multiple times",
+  );
+  await testCase(
+    ["--single-value=a", "--single-value=b"],
+    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Requires a single value, but got multiple",
   );
   await testCase(
     ["--flag=invalid"],
@@ -63,7 +75,7 @@ async function testCase(args: Array<string>, error: string) {
         },
         positionals: [],
       },
-      async () => {},
+      async function () {},
     ),
   );
   console.log = onLogStdOut.call;
@@ -83,7 +95,7 @@ function makeMocked<P, R>(returns: Array<R>) {
   const history = new Array<P>();
   return {
     history,
-    call: (p: P) => {
+    call(p: P) {
       history.push(p);
       if (history.length > returns.length) {
         throw new Error(

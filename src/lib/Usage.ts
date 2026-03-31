@@ -30,7 +30,7 @@ import {
  *   <name>  <description> (<hint>)
  *
  * Options:
- *   -s, --long <LABEL>  <description> (<hint>)
+ *   -s, --long <LABEL><annotation>  <description> (<hint>)
  *
  * Examples:
  *   <description>
@@ -66,35 +66,32 @@ export function usageToStyledLines(params: {
 
   const lines = new Array<string>();
 
-  const segments = [
-    textUsageHero("Usage:").computeStyledString(typoSupport),
-    textConstants(cliName).computeStyledString(typoSupport),
-  ].concat(
-    commandUsage.segments.map((segment) => {
-      if ("positional" in segment) {
-        return textUserInput(segment.positional).computeStyledString(
-          typoSupport,
-        );
-      }
-      if ("command" in segment) {
-        return textConstants(segment.command).computeStyledString(typoSupport);
-      }
-      throw new Error(`Unknown segment: ${JSON.stringify(segment)}`);
-    }),
-  );
-  lines.push(segments.join(" "));
+  const segmentsText = new TypoText();
+  segmentsText.push(textUsageHero("Usage:"));
+  segmentsText.push(textDelimiter(" "));
+  segmentsText.push(textConstants(cliName));
+  for (const segment of commandUsage.segments) {
+    segmentsText.push(textDelimiter(" "));
+    if ("positional" in segment) {
+      segmentsText.push(textUserInput(segment.positional));
+    }
+    if ("subcommand" in segment) {
+      segmentsText.push(textConstants(segment.subcommand));
+    }
+  }
+  lines.push(segmentsText.computeStyledString(typoSupport));
 
   lines.push("");
   const introText = new TypoText();
-  introText.pushString(textUsageText(commandUsage.information.description));
+  introText.push(textUsageText(commandUsage.information.description));
   if (commandUsage.information.hint) {
-    introText.pushString(textDelimiter(" "));
-    introText.pushString(textSubtleInfo(`(${commandUsage.information.hint})`));
+    introText.push(textDelimiter(" "));
+    introText.push(textSubtleInfo(`(${commandUsage.information.hint})`));
   }
   lines.push(introText.computeStyledString(typoSupport));
   for (const detail of commandUsage.information.details ?? []) {
     const detailText = new TypoText();
-    detailText.pushString(textSubtleInfo(detail));
+    detailText.push(textSubtleInfo(detail));
     lines.push(detailText.computeStyledString(typoSupport));
   }
 
@@ -109,9 +106,7 @@ export function usageToStyledLines(params: {
       typoGridRow.push(...createInformationals(positionalUsage));
       typoGrid.pushRow(typoGridRow);
     }
-    lines.push(
-      ...typoGrid.computeStyledGrid(typoSupport).map((row) => row.join("")),
-    );
+    lines.push(...typoGrid.computeStyledLines(typoSupport));
   }
 
   if (commandUsage.subcommands.length > 0) {
@@ -125,9 +120,7 @@ export function usageToStyledLines(params: {
       typoGridRow.push(...createInformationals(subcommandUsage));
       typoGrid.pushRow(typoGridRow);
     }
-    lines.push(
-      ...typoGrid.computeStyledGrid(typoSupport).map((row) => row.join("")),
-    );
+    lines.push(...typoGrid.computeStyledLines(typoSupport));
   }
 
   if (commandUsage.options.length > 0) {
@@ -147,28 +140,21 @@ export function usageToStyledLines(params: {
       } else {
         typoGridRow.push(new TypoText());
       }
+      const longOptionText = new TypoText(
+        textConstants(`--${optionUsage.long}`),
+      );
       if (optionUsage.label) {
-        typoGridRow.push(
-          new TypoText(
-            textConstants(`--${optionUsage.long}`),
-            textDelimiter(" "),
-            textUserInput(optionUsage.label),
-          ),
-        );
-      } else {
-        typoGridRow.push(
-          new TypoText(
-            textConstants(`--${optionUsage.long}`),
-            textSubtleInfo("[=no]"),
-          ),
-        );
+        longOptionText.push(textDelimiter(" "));
+        longOptionText.push(textUserInput(optionUsage.label));
       }
+      if (optionUsage.annotation) {
+        longOptionText.push(textSubtleInfo(optionUsage.annotation));
+      }
+      typoGridRow.push(longOptionText);
       typoGridRow.push(...createInformationals(optionUsage));
       typoGrid.pushRow(typoGridRow);
     }
-    lines.push(
-      ...typoGrid.computeStyledGrid(typoSupport).map((row) => row.join("")),
-    );
+    lines.push(...typoGrid.computeStyledLines(typoSupport));
   }
 
   if (commandUsage.information.examples) {
@@ -176,32 +162,30 @@ export function usageToStyledLines(params: {
     lines.push(textBlockTitle("Examples:").computeStyledString(typoSupport));
     for (const example of commandUsage.information.examples) {
       const exampleExplanationText = new TypoText();
-      exampleExplanationText.pushString(textDelimiter(" "));
-      exampleExplanationText.pushString(
-        textSubtleInfo(`# ${example.explanation}`),
-      );
+      exampleExplanationText.push(textDelimiter(" "));
+      exampleExplanationText.push(textSubtleInfo(`# ${example.explanation}`));
       lines.push(exampleExplanationText.computeStyledString(typoSupport));
       const commandLineText = new TypoText();
-      commandLineText.pushString(textDelimiter(" "));
-      commandLineText.pushString(textConstants(cliName));
+      commandLineText.push(textDelimiter(" "));
+      commandLineText.push(textConstants(cliName));
       for (const commandArg of example.commandArgs) {
-        commandLineText.pushString(textDelimiter(" "));
+        commandLineText.push(textDelimiter(" "));
         if (typeof commandArg === "string") {
-          commandLineText.pushString(commandArg);
+          commandLineText.push(commandArg);
         } else if ("positional" in commandArg) {
-          commandLineText.pushString(textUserInput(commandArg.positional));
+          commandLineText.push(textUserInput(commandArg.positional));
         } else if ("subcommand" in commandArg) {
-          commandLineText.pushString(textConstants(commandArg.subcommand));
+          commandLineText.push(textConstants(commandArg.subcommand));
         } else if ("option" in commandArg) {
           const option = commandArg.option;
           if ("short" in option) {
-            commandLineText.pushString(textConstants(`-${option.short}`));
+            commandLineText.push(textConstants(`-${option.short}`));
           } else {
-            commandLineText.pushString(textConstants(`--${option.long}`));
+            commandLineText.push(textConstants(`--${option.long}`));
           }
           if (option.value !== undefined) {
-            commandLineText.pushString(textSubtleInfo("="));
-            commandLineText.pushString(textUserInput(option.value));
+            commandLineText.push(textSubtleInfo("="));
+            commandLineText.push(textUserInput(option.value));
           }
         }
       }

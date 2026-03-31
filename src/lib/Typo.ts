@@ -130,18 +130,18 @@ export class TypoString {
     this.#typoStyle = typoStyle;
   }
   /**
-   * Returns the unstyled raw text content.
-   */
-  getRawString(): string {
-    return this.#value;
-  }
-  /**
    * Returns the text styled by `typoSupport`.
    *
    * @param typoSupport - Rendering mode.
    */
   computeStyledString(typoSupport: TypoSupport): string {
     return typoSupport.computeStyledString(this.#value, this.#typoStyle);
+  }
+  /**
+   * Returns the unstyled raw text content.
+   */
+  getRawString(): string {
+    return this.#value;
   }
 }
 
@@ -152,44 +152,32 @@ export class TypoString {
 export class TypoText {
   #typoStrings: Array<TypoString>;
   /**
-   * @param typoParts - Initial segments; `TypoText` is flattened, `string` is wrapped unstyled.
+   * @param segments - Initial text segments
    */
-  constructor(...typoParts: Array<TypoText | TypoString | string>) {
+  constructor(
+    ...segments: Array<TypoText | Array<TypoString> | TypoString | string>
+  ) {
     this.#typoStrings = [];
-    for (const typoPart of typoParts) {
-      if (typoPart instanceof TypoText) {
-        this.pushText(typoPart);
-      } else if (typoPart instanceof TypoString) {
-        this.pushString(typoPart);
-      } else if (typeof typoPart === "string") {
-        this.pushString(new TypoString(typoPart));
-      }
+    for (const typoPart of segments) {
+      this.push(typoPart);
     }
   }
   /**
-   * Appends a {@link TypoString} segment.
+   * Appends new text segment(s).
    *
-   * @param typoString - Segment to append.
+   * @param segment - Text segment(s) to append.
    */
-  pushString(typoString: TypoString | string) {
-    if (typeof typoString === "string") {
-      this.#typoStrings.push(new TypoString(typoString));
-    } else {
-      this.#typoStrings.push(typoString);
-    }
-  }
-  /**
-   * Appends all segments from another {@link TypoText} (shallow copy).
-   *
-   * @param typoText - Source text.
-   */
-  pushText(typoText: TypoText | string) {
-    if (typeof typoText === "string") {
-      this.pushString(typoText);
-    } else {
-      for (const typoString of typoText.#typoStrings) {
+  push(segment: TypoText | Array<TypoString> | TypoString | string) {
+    if (typeof segment === "string") {
+      this.#typoStrings.push(new TypoString(segment));
+    } else if (segment instanceof TypoText) {
+      this.#typoStrings.push(...segment.#typoStrings);
+    } else if (Array.isArray(segment)) {
+      for (const typoString of segment) {
         this.#typoStrings.push(typoString);
       }
+    } else {
+      this.#typoStrings.push(segment);
     }
   }
   /**
@@ -246,9 +234,9 @@ export class TypoGrid {
    * @param typoSupport - Rendering mode.
    * @returns 2-D array of styled strings.
    */
-  computeStyledGrid(typoSupport: TypoSupport): Array<Array<string>> {
+  computeStyledLines(typoSupport: TypoSupport): Array<string> {
     const widths = new Array<number>();
-    const printableGrid = new Array<Array<string>>();
+    const styledLines = new Array<string>();
     for (const typoGridRow of this.#typoRows) {
       for (
         let typoGridColumnIndex = 0;
@@ -266,24 +254,23 @@ export class TypoGrid {
       }
     }
     for (const typoGridRow of this.#typoRows) {
-      const printableGridRow = new Array<string>();
+      const styledGridRow = new Array<string>();
       for (
         let typoGridColumnIndex = 0;
         typoGridColumnIndex < typoGridRow.length;
         typoGridColumnIndex++
       ) {
         const typoGridCell = typoGridRow[typoGridColumnIndex]!;
-        const printableGridCell = typoGridCell.computeStyledString(typoSupport);
-        printableGridRow.push(printableGridCell);
+        styledGridRow.push(typoGridCell.computeStyledString(typoSupport));
         if (typoGridColumnIndex < typoGridRow.length - 1) {
           const width = typoGridCell.computeRawLength();
           const padding = " ".repeat(widths[typoGridColumnIndex]! - width);
-          printableGridRow.push(padding);
+          styledGridRow.push(padding);
         }
       }
-      printableGrid.push(printableGridRow);
+      styledLines.push(styledGridRow.join(""));
     }
-    return printableGrid;
+    return styledLines;
   }
 }
 
@@ -300,14 +287,14 @@ export class TypoError extends Error {
    */
   constructor(currentTypoText: TypoText, source?: unknown) {
     const typoText = new TypoText();
-    typoText.pushText(currentTypoText);
+    typoText.push(currentTypoText);
     if (source instanceof TypoError) {
-      typoText.pushString(new TypoString(": "));
-      typoText.pushText(source.#typoText);
+      typoText.push(new TypoString(": "));
+      typoText.push(source.#typoText);
     } else if (source instanceof Error) {
-      typoText.pushString(new TypoString(`: ${source.message}`));
+      typoText.push(new TypoString(`: ${source.message}`));
     } else if (source !== undefined) {
-      typoText.pushString(new TypoString(`: ${String(source)}`));
+      typoText.push(new TypoString(`: ${String(source)}`));
     }
     super(typoText.computeRawString());
     this.#typoText = typoText;

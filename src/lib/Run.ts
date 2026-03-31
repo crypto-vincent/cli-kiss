@@ -17,7 +17,6 @@ import { usageToStyledLines } from "./Usage";
  * @param cliArgs - Raw arguments, typically `process.argv.slice(2)`.
  * @param context - Forwarded to the command handler, injected dependencies.
  * @param command - Root {@link Command}.
- * @param options - Optional runner configuration.
  * @param options.useTtyColors - Color mode: `true` (always), `false` (never),
  *   `"mock"` (snapshot-friendly), `undefined` (auto-detect from env).
  * @param options.usageOnHelp - Enables `--help` flag (default `true`).
@@ -36,7 +35,7 @@ import { usageToStyledLines } from "./Usage";
  *   { description: "Greet someone" },
  *   operation(
  *     { options: {}, positionals: [positionalRequired({ type: typeString, label: "NAME" })] },
- *     async (_ctx, { positionals: [name] }) => {
+ *     async function (_ctx, { positionals: [name] }) {
  *       console.log(`Hello, ${name}!`);
  *     },
  *   ),
@@ -53,7 +52,7 @@ export async function runAndExit<Context>(
   context: Context,
   command: Command<Context, void>,
   options?: {
-    useTtyColors?: boolean | undefined | "mock";
+    useTtyColors?: boolean | undefined | "mock"; // TODO - flag setter option
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
@@ -67,7 +66,10 @@ export async function runAndExit<Context>(
     readerArgs.registerOption({
       shorts: [],
       longs: ["help"],
-      valued: false,
+      parsing: {
+        consumeShortGroup: false,
+        consumeNextArg: () => false,
+      },
     });
   }
   const buildVersion = options?.buildVersion;
@@ -75,7 +77,10 @@ export async function runAndExit<Context>(
     readerArgs.registerOption({
       shorts: [],
       longs: ["version"],
-      valued: false,
+      parsing: {
+        consumeShortGroup: false,
+        consumeNextArg: () => false,
+      },
     });
   }
   /*
@@ -86,6 +91,7 @@ export async function runAndExit<Context>(
     longs: ["completion"],
   });
   */
+  // TODO - handle color flag ?
   const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   while (true) {
     try {
@@ -95,15 +101,8 @@ export async function runAndExit<Context>(
       }
     } catch (_) {}
   }
+  const typoSupport = computeTypoSupport(options?.useTtyColors);
   const onExit = options?.onExit ?? process.exit;
-  const typoSupport =
-    options?.useTtyColors === undefined
-      ? TypoSupport.inferFromProcess()
-      : options.useTtyColors === "mock"
-        ? TypoSupport.mock()
-        : options.useTtyColors
-          ? TypoSupport.tty()
-          : TypoSupport.none();
   if (usageOnHelp) {
     if (readerArgs.getOptionValues("--help" as any).length > 0) {
       console.log(computeUsageString(cliName, commandDecoder, typoSupport));
@@ -156,4 +155,16 @@ function computeUsageString<Context, Result>(
     commandUsage: commandDecoder.generateUsage(),
     typoSupport,
   }).join("\n");
+}
+
+function computeTypoSupport(
+  useTtyColors: boolean | undefined | "mock",
+): TypoSupport {
+  return useTtyColors === undefined
+    ? TypoSupport.inferFromProcess()
+    : useTtyColors === "mock"
+      ? TypoSupport.mock()
+      : useTtyColors
+        ? TypoSupport.tty()
+        : TypoSupport.none();
 }

@@ -96,7 +96,7 @@ export type OperationUsage = {
  *       positionalRequired({ type: typeString, label: "NAME", description: "Name to greet" }),
  *     ],
  *   },
- *   async (_ctx, { options: { loud }, positionals: [name] }) => {
+ *   async function (_ctx, { options: { loud }, positionals: [name] }) {
  *     const message = `Hello, ${name}!`;
  *     console.log(loud ? message.toUpperCase() : message);
  *   },

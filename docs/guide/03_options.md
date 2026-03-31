@@ -1,10 +1,11 @@
 # Options
 
-Named `--` arguments (or `-` for short forms). Declared in the `options` map of [`operation`](/guide/02_commands).
+Named `--` arguments (or `-` for short forms). Declared in the `options` map of
+[`operation`](/guide/02_commands).
 
 ## `optionFlag` — boolean toggle
 
-Present or absent. Also accepts `--flag=yes` / `--flag=no`.
+Present or absent. Also accepts `--flag=true` / `--flag=no` / `--no-flag`.
 
 ```ts
 import { optionFlag } from "cli-kiss";
@@ -20,14 +21,14 @@ const verbose = optionFlag({
 // (absent)        →  false
 ```
 
-| Parameter     | Type                  | Description                                  |
-| ------------- | --------------------- | -------------------------------------------- |
-| `long`        | `Lowercase<string>`   | Long flag name (without `--`)                |
-| `short`       | `string?`             | Short flag name (without `-`)                |
-| `description` | `string?`             | Help text                                    |
-| `hint`        | `string?`             | Short note in parentheses                    |
-| `default`     | `() => boolean`       | Default when absent (default: `() => false`) |
-| `aliases`     | `{ longs?, shorts? }` | Additional names for the flag                |
+| Parameter     | Type                  | Description                          |
+| ------------- | --------------------- | ------------------------------------ |
+| `long`        | `Lowercase<string>`   | Long flag name (without `--`)        |
+| `short`       | `string?`             | Short flag name (without `-`)        |
+| `description` | `string?`             | Help text                            |
+| `hint`        | `string?`             | Short note in parentheses            |
+| `default`     | `boolean? `           | Value when absent (default: `false`) |
+| `aliases`     | `{ longs?, shorts? }` | Additional names for the flag        |
 
 ::: tip A flag specified more than once triggers a parse error. Use
 [`optionRepeatable`](#optionrepeatable-collect-multiple-values) if you need

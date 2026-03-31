@@ -1,7 +1,7 @@
 import { expect, it } from "@jest/globals";
-import { ReaderArgs } from "../src";
+import { ReaderArgs, ReaderOptionParsing } from "../src";
 
-it("run", async () => {
+it("run", async function () {
   const readerArgs = new ReaderArgs([
     "--option=1.1",
     "--option-alias1=1.2",
@@ -10,7 +10,7 @@ it("run", async () => {
     "-pts=1.4",
     "-o",
     "1.5",
-    "--flag-alias",
+    "--flag1-alias",
     "-fa2=woops",
     "-fa2o=1.6",
   ]);
@@ -18,29 +18,45 @@ it("run", async () => {
   const kOption = readerArgs.registerOption({
     longs: ["option", "option-alias1", "option-alias2"],
     shorts: ["pts", "o"],
-    valued: true,
+    parsing: optionValueFixedUniqueParsing,
   });
   const kFlag1 = readerArgs.registerOption({
-    longs: ["flag1", "flag-alias"],
+    longs: ["flag1", "flag1-alias"],
     shorts: [],
-    valued: false,
+    parsing: optionFlagParsing,
   });
   const kFlag2 = readerArgs.registerOption({
     longs: ["flag2"],
     shorts: ["fa2"],
-    valued: false,
+    parsing: optionFlagParsing,
   });
 
   expect(readerArgs.consumePositional()).toStrictEqual(undefined);
 
   expect(readerArgs.getOptionValues(kOption)).toStrictEqual([
-    "1.1",
-    "1.2",
-    "1.3",
-    "1.4",
-    "1.5",
-    "1.6",
+    { inlined: "1.1", separated: [] },
+    { inlined: "1.2", separated: [] },
+    { inlined: null, separated: ["1.3"] },
+    { inlined: "1.4", separated: [] },
+    { inlined: null, separated: ["1.5"] },
+    { inlined: "1.6", separated: [] },
   ]);
-  expect(readerArgs.getOptionValues(kFlag1)).toStrictEqual(["true"]);
-  expect(readerArgs.getOptionValues(kFlag2)).toStrictEqual(["woops", "true"]);
+  expect(readerArgs.getOptionValues(kFlag1)).toStrictEqual([
+    { inlined: null, separated: [] },
+  ]);
+  expect(readerArgs.getOptionValues(kFlag2)).toStrictEqual([
+    { inlined: "woops", separated: [] },
+    { inlined: null, separated: [] },
+  ]);
 });
+
+const optionFlagParsing: ReaderOptionParsing = {
+  consumeShortGroup: false,
+  consumeNextArg: () => false,
+};
+
+const optionValueFixedUniqueParsing: ReaderOptionParsing = {
+  consumeShortGroup: true,
+  consumeNextArg: (inlined, separated) =>
+    inlined === null && separated.length === 0,
+};

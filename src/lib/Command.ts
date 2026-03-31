@@ -85,7 +85,7 @@ export type CommandInformation = {
    */
   examples?: Array<{
     /**
-     * Explanation shown above the example.
+     * Explanation text shown above the example.
      */
     explanation: string;
     /**
@@ -136,7 +136,9 @@ export type CommandUsage = {
 /**
  * One element in the usage segment trail.
  */
-export type CommandUsageSegment = { positional: string } | { command: string };
+export type CommandUsageSegment =
+  | { positional: string }
+  | { subcommand: string };
 
 /**
  * Subcommand entry shown in the `Subcommands:` section of the usage output.
@@ -284,7 +286,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
           generateUsage() {
             const subcommandUsage = subcommandDecoder.generateUsage();
             const currentUsage = generateUsageLeaf(information, operation);
-            currentUsage.segments.push(segmentCommand(subcommandName));
+            currentUsage.segments.push(segmentSubcommand(subcommandName));
             currentUsage.segments.push(...subcommandUsage.segments);
             currentUsage.information = subcommandUsage.information;
             currentUsage.positionals.push(...subcommandUsage.positionals);
@@ -409,8 +411,8 @@ function segmentPositional(value: string): CommandUsageSegment {
   return { positional: value };
 }
 
-function segmentCommand(value: string): CommandUsageSegment {
-  return { command: value };
+function segmentSubcommand(value: string): CommandUsageSegment {
+  return { subcommand: value };
 }
 
 function generateUsageLeaf(

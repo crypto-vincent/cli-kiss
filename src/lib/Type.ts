@@ -32,24 +32,27 @@ export type Type<Value> = {
 };
 
 /**
- * Decodes `"true"` / `"yes"` → `true` and `"false"` / `"no"` → `false` (case-insensitive).
+ * Decodes a string into a `boolean` on a best effort basis (case-insensitive).
  * Used internally by {@link optionFlag} for the `--flag=<value>` syntax.
  *
  * @example
  * ```ts
+ * typeBoolean.decoder("true")  // → true
  * typeBoolean.decoder("yes")   // → true
+ * typeBoolean.decoder("y")     // → true
  * typeBoolean.decoder("false") // → false
- * typeBoolean.decoder("1")     // throws TypoError
+ * typeBoolean.decoder("no")    // → false
+ * typeBoolean.decoder("n")     // → false
  * ```
  */
 export const typeBoolean: Type<boolean> = {
   content: "Boolean",
   decoder(input: string) {
     const lower = input.toLowerCase();
-    if (lower === "true" || lower === "yes") {
+    if (booleanValuesTrue.has(lower)) {
       return true;
     }
-    if (lower === "false" || lower === "no") {
+    if (booleanValuesFalse.has(lower)) {
       return false;
     }
     throw new TypoError(
@@ -60,6 +63,8 @@ export const typeBoolean: Type<boolean> = {
     );
   },
 };
+const booleanValuesTrue = new Set(["true", "yes", "on", "1", "y", "t"]);
+const booleanValuesFalse = new Set(["false", "no", "off", "0", "n", "f"]);
 
 /**
  * Parses a date/time string via `Date.parse` into a `Date` object.
