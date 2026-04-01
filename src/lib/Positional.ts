@@ -2,6 +2,7 @@ import { ReaderPositionals } from "./Reader";
 import { Type } from "./Type";
 import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
 import { UsagePositional } from "./Usage";
+// TODO - One of positionals ? is that even possible ?
 
 /**
  * A positional argument. Created with {@link positionalRequired}, {@link positionalOptional},

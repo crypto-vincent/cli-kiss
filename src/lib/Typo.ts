@@ -28,6 +28,10 @@ export type TypoColor =
  */
 export type TypoStyle = {
   /**
+   * Letter case.
+   */
+  case?: "upper" | "lower" | "title";
+  /**
    * Foreground (text) color.
    */
   fgColor?: TypoColor;
@@ -386,8 +390,15 @@ export class TypoSupport {
    * @returns Styled string.
    */
   computeStyledString(value: string, typoStyle: TypoStyle): string {
+    let styledValue = value;
+    if (typoStyle.case === "upper") {
+      styledValue = styledValue.toUpperCase();
+    }
+    if (typoStyle.case === "lower") {
+      styledValue = styledValue.toLowerCase();
+    }
     if (this.#kind === "none") {
-      return value;
+      return styledValue;
     }
     if (this.#kind === "tty") {
       const fgColorCode = typoStyle.fgColor
@@ -403,12 +414,12 @@ export class TypoSupport {
       const strikethroughCode = typoStyle.strikethrough
         ? ttyCodeStrikethrough
         : "";
-      return `${fgColorCode}${bgColorCode}${boldCode}${dimCode}${italicCode}${underlineCode}${strikethroughCode}${value}${ttyCodeReset}`;
+      return `${fgColorCode}${bgColorCode}${boldCode}${dimCode}${italicCode}${underlineCode}${strikethroughCode}${styledValue}${ttyCodeReset}`;
     }
     if (this.#kind === "mock") {
       const fgColorPart = typoStyle.fgColor
-        ? `{${value}}@${typoStyle.fgColor}`
-        : value;
+        ? `{${styledValue}}@${typoStyle.fgColor}`
+        : styledValue;
       const bgColorPart = typoStyle.bgColor
         ? `{${fgColorPart}}#${typoStyle.bgColor}`
         : fgColorPart;

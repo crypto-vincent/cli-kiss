@@ -294,9 +294,15 @@ export function usageToStyledLines(params: {
           } else {
             commandLineText.push(textConstants(`--${option.long}`));
           }
-          if (option.value !== undefined) {
+          if (option.inlined !== undefined) {
             commandLineText.push(textSubtleInfo("="));
-            commandLineText.push(textUserInput(option.value));
+            commandLineText.push(textUserInput(option.inlined));
+          }
+          if (option.separated !== undefined) {
+            for (const separatedValue of option.separated) {
+              commandLineText.push(textDelimiter(" "));
+              commandLineText.push(textUserInput(separatedValue));
+            }
           }
         }
       }

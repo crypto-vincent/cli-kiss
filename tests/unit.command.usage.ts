@@ -154,7 +154,17 @@ const rootCommand = commandChained<any, any, any>(
                 { positional: "40" },
                 { positional: "41" },
                 { subcommand: "sub2" },
-                { option: { long: "dudu", value: "hello" } },
+                { option: { long: "dudu", inlined: "hello" } },
+                { positional: "50" },
+              ],
+            },
+            {
+              explanation: "Example usage of subcommand 2",
+              commandArgs: [
+                { positional: "40" },
+                { positional: "41" },
+                { subcommand: "sub2" },
+                { option: { long: "dudu", separated: ["hello"] } },
                 { positional: "50" },
               ],
             },
@@ -304,6 +314,8 @@ it("run", async function () {
     "{{Examples:}@darkGreen}+",
     " {{# Example usage of subcommand 2}-}*",
     " {{my-cli}@darkCyan}+ {{40}@darkBlue}+ {{41}@darkBlue}+ {{sub2}@darkCyan}+ {{--dudu}@darkCyan}+{{=}-}*{{hello}@darkBlue}+ {{50}@darkBlue}+",
+    " {{# Example usage of subcommand 2}-}*",
+    " {{my-cli}@darkCyan}+ {{40}@darkBlue}+ {{41}@darkBlue}+ {{sub2}@darkCyan}+ {{--dudu}@darkCyan}+ {{hello}@darkBlue}+ {{50}@darkBlue}+",
     "",
   ];
 
@@ -332,17 +344,6 @@ async function getUsage<Context, Result>(
 ) {
   const readerArgs = new ReaderArgs(args);
   const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
-  /*
-  try {
-    const interpreter = commandDecoder.decodeAndMakeInterpreter();
-    const result = await interpreter.executeWithContext(
-      "" as unknown as Context,
-    );
-    console.log(result);
-  } catch (error) {
-    console.log(TypoSupport.tty().computeStyledErrorMessage(error));
-  }
-    */
   return usageToStyledLines({
     cliName: "my-cli",
     usage: commandDecoder.generateUsage(),

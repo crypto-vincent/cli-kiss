@@ -9,6 +9,7 @@ import {
   TypoText,
 } from "./Typo";
 import { UsageOption } from "./Usage";
+// TODO - one of, or many of combinatorial options.
 
 /**
  * A CLI option. Created with {@link optionFlag}, {@link optionSingleValue},

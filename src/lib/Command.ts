@@ -93,8 +93,8 @@ export type CommandInformation = {
       | { subcommand: string }
       | {
           option:
-            | { long: string; value?: string }
-            | { short: string; value?: string };
+            | { long: string; inlined?: string; separated?: Array<string> }
+            | { short: string; inlined?: string; separated?: Array<string> };
         }
     >;
   }>;
