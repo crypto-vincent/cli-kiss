@@ -1,5 +1,3 @@
-import { typeBoolean } from "./Type";
-
 /**
  * Color names for terminal styling, used by {@link TypoStyle}.
  * `dark*` = standard ANSI (30–37); `bright*` = high-intensity (90–97).
@@ -30,7 +28,7 @@ export type TypoStyle = {
   /**
    * Letter case.
    */
-  case?: "upper" | "lower" | "title";
+  case?: "upper" | "lower";
   /**
    * Foreground (text) color.
    */
@@ -363,27 +361,23 @@ export class TypoSupport {
     if (!process || !process.env) {
       return TypoSupport.none();
     }
-    function readEnvVar(name: string): boolean | undefined {
+    function readEnvVar(name: string) {
       if (!(name in process.env)) {
         return undefined;
       }
-      const value = process.env[name];
-      if (value === undefined) {
-        return undefined;
-      }
-      if (value === "") {
-        return true;
-      }
-      return typeBoolean.decoder(value);
+      return process.env[name];
     }
-    const forceColor = readEnvVar("FORCE_COLOR");
-    if (forceColor !== undefined) {
-      return forceColor ? TypoSupport.tty() : TypoSupport.none();
-    }
-    if (readEnvVar("NO_COLOR")) {
+    const envForceColor = readEnvVar("FORCE_COLOR");
+    if (envForceColor === "0") {
       return TypoSupport.none();
     }
-    if (readEnvVar("MOCK_COLOR")) {
+    if (envForceColor !== undefined) {
+      TypoSupport.tty();
+    }
+    if (readEnvVar("NO_COLOR") !== undefined) {
+      return TypoSupport.none();
+    }
+    if (readEnvVar("MOCK_COLOR") !== undefined) {
       return TypoSupport.mock();
     }
     return TypoSupport.tty();

@@ -7,14 +7,14 @@ Three factory functions cover every use-case.
 No subcommands — directly runs an operation.
 
 ```ts
-import { command, operation, positionalRequired, typeString } from "cli-kiss";
+import { command, operation, positionalRequired, type } from "cli-kiss";
 
 const greet = command(
   { description: "Greet a user" },
   operation(
     {
       options: {},
-      positionals: [positionalRequired({ type: typeString })],
+      positionals: [positionalRequired({ type: type("name") })],
     },
     async function (_ctx, { positionals: [name] }) {
       console.log(`Hello, ${name}!`);
@@ -91,7 +91,7 @@ import {
   commandChained,
   operation,
   optionSingleValue,
-  typeString,
+  type,
 } from "cli-kiss";
 
 const authenticatedDeploy = commandChained(
@@ -102,7 +102,7 @@ const authenticatedDeploy = commandChained(
       options: {
         token: optionSingleValue({
           long: "token",
-          type: typeString,
+          type: type("SECRET"),
           description: "API token",
           default: function () {
             const t = process.env.API_TOKEN;

@@ -7,22 +7,22 @@ A `Type<Value>` converts a raw CLI string into a typed value:
 
 ## Built-in types
 
-| Export        | TypeScript type | Accepts                                                                     |
-| ------------- | --------------- | --------------------------------------------------------------------------- |
-| `typeString`  | `string`        | Any string                                                                  |
-| `typeBoolean` | `boolean`       | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
-| `typeNumber`  | `number`        | Integers, floats, scientific notation                                       |
-| `typeInteger` | `bigint`        | Integer strings only                                                        |
-| `typeDate`    | `Date`          | Any format accepted by `Date.parse` (ISO 8601 recommended)                  |
-| `typeUrl`     | `URL`           | Absolute URLs                                                               |
+| Type factory   | Content type    | Accepts                                                                     |
+| -------------- | --------------- | --------------------------------------------------------------------------- |
+| `type`         | `string`        | Any string                                                                  |
+| `typeBoolean`  | `boolean`       | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
+| `typeNumber`   | `number`        | Integers, floats, scientific notation                                       |
+| `typeInteger`  | `bigint`        | Integer strings only                                                        |
+| `typeDatetime` | `Date`          | Any format accepted by `Date.parse` (ISO 8601 recommended)                  |
+| `typeUrl`      | `URL`           | Absolute URLs                                                               |
 
 ```ts
-typeString.decoder("hello"); // → "hello"
-typeBoolean.decoder("yes"); // → true
-typeNumber.decoder("3.14"); // → 3.14
-typeInteger.decoder("9007199254740993"); // → 9007199254740993n
-typeDate.decoder("2024-01-15"); // → Date object
-typeUrl.decoder("https://example.com/path"); // → URL object
+type("greentings").decoder("hello"); // → "hello"
+typeBoolean("flag").decoder("yes"); // → true
+typeNumber("pi").decoder("3.14"); // → 3.14
+typeInteger("id").decoder("9007199254740993"); // → 9007199254740993n
+typeDate("birthday").decoder("2024-01-15"); // → Date object
+typeUrl("redirect").decoder("https://example.com/path"); // → URL object
 ```
 
 ## `typeOneOf` — string enum
@@ -36,33 +36,12 @@ typeEnv.decoder("unknown");
 // Error: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
 ```
 
-## `typeMapped` — transform an existing type
-
-Chain a `before` type with an `after` transformation:
-
-```ts
-const typePort = typeMapped(typeNumber, {
-  content: "port",
-  decoder(n) {
-    if (n < 1 || n > 65535) {
-      throw new Error("Out of range");
-    }
-    return n;
-  },
-});
-// "--port 8080"   →  8080
-// "--port 99999"  →  Error: --port: <PORT>: Port: Out of range
-```
-
-Errors from the `before` decoder are prefixed with `from: <content>`.
-
 ## `typeTuple` — fixed-length delimited value
 
 Splits a string into a fixed-length typed tuple:
 
 ```ts
-const typePoint = typeTuple([typeNumber, typeNumber]);
-
+const typePoint = typeTuple([typeNumber(), typeNumber()]);
 typePoint.decoder("3.14,2.71"); // → [3.14, 2.71]
 typePoint.decoder("x,2"); // → Error: at 0: Number: Unable to parse: "x"
 ```
@@ -70,7 +49,7 @@ typePoint.decoder("x,2"); // → Error: at 0: Number: Unable to parse: "x"
 The default separator is `","`. Pass a second argument to change it:
 
 ```ts
-typeTuple([typeString, typeNumber], ":");
+typeTuple([type("name"), typeNumber()], ":");
 // "foo:42"  →  ["foo", 42]
 ```
 
@@ -87,7 +66,7 @@ typeNumbers.decoder("1,x,3"); // → Error: at 1: Number: Unable to parse: "x"
 Custom separator:
 
 ```ts
-const typePaths = typeList(typeString, ":");
+const typePaths = typeList(typePath(), ":");
 typePaths.decoder("/usr/bin:/usr/local/bin"); // → ["/usr/bin", "/usr/local/bin"]
 ```
 
@@ -103,14 +82,13 @@ over `typeList` when users should pass multiple values as separate flags
 Implement the `Type<Value>` interface directly:
 
 ```ts
-import type { Type } from "cli-kiss";
 const typeHexColor: Type<string> = {
   content: "hex-color",
   decoder(value) {
     if (/^#[0-9a-fA-F]{6}$/.test(value)) {
       return value;
     }
-    throw new Error(`Not a valid value: "${value}"`);
+    throw new Error(`Not a valid color: "${value}"`);
   },
 };
 // "#ff0000"  →  "#ff0000"

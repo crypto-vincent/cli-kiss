@@ -13,10 +13,9 @@ import {
   positionalRequired,
   positionalVariadics,
   ReaderArgs,
+  type,
   typeList,
-  typeNamed,
   typeNumber,
-  typeString,
   typeTuple,
   TypoSupport,
   usageToStyledLines,
@@ -53,7 +52,7 @@ const rootCommand = commandChained<any, any, any>(
       positionals: [
         positionalRequired({
           description: "Required positional number 1",
-          type: typeNamed(typeNumber, "pos-1"),
+          type: typeNumber("pos-1"),
         }),
       ],
     },
@@ -82,20 +81,20 @@ const rootCommand = commandChained<any, any, any>(
           stringOption: optionSingleValue({
             short: "s",
             long: "string-option",
-            type: typeNamed(typeString, "cool-stuff"),
+            type: type("cool-stuff"),
             default: () => undefined,
             description: "string-option description",
           }),
           complexOption: optionRepeatable({
             long: "complex-option",
-            type: typeTuple([typeNumber, typeList(typeString)]),
+            type: typeTuple([typeNumber(), typeList(type("string"))]),
             description: "complex-option description",
           }),
         },
         positionals: [
           positionalRequired({
             description: "Required positional number 2",
-            type: typeNamed(typeNumber, "pos-2"),
+            type: typeNumber("pos-2"),
           }),
         ],
       },
@@ -130,7 +129,7 @@ const rootCommand = commandChained<any, any, any>(
             positionals: [
               positionalRequired({
                 description: "Required positional string",
-                type: typeNamed(typeString, "pos-3.1"),
+                type: type("pos-3.1"),
               }),
             ],
           },
@@ -175,7 +174,7 @@ const rootCommand = commandChained<any, any, any>(
             options: {
               duduValue: optionSingleValue({
                 long: "dudu",
-                type: typeNamed(typeString, "dudu-value"),
+                type: type("dudu-value"),
                 default: () => "duduDefault",
                 hint: "Dudu option hint",
                 description: "Dudu option description",
@@ -184,17 +183,17 @@ const rootCommand = commandChained<any, any, any>(
             positionals: [
               positionalRequired({
                 description: "Required positional number",
-                type: typeNamed(typeNumber, "pos-3.2"),
+                type: typeNumber("pos-3.2"),
               }),
               positionalOptional({
                 description: "Optional positional string",
                 hint: "Optional positional hint",
-                type: typeNamed(typeString, "pos-4"),
+                type: type("pos-4"),
                 default: () => "42",
               }),
               positionalVariadics({
                 description: "Variadic positionals strings",
-                type: typeNamed(typeString, "pos-5"),
+                type: type("pos-5"),
               }),
             ],
           },

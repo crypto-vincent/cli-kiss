@@ -6,7 +6,6 @@ import {
   optionRepeatable,
   optionSingleValue,
   runAndExit,
-  typeNamed,
   typeNumber,
   typeUrl,
 } from "../src";
@@ -34,7 +33,7 @@ it("run", async function () {
   );
   await testCase(
     ["--flag=invalid"],
-    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{boolean}@darkMagenta}+: Invalid value: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{=}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+',
   );
   await testCase(
     ["--single-value=a", "--single-value=b"],
@@ -46,11 +45,11 @@ it("run", async function () {
   );
   await testCase(
     ["--single-value=invalid"],
-    '{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: from: {{url}@darkMagenta}+: Unable to parse: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: Not an URL: {{"invalid"}@darkYellow}+',
   );
   await testCase(
     ["--repeatable=invalid"],
-    '{{Error:}@darkRed}+ {{--repeatable}@darkCyan}+: {{<index>}@darkBlue}+: from: {{number}@darkMagenta}+: Unable to parse: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--repeatable}@darkCyan}+: {{<index>}@darkBlue}+: Not a number: {{"invalid"}@darkYellow}+',
   );
 });
 
@@ -66,12 +65,12 @@ async function testCase(args: Array<string>, error: string) {
           optionFlag: optionFlag({ long: "flag" }),
           optionSingleValue: optionSingleValue({
             long: "single-value",
-            type: typeNamed(typeUrl, "location"),
+            type: typeUrl("location"),
             default: () => undefined,
           }),
           optionRepeatable: optionRepeatable({
             long: "repeatable",
-            type: typeNamed(typeNumber, "index"),
+            type: typeNumber("index"),
           }),
         },
         positionals: [],
@@ -84,7 +83,7 @@ async function testCase(args: Array<string>, error: string) {
   await runAndExit("my-cli", args, null, rootCommand, {
     buildVersion: "1.0.0",
     usageOnError: false,
-    colorMode: "mock",
+    colorSupport: "mock",
     onExit: onExit.call,
   });
   expect(onLogStdOut.history).toEqual([]);

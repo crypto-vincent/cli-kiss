@@ -18,7 +18,7 @@ import { usageToStyledLines } from "./Usage";
  * @param cliArgs - Raw arguments, typically `process.argv.slice(2)`.
  * @param context - Forwarded to the handler.
  * @param command - Root {@link Command}.
- * @param options.colorMode - Controls color support; defaults to `"auto"`.
+ * @param options.colorSupport - Configures color support; enables `--color` flag if set to `"flag"`.
  * @param options.usageOnHelp - Enables `--help` flag (default `true`).
  * @param options.usageOnError - Prints usage to stderr on parse error (default `true`).
  * @param options.buildVersion - Enables `--version`; prints `<cliName> <buildVersion>`.
@@ -52,7 +52,7 @@ export async function runAndExit<Context>(
   context: Context,
   command: Command<Context, void>,
   options?: {
-    colorMode?: "auto" | "env" | "always" | "never" | "mock" | undefined;
+    colorSupport?: "flag" | "env" | "always" | "never" | "mock" | undefined;
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
@@ -64,8 +64,9 @@ export async function runAndExit<Context>(
   const preprocessors = new Array<
     (commandDecoder: CommandDecoder<Context, void>) => undefined | number
   >();
-  let typoSupport = computeTypoSupport(options?.colorMode ?? "auto");
-  if (options?.colorMode === "auto" || options?.colorMode === undefined) {
+  let typoSupport = TypoSupport.none();
+  const colorSupport = options?.colorSupport ?? "flag";
+  if (colorSupport === "flag") {
     const colorOption = optionChoice({
       long: "color",
       choices: ["auto", "always", "never", "mock"],
@@ -74,14 +75,19 @@ export async function runAndExit<Context>(
       defaultEmpty: () => "always",
     }).registerAndMakeDecoder(readerArgs);
     preprocessors.push(() => {
-      typoSupport = computeTypoSupport(colorOption.getAndDecodeValue());
+      try {
+        typoSupport = computeTypoSupport(colorOption.getAndDecodeValue());
+      } catch (error) {
+        typoSupport = TypoSupport.inferFromEnv();
+        throw error;
+      }
       return undefined;
     });
   } else {
-    if (options.colorMode === "env") {
+    if (colorSupport === "env") {
       typoSupport = TypoSupport.inferFromEnv();
     } else {
-      typoSupport = computeTypoSupport(options.colorMode);
+      typoSupport = computeTypoSupport(colorSupport);
     }
   }
   if (options?.usageOnHelp ?? true) {
@@ -116,7 +122,7 @@ export async function runAndExit<Context>(
     longs: ["completion"],
   });
   */
-  // TODO - handle no-color/force-color flag and weird errors propagation ?
+  // TODO - handle no-color/force-color flag
   const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   while (true) {
     try {
@@ -176,12 +182,10 @@ function computeUsageString<Context, Result>(
 }
 
 function computeTypoSupport(
-  colorMode: "auto" | "env" | "always" | "never" | "mock",
+  colorMode: "auto" | "always" | "never" | "mock",
 ): TypoSupport {
   switch (colorMode) {
     case "auto":
-      return TypoSupport.inferFromEnv();
-    case "env":
       return TypoSupport.inferFromEnv();
     case "always":
       return TypoSupport.tty();

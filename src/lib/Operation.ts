@@ -1,7 +1,7 @@
 import { Option, OptionDecoder } from "./Option";
 import { Positional, PositionalDecoder } from "./Positional";
 import { ReaderArgs } from "./Reader";
-import { UsageOperation, UsageOption, UsagePositional } from "./Usage";
+import { UsageOption, UsagePositional } from "./Usage";
 
 /**
  * Options, positionals, and an async handler that together form the logic of a CLI command.
@@ -16,7 +16,16 @@ export type Operation<Context, Result> = {
   /**
    * Returns usage metadata without consuming any arguments.
    */
-  generateUsage(): UsageOperation;
+  generateUsage(): {
+    /**
+     * Registered options.
+     */
+    options: Array<UsageOption>;
+    /**
+     * Declared positionals, in order.
+     */
+    positionals: Array<UsagePositional>;
+  };
   /**
    * Consumes args from `readerArgs` and returns an {@link OperationDecoder}.
    */

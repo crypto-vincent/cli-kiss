@@ -8,14 +8,13 @@ array of [`operation`](/guide/02_commands).
 Fails if missing.
 
 ```ts
-import { positionalRequired, typeString } from "cli-kiss";
-
 const name = positionalRequired({
-  type: typeNamed(typeString, "person"),
+  type: type("person"),
   description: "The name of the person to greet",
 });
-// my-cli Alice   →  "Alice"
-// my-cli         →  Error: <PERSON>: Is required, but was not provided
+// Usage:
+//   my-cli Alice   →  "Alice"
+//   my-cli  →  Error: <person>: Is required, but was not provided
 ```
 
 | Parameter     | Type          | Description                      |
@@ -29,15 +28,15 @@ const name = positionalRequired({
 Falls back to a default when absent.
 
 ```ts
-import { positionalOptional, typeString } from "cli-kiss";
-
 const greeting = positionalOptional({
-  type: typeNamed(typeString, "greeting"),
-  description: "Custom greeting (default: Hello)",
+  type: type("greeting"),
+  description: "Custom greeting",
+  hint: "default to 'Hello'",
   default: () => "Hello",
 });
-// my-cli          →  "Hello"
-// my-cli Howdy    →  "Howdy"
+// Usage:
+//   my-cli          →  "Hello"
+//.  my-cli Howdy    →  "Howdy"
 ```
 
 | Parameter     | Type          | Description                                       |
@@ -52,14 +51,13 @@ const greeting = positionalOptional({
 Consumes all remaining tokens into an array.
 
 ```ts
-import { positionalVariadics, typeString } from "cli-kiss";
-
 const files = positionalVariadics({
   type: typePath(),
   description: "Files to process",
 });
-// my-cli a.ts b.ts c.ts   →  ["a.ts", "b.ts", "c.ts"]
-// my-cli                  →  []
+// Usage:
+//   my-cli a.ts b.ts c.ts   →  ["a.ts", "b.ts", "c.ts"]
+//   my-cli  →  []
 ```
 
 ### End delimiter
@@ -68,11 +66,12 @@ Optionally stop collecting at a specific sentinel token:
 
 ```ts
 const args = positionalVariadics({
-  type: typeNamed("argument", typeString),
+  type: type("argument"),
   endDelimiter: "STOP",
   description: "Arguments (end with STOP)",
 });
-// my-cli foo bar STOP   →  ["foo", "bar"]
+// Usage:
+//   my-cli foo bar STOP   →  ["foo", "bar"]
 ```
 
 | Parameter      | Type          | Description                          |
@@ -91,10 +90,10 @@ operation(
   {
     options: {},
     positionals: [
-      positionalRequired({ type: typeNamed("src", typeString) }),
-      positionalRequired({ type: typeNamed("dst", typeString) }),
-      positionalOptional({ type: typeString, default: () => "latest" }),
-      positionalVariadics({ type: typeString }),
+      positionalRequired({ type: type("src") }),
+      positionalRequired({ type: type("dst") }),
+      positionalOptional({ type: type("tag"), default: () => "latest" }),
+      positionalVariadics({ type: type("extra") }),
     ],
   },
   async function (_ctx, { positionals: [src, dst, tag, extras] }) {

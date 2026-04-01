@@ -11,9 +11,9 @@ import {
  * Decodes a raw CLI string into a typed value.
  * A pair of a human-readable `content` name (e.g. `"Number"`) and a `decoder` function.
  *
- * Built-in: {@link typeString}, {@link typeBoolean}, {@link typeNumber},
- * {@link typeInteger}, {@link typeDate}, {@link typeUrl}.
- * Composite: {@link typeOneOf}, {@link typeMapped}, {@link typeTuple}, {@link typeList}.
+ * Built-in: {@link type}, {@link typeBoolean}, {@link typeNumber},
+ * {@link typeInteger}, {@link typeDatetime}, {@link typeUrl}.
+ * Composite: {@link typeOneOf}, {@link typeConverted}, {@link typeTuple}, {@link typeList}.
  *
  * @typeParam Value - Type produced by the decoder.
  */
@@ -46,24 +46,26 @@ export type Type<Value> = {
  * typeBoolean.decoder("n")     // → false
  * ```
  */
-export const typeBoolean: Type<boolean> = {
-  content: "boolean",
-  decoder(input: string) {
-    const lower = input.toLowerCase();
-    if (booleanValuesTrue.has(lower)) {
-      return true;
-    }
-    if (booleanValuesFalse.has(lower)) {
-      return false;
-    }
-    throw new TypoError(
-      new TypoText(
-        new TypoString(`Invalid value: `),
-        new TypoString(`"${input}"`, typoStyleQuote),
-      ),
-    );
-  },
-};
+export function typeBoolean(name?: string): Type<boolean> {
+  return {
+    content: name ?? "boolean",
+    decoder(input: string) {
+      const lower = input.toLowerCase();
+      if (booleanValuesTrue.has(lower)) {
+        return true;
+      }
+      if (booleanValuesFalse.has(lower)) {
+        return false;
+      }
+      throw new TypoError(
+        new TypoText(
+          new TypoString(`Not a boolean: `),
+          new TypoString(`"${input}"`, typoStyleQuote),
+        ),
+      );
+    },
+  };
+}
 const booleanValuesTrue = new Set(["true", "yes", "on", "1", "y", "t"]);
 const booleanValuesFalse = new Set(["false", "no", "off", "0", "n", "f"]);
 
@@ -73,60 +75,64 @@ const booleanValuesFalse = new Set(["false", "no", "off", "0", "n", "f"]);
  *
  * @example
  * ```ts
- * typeDate.decoder("2024-01-15") // → Date object for 2024-01-15
- * typeDate.decoder("2024-01-15T13:45:30Z") // → Date object for 2024-01-15 13:45:30 UTC
- * typeDate.decoder("not a date") // throws TypoError
+ * typeDatetime("my-datetime").decoder("2024-01-15") // → Date object for 2024-01-15
+ * typeDatetime("my-datetime").decoder("2024-01-15T13:45:30Z") // → Date object for 2024-01-15 13:45:30 UTC
+ * typeDatetime("my-datetime").decoder("not a date") // throws TypoError
  * ```
  */
-export const typeDate: Type<Date> = {
-  content: "date",
-  decoder(input: string) {
-    try {
-      const timestampMs = Date.parse(input);
-      if (isNaN(timestampMs)) {
-        throw new Error();
+export function typeDatetime(name?: string): Type<Date> {
+  return {
+    content: name ?? "datetime",
+    decoder(input: string) {
+      try {
+        const timestampMs = Date.parse(input);
+        if (isNaN(timestampMs)) {
+          throw new Error();
+        }
+        return new Date(timestampMs);
+      } catch {
+        throw new TypoError(
+          new TypoText(
+            new TypoString(`Not a valid ISO_8601 datetime: `),
+            new TypoString(`"${input}"`, typoStyleQuote),
+          ),
+        );
       }
-      return new Date(timestampMs);
-    } catch {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Not a valid ISO_8601: `),
-          new TypoString(`"${input}"`, typoStyleQuote),
-        ),
-      );
-    }
-  },
-};
+    },
+  };
+}
 
 /**
  * Parses a string to `number` via `Number()`; `NaN` throws {@link TypoError}.
  *
  * @example
  * ```ts
- * typeNumber.decoder("3.14")  // → 3.14
- * typeNumber.decoder("-1")    // → -1
- * typeNumber.decoder("hello") // throws TypoError
+ * typeNumber("my-number").decoder("3.14")  // → 3.14
+ * typeNumber("my-number").decoder("-1")    // → -1
+ * typeNumber("my-number").decoder("hello") // throws TypoError
  * ```
  */
-export const typeNumber: Type<number> = {
-  content: "number",
-  decoder(input: string) {
-    try {
-      const parsed = Number(input);
-      if (isNaN(parsed)) {
-        throw new Error();
+export function typeNumber(name?: string): Type<number> {
+  return {
+    content: name ?? "number",
+    decoder(input: string) {
+      try {
+        const parsed = Number(input);
+        if (isNaN(parsed)) {
+          throw new Error();
+        }
+        return parsed;
+      } catch {
+        throw new TypoError(
+          new TypoText(
+            new TypoString(`Not a number: `),
+            new TypoString(`"${input}"`, typoStyleQuote),
+          ),
+        );
       }
-      return parsed;
-    } catch {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Unable to parse: `),
-          new TypoString(`"${input}"`, typoStyleQuote),
-        ),
-      );
-    }
-  },
-};
+    },
+  };
+}
 
 /**
  * Parses an integer string to `bigint` via `BigInt()`.
@@ -134,26 +140,28 @@ export const typeNumber: Type<number> = {
  *
  * @example
  * ```ts
- * typeInteger.decoder("42")   // → 42n
- * typeInteger.decoder("3.14") // throws TypoError
- * typeInteger.decoder("abc")  // throws TypoError
+ * typeInteger("my-integer").decoder("42")   // → 42n
+ * typeInteger("my-integer").decoder("3.14") // throws TypoError
+ * typeInteger("my-integer").decoder("abc")  // throws TypoError
  * ```
  */
-export const typeInteger: Type<bigint> = {
-  content: "integer",
-  decoder(input: string) {
-    try {
-      return BigInt(input);
-    } catch {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Unable to parse: `),
-          new TypoString(`"${input}"`, typoStyleQuote),
-        ),
-      );
-    }
-  },
-};
+export function typeInteger(name?: string): Type<bigint> {
+  return {
+    content: name ?? "integer",
+    decoder(input: string) {
+      try {
+        return BigInt(input);
+      } catch {
+        throw new TypoError(
+          new TypoText(
+            new TypoString(`Not an integer: `),
+            new TypoString(`"${input}"`, typoStyleQuote),
+          ),
+        );
+      }
+    },
+  };
+}
 
 /**
  * Parses an absolute URL string to a `URL` object.
@@ -161,41 +169,43 @@ export const typeInteger: Type<bigint> = {
  *
  * @example
  * ```ts
- * typeUrl.decoder("https://example.com") // → URL { href: "https://example.com/", ... }
- * typeUrl.decoder("not-a-url")           // throws TypoError
+ * typeUrl("my-url").decoder("https://example.com") // → URL { href: "https://example.com/", ... }
+ * typeUrl("my-url").decoder("not-a-url")           // throws TypoError
  * ```
  */
-export const typeUrl: Type<URL> = {
-  content: "url",
-  decoder(input: string) {
-    try {
-      return new URL(input);
-    } catch {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Unable to parse: `),
-          new TypoString(`"${input}"`, typoStyleQuote),
-        ),
-      );
-    }
-  },
-};
+export function typeUrl(name?: string): Type<URL> {
+  return {
+    content: name ?? "url",
+    decoder(input: string) {
+      try {
+        return new URL(input);
+      } catch {
+        throw new TypoError(
+          new TypoText(
+            new TypoString(`Not an URL: `),
+            new TypoString(`"${input}"`, typoStyleQuote),
+          ),
+        );
+      }
+    },
+  };
+}
 
 /**
- * Identity decoder — passes the raw string through unchanged.
- *
+ * A named type that accepts any string as input.
+ * @param name - Name shown in help and errors (e.g. `"my-value"`).
  * @example
  * ```ts
- * typeString.decoder("hello") // → "hello"
- * typeString.decoder("")      // → ""
+ * type("greeting").decoder("hello") // → "hello"
+ * type("greeting").decoder("")      // → ""
  * ```
  */
-export const typeString: Type<string> = {
-  content: "string",
-  decoder(input: string) {
-    return input;
-  },
-};
+export function type(name?: string): Type<string> {
+  return {
+    content: name ?? "string",
+    decoder: (input: string) => input,
+  };
+}
 
 /**
  * Chains `before`'s decoder with an `after` transformation.
@@ -212,25 +222,23 @@ export const typeString: Type<string> = {
  *
  * @example
  * ```ts
- * const typePort = typeMapped(typeNumber, {
- *   content: "port",
- *   decoder: (n) => {
- *     if (n < 1 || n > 65535) throw new Error("Out of range");
- *     return n;
- *   },
+ * const typePort = typeRemapped("port", typeNumber(), (n) => {
+ *   if (n < 1 || n > 65535) throw new Error("Out of range");
+ *   return n;
  * });
  * // "--port 8080"   →  8080
  * // "--port 99999"  →  TypoError: --port: <PORT>: Port: Out of range
  * ```
  */
-export function typeMapped<Before, After>(
+export function typeConverted<Before, After>(
+  name: string,
   before: Type<Before>,
-  after: { content: string; decoder: (value: Before) => After },
+  mapper: (value: Before) => After,
 ): Type<After> {
   return {
-    content: after.content,
+    content: name,
     decoder: (input: string) => {
-      return after.decoder(
+      return mapper(
         TypoError.tryWithContext(
           () => before.decoder(input),
           () =>
@@ -251,7 +259,10 @@ export function typeMapped<Before, After>(
  * @param type - Base type to name.
  * @returns A {@link Type} with the given name.
  */
-export function typeNamed<Value>(type: Type<Value>, name: string): Type<Value> {
+export function typeRenamed<Value>(
+  type: Type<Value>,
+  name: string,
+): Type<Value> {
   return {
     content: name,
     decoder: (input: string) => {
@@ -272,18 +283,12 @@ export function typeNamed<Value>(type: Type<Value>, name: string): Type<Value> {
  * @param checks - Optional checks for path existence and type (file/directory).
  * @returns A {@link Type}`<string>` representing the path.
  */
-export function typePath(checks?: {
-  checkSyncExistAs?: "file" | "directory" | "anything";
-}): Type<string> {
-  let content = "path";
-  if (checks?.checkSyncExistAs === "file") {
-    content = "path-file";
-  }
-  if (checks?.checkSyncExistAs === "directory") {
-    content = "path-directory";
-  }
+export function typePath(
+  name?: string,
+  checks?: { checkSyncExistAs?: "file" | "directory" | "anything" },
+): Type<string> {
   return {
-    content,
+    content: name ?? "path",
     decoder(input: string) {
       if (input.length === 0) {
         throw new Error(`Path cannot be empty`);
@@ -324,7 +329,7 @@ export function typePath(checks?: {
  * Creates a {@link Type}`<string>` that only accepts a fixed set of values.
  * Out-of-set inputs throw {@link TypoError} listing up to 5 valid options.
  *
- * @param content - Name shown in help and errors (e.g. `"Environment"`).
+ * @param name - Name shown in help and errors (e.g. `"Environment"`).
  * @param values - Ordered list of accepted values.
  * @returns A {@link Type}`<string>`.
  *
@@ -336,16 +341,21 @@ export function typePath(checks?: {
  * ```
  */
 export function typeOneOf<const Value extends string>(
-  content: string,
+  name: string,
   values: Array<Value>,
+  caseSensitive: boolean = false,
 ): Type<Value> {
-  const valueSet = new Set(values.map((v) => v.toLowerCase()));
+  const normalize = caseSensitive
+    ? (s: string) => s
+    : (s: string) => s.toLowerCase();
+  const valueMap = new Map(values.map((value) => [normalize(value), value]));
   return {
-    content,
+    content: name,
     decoder(input: string) {
-      const lowerInput = input.toLowerCase();
-      if (valueSet.has(lowerInput)) {
-        return lowerInput as Value;
+      const normalized = normalize(input);
+      const original = valueMap.get(normalized);
+      if (original !== undefined) {
+        return original;
       }
       const valuesPreview = [];
       for (const value of values) {
@@ -440,7 +450,7 @@ export function typeTuple<const Elements extends Array<any>>(
  * typeNumbers.decoder("1,2,3")  // → [1, 2, 3]
  * typeNumbers.decoder("1,x,3")  // throws TypoError: at 1: Number: Unable to parse: "x"
  *
- * const typePaths = typeList(typeString, ":");
+ * const typePaths = typeList(typePath(), ":");
  * typePaths.decoder("/usr/bin:/usr/local/bin") // → ["/usr/bin", "/usr/local/bin"]
  * ```
  */

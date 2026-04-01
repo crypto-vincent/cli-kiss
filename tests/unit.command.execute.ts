@@ -12,9 +12,9 @@ import {
   positionalRequired,
   positionalVariadics,
   ReaderArgs,
+  type,
   typeList,
   typeNumber,
-  typeString,
 } from "../src";
 
 const rootCommand = commandChained(
@@ -33,7 +33,7 @@ const rootCommand = commandChained(
           default: false,
         }),
       },
-      positionals: [positionalRequired({ type: typeNumber })],
+      positionals: [positionalRequired({ type: typeNumber() })],
     },
     async function (context, inputs) {
       return { at: "root", context, inputs };
@@ -46,15 +46,15 @@ const rootCommand = commandChained(
         options: {
           string: optionSingleValue({
             long: "string-option",
-            type: typeString,
+            type: type(),
             default: () => undefined,
           }),
           number: optionRepeatable({
             long: "number-option",
-            type: typeList(typeNumber),
+            type: typeList(typeNumber()),
           }),
         },
-        positionals: [positionalRequired({ type: typeNumber })],
+        positionals: [positionalRequired({ type: typeNumber() })],
       },
       async function (context, inputs) {
         return { at: "mid", context, inputs };
@@ -66,7 +66,7 @@ const rootCommand = commandChained(
         operation(
           {
             options: {},
-            positionals: [positionalRequired({ type: typeString })],
+            positionals: [positionalRequired({ type: type() })],
           },
           async function (context, inputs) {
             return { at: "sub1", context, inputs };
@@ -79,9 +79,9 @@ const rootCommand = commandChained(
           {
             options: {},
             positionals: [
-              positionalRequired({ type: typeNumber }),
-              positionalOptional({ type: typeString, default: () => "42" }),
-              positionalVariadics({ type: typeString }),
+              positionalRequired({ type: typeNumber() }),
+              positionalOptional({ type: type(), default: () => "42" }),
+              positionalVariadics({ type: type() }),
             ],
           },
           async function (context, inputs) {
@@ -96,7 +96,7 @@ const rootCommand = commandChained(
 it("run", async function () {
   expect(
     await executeInterpreted(
-      ["-fn=true", "-fp", "50", "51", "sub1", "final"],
+      ["-fn=TRUE", "-fp", "50", "51", "sub1", "final"],
       "Run Context Input",
       rootCommand,
     ),

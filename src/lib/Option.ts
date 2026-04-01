@@ -78,7 +78,7 @@ export function optionFlag(definition: {
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   default?: boolean;
 }): Option<boolean> {
-  const type = typeBoolean;
+  const type = typeBoolean("=");
   const { long, short, description, hint, aliases } = definition;
   return {
     generateUsage() {
@@ -251,7 +251,7 @@ export function optionChoice<const Value extends string>(definition: {
  * const outputOption = optionSingleValue({
  *   long: "output",
  *   short: "o",
- *   type: typeString,
+ *   type: typePath(),
  *   description: "Output directory",
  *   default: () => "dist",
  * });

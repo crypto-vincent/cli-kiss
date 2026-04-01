@@ -41,12 +41,12 @@ multiple values.
 Exactly one typed value.
 
 ```ts
-import { optionSingleValue, typeString } from "cli-kiss";
+import { optionSingleValue, type } from "cli-kiss";
 
 const output = optionSingleValue({
   long: "output",
   short: "o",
-  type: typeString,
+  type: type,
   description: "Output directory",
   default: () => "dist/",
 });
@@ -71,12 +71,12 @@ const output = optionSingleValue({
 Collects every occurrence into an array.
 
 ```ts
-import { optionRepeatable, typeString } from "cli-kiss";
+import { optionRepeatable, type } from "cli-kiss";
 
 const files = optionRepeatable({
   long: "file",
   short: "f",
-  type: typeString,
+  type: typePath("FILE_PATH"),
   description: "Input file (may be repeated)",
 });
 // --file a.ts --file b.ts   →  ["a.ts", "b.ts"]

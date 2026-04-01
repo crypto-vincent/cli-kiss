@@ -51,7 +51,7 @@ export type PositionalDecoder<Value> = {
  * @example
  * ```ts
  * const namePositional = positionalRequired({
- *   type: typeString,
+ *   type: type("name"),
  *   description: "The name to greet",
  * });
  * // Usage:
@@ -164,7 +164,7 @@ export function positionalOptional<Value>(definition: {
  * @example
  * ```ts
  * const filesPositional = positionalVariadics({
- *   type: typeString,
+ *   type: typePath(),
  *   label: "FILE",
  *   description: "Files to process",
  * });

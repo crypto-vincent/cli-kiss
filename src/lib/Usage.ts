@@ -45,31 +45,17 @@ export type UsageCommand = {
 export type UsageSegment = { positional: string } | { subcommand: string };
 
 /**
- * Usage metadata. Produced by {@link Operation.generateUsage}, consumed when building {@link UsageCommand}.
- */
-export type UsageOperation = {
-  /**
-   * Registered options.
-   */
-  options: Array<UsageOption>;
-  /**
-   * Declared positionals, in order.
-   */
-  positionals: Array<UsagePositional>;
-};
-
-/**
  * Positional metadata for the `Positionals:` section of help.
  */
 export type UsagePositional = {
   /**
    * Help text.
    */
-  description: string | undefined;
+  description?: string | undefined;
   /**
    * Short note shown in parentheses.
    */
-  hint: string | undefined;
+  hint?: string | undefined;
   /**
    * Placeholder label shown in the usage line and the `Positionals:` section.
    */
@@ -87,11 +73,11 @@ export type UsageSubcommand = {
   /**
    * From {@link CommandInformation.description}.
    */
-  description: string | undefined;
+  description?: string | undefined;
   /**
    * From {@link CommandInformation.hint}.
    */
-  hint: string | undefined;
+  hint?: string | undefined;
 };
 
 /**
@@ -117,11 +103,11 @@ export type UsageOption = {
   /**
    * Help text.
    */
-  description: string | undefined;
+  description?: string | undefined;
   /**
    * Short note shown in parentheses.
    */
-  hint: string | undefined;
+  hint?: string | undefined;
 };
 
 /**
@@ -315,8 +301,8 @@ export function usageToStyledLines(params: {
 }
 
 function createInformationals(usage: {
-  description: string | undefined;
-  hint: string | undefined;
+  description?: string | undefined;
+  hint?: string | undefined;
 }): Array<TypoText> {
   const informationals = [];
   if (usage.description) {
