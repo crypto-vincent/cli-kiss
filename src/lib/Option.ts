@@ -1,5 +1,5 @@
 import { ReaderOptionParsing, ReaderArgs as ReaderOptions } from "./Reader";
-import { Type, typeBoolean, typeOneOf } from "./Type";
+import { Type, typeBoolean } from "./Type";
 import {
   TypoError,
   TypoString,
@@ -9,7 +9,6 @@ import {
   TypoText,
 } from "./Typo";
 import { UsageOption } from "./Usage";
-// TODO - one of, or many of combinatorial options.
 
 /**
  * A CLI option. Created with {@link optionFlag}, {@link optionSingleValue},
@@ -85,123 +84,6 @@ export function optionFlag(definition: {
       return { short, long, annotation: "[=no]", description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
-      const longNegative = `no-${long}`;
-      const aliasesLongsNegatives = aliases?.longs?.map(
-        (aliasLong) => `no-${aliasLong}`,
-      );
-      const keyNegative = registerOption(readerOptions, {
-        long: longNegative,
-        short: undefined,
-        aliasesShorts: undefined,
-        aliasesLongs: aliasesLongsNegatives,
-        parsing: { consumeShortGroup: false, consumeNextArg: () => false },
-      });
-      const keyPositive = registerOption(readerOptions, {
-        long,
-        short,
-        aliasesLongs: aliases?.longs,
-        aliasesShorts: aliases?.shorts,
-        parsing: { consumeShortGroup: false, consumeNextArg: () => false },
-      });
-      return {
-        getAndDecodeValue() {
-          const negativeResults = readerOptions.getOptionValues(keyNegative);
-          const positiveResults = readerOptions.getOptionValues(keyPositive);
-          if (positiveResults.length > 1) {
-            throwSetMultipleTimesError(long);
-          }
-          if (negativeResults.length > 1) {
-            throwSetMultipleTimesError(longNegative);
-          }
-          if (negativeResults.length > 0 && positiveResults.length > 0) {
-            throw new TypoError(
-              new TypoText(
-                new TypoString(`--${long}`, typoStyleConstants),
-                new TypoString(`: Must not be set in combination with: `),
-                new TypoString(`--${longNegative}`, typoStyleConstants),
-              ),
-            );
-          }
-          if (negativeResults.length > 0) {
-            const negativeResult = negativeResults[0]!;
-            if (negativeResult.inlined) {
-              throw new TypoError(
-                new TypoText(
-                  new TypoString(`--${longNegative}`, typoStyleConstants),
-                  new TypoString(`: Must not have a value`),
-                ),
-              );
-            }
-            return false;
-          }
-          if (positiveResults.length === 0) {
-            return definition.default === undefined
-              ? false
-              : definition.default;
-          }
-          const positiveResult = positiveResults[0]!;
-          const input =
-            positiveResult.inlined === null ? "true" : positiveResult.inlined;
-          return decodeValue({ long, short, type, input });
-        },
-      };
-    },
-  };
-}
-
-/**
- * Creates an option that accepts one value from a predefined set of strings (e.g. `--color=auto`).
- *
- * Parsing: absent → `defaultUnset()`; present with no value → `defaultEmpty()`; present with value → decoded with `typeOneOf`.
- * Value syntax: `--choice=value`, `-c=value`, `-cvalue`, `--choice`, `-c`.
- * Note: `--choice` and `-c` are treated as present with no value, not with an empty string value.
- *
- * @param definition
- * @param definition.long - Long-form name (without `--`).
- * @param definition.short - Short-form name (without `-`).
- * @param definition.description - Help text.
- * @param definition.hint - Short note shown in parentheses.
- * @param definition.aliases - Additional names.
- * @param definition.content - Value placeholder in help.
- * @param definition.choices - Allowed values.
- * @param definition.defaultUnset - Default when the option is absent. Throw to make the option required.
- * @param definition.defaultEmpty - Default when the option is present with no value. Throw to disallow this syntax.
- * @returns An {@link Option}`<Value>`.
- *
- * @example
- * ```ts
- * const colorOption = optionChoice({
- *   long: "color",
- *   content: "color-mode",
- *   choices: ["auto", "always", "never"],
- *   defaultUnset: () => "auto",
- *   defaultEmpty: () => "always",
- * });
- * // Usage:
- * //   my-cli  →  "auto"
- * //   my-cli --color  →  "always"
- * //   my-cli --color=never  →  "never"
- * ```
- */
-export function optionChoice<const Value extends string>(definition: {
-  long: string;
-  short?: string;
-  description?: string;
-  hint?: string;
-  aliases?: { longs?: Array<string>; shorts?: Array<string> };
-  content: string;
-  choices: Array<Value>;
-  defaultUnset: () => Value;
-  defaultEmpty: () => Value;
-}): Option<Value> {
-  const type = typeOneOf(definition.content, definition.choices);
-  const { long, short, description, hint, aliases } = definition;
-  const label = `<${type.content}>`;
-  return {
-    generateUsage() {
-      return { short, long, label, description, hint };
-    },
-    registerAndMakeDecoder(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
         long,
         short,
@@ -216,13 +98,14 @@ export function optionChoice<const Value extends string>(definition: {
             throwSetMultipleTimesError(long);
           }
           if (optionResults.length === 0) {
-            return definition.defaultUnset();
+            return definition.default === undefined
+              ? false
+              : definition.default;
           }
-          if (optionResults[0]!.inlined === null) {
-            return definition.defaultEmpty();
-          }
-          const input = optionResults[0]!.inlined!;
-          return decodeValue({ long, short, label, type, input });
+          const positiveResult = optionResults[0]!;
+          const value =
+            positiveResult.inlined === null ? "true" : positiveResult.inlined;
+          return decodeValue({ long, short, type, input: value });
         },
       };
     },
@@ -232,7 +115,7 @@ export function optionChoice<const Value extends string>(definition: {
 /**
  * Creates an option that accepts exactly one value (e.g. `--output dist/`).
  *
- * Parsing: absent → `default()`; once → decoded with `type`; more than once → {@link TypoError}.
+ * Parsing: absent → `defaultValue()`; once → decoded with `type`; more than once → {@link TypoError}.
  * Value syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
  *
  * @typeParam Value - Type produced by the decoder.
@@ -243,7 +126,8 @@ export function optionChoice<const Value extends string>(definition: {
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.aliases - Additional names.
  * @param definition.type - Decoder for the raw string value.
- * @param definition.default - Default when absent. Throw to make the option required.
+ * @param definition.valueWhenNotDefined - Default value when the option is not specified at all.
+ * @param definition.valueWhenNotInlined - Default value when the option is specified without an inline value (e.g. `--option` or `-o`).
  * @returns An {@link Option}`<Value>`.
  *
  * @example
@@ -253,7 +137,7 @@ export function optionChoice<const Value extends string>(definition: {
  *   short: "o",
  *   type: typePath(),
  *   description: "Output directory",
- *   default: () => "dist",
+ *   valueWhenNotDefined: () => "dist",
  * });
  * // Usage:
  * //   my-cli  →  "dist"
@@ -268,7 +152,8 @@ export function optionSingleValue<Value>(definition: {
   hint?: string;
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   type: Type<Value>;
-  default: () => Value;
+  valueNotDefined: () => Value;
+  valueNotInlined?: () => Value;
 }): Option<Value> {
   const { long, short, description, hint, aliases, type } = definition;
   const label = `<${type.content}>`;
@@ -284,37 +169,41 @@ export function optionSingleValue<Value>(definition: {
         aliasesShorts: aliases?.shorts,
         parsing: {
           consumeShortGroup: true,
-          consumeNextArg: (inlined, separated) =>
-            inlined === null && separated.length === 0,
+          consumeNextArg(inlined, separated) {
+            if (definition.valueNotInlined !== undefined) {
+              return false;
+            }
+            return inlined === null && separated.length === 0;
+          },
         },
       });
       return {
         getAndDecodeValue() {
           const optionResults = readerOptions.getOptionValues(key);
           if (optionResults.length > 1) {
-            throw new TypoError(
-              new TypoText(
-                new TypoString(`--${long}`, typoStyleConstants),
-                new TypoString(`: Requires a single value, but got multiple`),
-              ),
-            );
+            throwSetMultipleTimesError(long);
           }
           const optionResult = optionResults[0];
           if (optionResult === undefined) {
             try {
-              return definition.default();
+              return definition.valueNotDefined();
             } catch (error) {
-              throw new TypoError(
-                new TypoText(
-                  new TypoString(`--${long}`, typoStyleConstants),
-                  new TypoString(`: Failed to get default value`),
-                ),
-                error,
-              );
+              throwFailedToGetDefaultValueError(long, error, "not set");
             }
           }
-          const input = optionResult.inlined ?? optionResult.separated[0]!;
-          return decodeValue({ long, short, label, type, input });
+          if (optionResult.inlined) {
+            const inlined = optionResult.inlined;
+            return decodeValue({ long, short, label, type, input: inlined });
+          }
+          if (definition.valueNotInlined !== undefined) {
+            try {
+              return definition.valueNotInlined();
+            } catch (error) {
+              throwFailedToGetDefaultValueError(long, error, "not inlined");
+            }
+          }
+          const separated = optionResult.separated[0]!;
+          return decodeValue({ long, short, label, type, input: separated });
         },
       };
     },
@@ -444,5 +333,19 @@ function throwSetMultipleTimesError(long: string): never {
       new TypoString(`--${long}`, typoStyleConstants),
       new TypoString(`: Must not be set multiple times`),
     ),
+  );
+}
+
+function throwFailedToGetDefaultValueError(
+  long: string,
+  error: unknown,
+  context: string,
+): never {
+  throw new TypoError(
+    new TypoText(
+      new TypoString(`--${long}`, typoStyleConstants),
+      new TypoString(`: Failed to get default value (${context})`),
+    ),
+    error,
   );
 }

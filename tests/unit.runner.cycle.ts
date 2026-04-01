@@ -11,8 +11,8 @@ import {
   positionalVariadics,
   runAndExit,
   type,
+  typeChoice,
   typeConverted,
-  typeOneOf,
   typeUrl,
 } from "../src";
 
@@ -202,12 +202,6 @@ it("run", async function () {
     [],
     0,
   );
-  await testCase(
-    ["--no-flag", "required1", "subcommand", "required2"],
-    ["Has executed root command", "Has executed subcommand"],
-    [],
-    0,
-  );
 
   // Test option parsing errors
   await testCase(
@@ -343,10 +337,7 @@ it("run", async function () {
       "43",
     ],
     [],
-    [
-      subcommandUsage,
-      "Error: --single-value: Requires a single value, but got multiple",
-    ],
+    [subcommandUsage, "Error: --single-value: Must not be set multiple times"],
     1,
   );
 });
@@ -384,16 +375,16 @@ async function testCase(
             long: "single-value",
             type: typeConverted(
               "enum(number)",
-              typeOneOf("enum(string)", ["42", "43"]),
+              typeChoice("enum(string)", ["42", "43"]),
               (value) => Number(value),
             ),
             description: "Option single value description",
-            default: () => 42,
+            valueNotDefined: () => 42,
           }),
         },
         positionals: [
           positionalRequired({
-            type: typeOneOf("required1", ["required1", "required1-bis"]),
+            type: typeChoice("required1", ["required1", "required1-bis"]),
             description: "Required1 positional description",
           }),
         ],
@@ -416,7 +407,7 @@ async function testCase(
             },
             positionals: [
               positionalRequired({
-                type: typeOneOf("required2", ["required2", "required2-bis"]),
+                type: typeChoice("required2", ["required2", "required2-bis"]),
                 description: "Required2 positional description",
               }),
               positionalOptional({
@@ -442,7 +433,7 @@ async function testCase(
   await runAndExit("my-cli", args, null, cmd, {
     buildVersion: "1.0.0",
     onExit: onExit.call,
-    colorSupport: "never",
+    colorSetup: "never",
   });
   expect({
     stdOut: onLogStdOut.history,

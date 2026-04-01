@@ -7,5 +7,3 @@ export * from "./lib/Run";
 export * from "./lib/Type";
 export * from "./lib/Typo";
 export * from "./lib/Usage";
-
-// TODO - maybe add a parsed option recap on error

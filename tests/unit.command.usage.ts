@@ -5,7 +5,6 @@ import {
   commandChained,
   commandWithSubcommands,
   operation,
-  optionChoice,
   optionFlag,
   optionRepeatable,
   optionSingleValue,
@@ -14,6 +13,7 @@ import {
   positionalVariadics,
   ReaderArgs,
   type,
+  typeChoice,
   typeList,
   typeNumber,
   typeTuple,
@@ -35,13 +35,12 @@ const rootCommand = commandChained<any, any, any>(
   operation(
     {
       options: {
-        choiceOption: optionChoice({
+        choiceOption: optionSingleValue({
           long: "choice-option",
-          content: "choice",
+          type: typeChoice("choice", ["unset", "empty", "choice1", "choice2"]),
           description: "choice-option description",
-          choices: ["unset", "empty", "choice1", "choice2"],
-          defaultUnset: () => "unset",
-          defaultEmpty: () => "empty",
+          valueNotInlined: () => "empty",
+          valueNotDefined: () => "unset",
         }),
         booleanFlag: optionFlag({
           short: "b",
@@ -82,7 +81,7 @@ const rootCommand = commandChained<any, any, any>(
             short: "s",
             long: "string-option",
             type: type("cool-stuff"),
-            default: () => undefined,
+            valueNotDefined: () => undefined,
             description: "string-option description",
           }),
           complexOption: optionRepeatable({
@@ -175,7 +174,7 @@ const rootCommand = commandChained<any, any, any>(
               duduValue: optionSingleValue({
                 long: "dudu",
                 type: type("dudu-value"),
-                default: () => "duduDefault",
+                valueNotDefined: () => "duduDefault",
                 hint: "Dudu option hint",
                 description: "Dudu option description",
               }),

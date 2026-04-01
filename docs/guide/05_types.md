@@ -7,14 +7,14 @@ A `Type<Value>` converts a raw CLI string into a typed value:
 
 ## Built-in types
 
-| Type factory   | Content type    | Accepts                                                                     |
-| -------------- | --------------- | --------------------------------------------------------------------------- |
-| `type`         | `string`        | Any string                                                                  |
-| `typeBoolean`  | `boolean`       | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
-| `typeNumber`   | `number`        | Integers, floats, scientific notation                                       |
-| `typeInteger`  | `bigint`        | Integer strings only                                                        |
-| `typeDatetime` | `Date`          | Any format accepted by `Date.parse` (ISO 8601 recommended)                  |
-| `typeUrl`      | `URL`           | Absolute URLs                                                               |
+| Type factory   | Content type | Accepts                                                                     |
+| -------------- | ------------ | --------------------------------------------------------------------------- |
+| `type`         | `string`     | Any string                                                                  |
+| `typeBoolean`  | `boolean`    | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
+| `typeNumber`   | `number`     | Integers, floats, scientific notation                                       |
+| `typeInteger`  | `bigint`     | Integer strings only                                                        |
+| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)                  |
+| `typeUrl`      | `URL`        | Absolute URLs                                                               |
 
 ```ts
 type("greentings").decoder("hello"); // → "hello"
@@ -25,12 +25,12 @@ typeDate("birthday").decoder("2024-01-15"); // → Date object
 typeUrl("redirect").decoder("https://example.com/path"); // → URL object
 ```
 
-## `typeOneOf` — string enum
+## `typeChoice` — string enum
 
 Accepts only a fixed set of strings:
 
 ```ts
-const typeEnv = typeOneOf("environment", ["dev", "staging", "prod"]);
+const typeEnv = typeChoice("environment", ["dev", "staging", "prod"]);
 typeEnv.decoder("prod"); // → "prod"
 typeEnv.decoder("unknown");
 // Error: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")

@@ -18,9 +18,8 @@ import {
 export type UsageCommand = {
   /**
    * Segments of the usage line
-   * (e.g. `my-cli <POSITIONAL> subcommand <ANOTHER_POSITIONAL>`).
    */
-  segments: Array<UsageSegment>;
+  segments: Array<{ positional: string } | { subcommand: string }>;
   /**
    * Command metadata.
    */
@@ -38,11 +37,6 @@ export type UsageCommand = {
    */
   options: Array<UsageOption>;
 };
-
-/**
- * One segment of the usage line.
- */
-export type UsageSegment = { positional: string } | { subcommand: string };
 
 /**
  * Positional metadata for the `Positionals:` section of help.

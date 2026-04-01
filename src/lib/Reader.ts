@@ -340,7 +340,7 @@ export class ReaderArgs {
   }
 
   #isValidOptionName(name: string): boolean {
-    return name.length > 0 && !name.includes("=");
+    return name.length > 0 && !name.includes("=") && !name.includes("\0");
   }
 }
 

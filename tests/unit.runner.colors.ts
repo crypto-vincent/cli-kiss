@@ -128,7 +128,7 @@ it("run", async function () {
 });
 
 async function testCase(
-  colorSupport: "flag" | "env" | "always" | "never" | "mock",
+  colorSetup: "flag" | "env" | "always" | "never" | "mock",
   cliArgs: Array<string>,
   expectStdOut: Array<string>,
   expectStdErr: Array<string>,
@@ -166,7 +166,7 @@ async function testCase(
   await runAndExit(cliName, cliArgs, null, cmd, {
     buildVersion: "1.0.0",
     onExit: onExit.call,
-    colorSupport,
+    colorSetup,
   });
   expect({
     stdOut: onLogStdOut.history,

@@ -24,20 +24,12 @@ it("run", async function () {
     "{{Error:}@darkRed}+ {{--flag}@darkCyan}+: Must not be set multiple times",
   );
   await testCase(
-    ["--flag", "--no-flag"],
-    "{{Error:}@darkRed}+ {{--flag}@darkCyan}+: Must not be set in combination with: {{--no-flag}@darkCyan}+",
-  );
-  await testCase(
-    ["--no-flag", "--no-flag"],
-    "{{Error:}@darkRed}+ {{--no-flag}@darkCyan}+: Must not be set multiple times",
-  );
-  await testCase(
     ["--flag=invalid"],
     '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{=}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+',
   );
   await testCase(
     ["--single-value=a", "--single-value=b"],
-    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Requires a single value, but got multiple",
+    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Must not be set multiple times",
   );
   await testCase(
     ["--single-value"],
@@ -66,7 +58,7 @@ async function testCase(args: Array<string>, error: string) {
           optionSingleValue: optionSingleValue({
             long: "single-value",
             type: typeUrl("location"),
-            default: () => undefined,
+            valueNotDefined: () => undefined,
           }),
           optionRepeatable: optionRepeatable({
             long: "repeatable",
@@ -83,7 +75,7 @@ async function testCase(args: Array<string>, error: string) {
   await runAndExit("my-cli", args, null, rootCommand, {
     buildVersion: "1.0.0",
     usageOnError: false,
-    colorSupport: "mock",
+    colorSetup: "mock",
     onExit: onExit.call,
   });
   expect(onLogStdOut.history).toEqual([]);

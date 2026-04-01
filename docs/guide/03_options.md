@@ -5,7 +5,7 @@ Named `--` arguments (or `-` for short forms). Declared in the `options` map of
 
 ## `optionFlag` — boolean toggle
 
-Present or absent. Also accepts `--flag=true` / `--flag=no` / `--no-flag`.
+Present or absent. Also accepts `--flag=true` / `--flag=no`.
 
 ```ts
 import { optionFlag } from "cli-kiss";

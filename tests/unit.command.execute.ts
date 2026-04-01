@@ -47,7 +47,7 @@ const rootCommand = commandChained(
           string: optionSingleValue({
             long: "string-option",
             type: type(),
-            default: () => undefined,
+            valueNotDefined: () => undefined,
           }),
           number: optionRepeatable({
             long: "number-option",
@@ -166,8 +166,8 @@ it("run", async function () {
         "88.88",
         "a,b",
         "final",
-        "--no-flag-positive",
-        "--no-flag-negative",
+        "--flag-positive=NO",
+        "--flag-negative=false",
       ],
       "Run Context Input",
       rootCommand,

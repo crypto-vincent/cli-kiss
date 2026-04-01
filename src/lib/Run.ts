@@ -1,6 +1,7 @@
 import { Command, CommandDecoder } from "./Command";
-import { optionChoice, optionFlag } from "./Option";
+import { optionFlag, optionSingleValue } from "./Option";
 import { ReaderArgs } from "./Reader";
+import { typeChoice } from "./Type";
 import { TypoSupport } from "./Typo";
 import { usageToStyledLines } from "./Usage";
 
@@ -18,7 +19,7 @@ import { usageToStyledLines } from "./Usage";
  * @param cliArgs - Raw arguments, typically `process.argv.slice(2)`.
  * @param context - Forwarded to the handler.
  * @param command - Root {@link Command}.
- * @param options.colorSupport - Configures color support; enables `--color` flag if set to `"flag"`.
+ * @param options.colorSetup - Configures color support; enables `--color` flag if set to `"flag"`.
  * @param options.usageOnHelp - Enables `--help` flag (default `true`).
  * @param options.usageOnError - Prints usage to stderr on parse error (default `true`).
  * @param options.buildVersion - Enables `--version`; prints `<cliName> <buildVersion>`.
@@ -52,7 +53,7 @@ export async function runAndExit<Context>(
   context: Context,
   command: Command<Context, void>,
   options?: {
-    colorSupport?: "flag" | "env" | "always" | "never" | "mock" | undefined;
+    colorSetup?: "flag" | "env" | "always" | "never" | "mock" | undefined;
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
@@ -65,15 +66,16 @@ export async function runAndExit<Context>(
     (commandDecoder: CommandDecoder<Context, void>) => undefined | number
   >();
   let typoSupport = TypoSupport.none();
-  const colorSupport = options?.colorSupport ?? "flag";
-  if (colorSupport === "flag") {
-    const colorOption = optionChoice({
-      long: "color",
-      choices: ["auto", "always", "never", "mock"],
-      content: "color-mode",
-      defaultUnset: () => "auto",
-      defaultEmpty: () => "always",
-    }).registerAndMakeDecoder(readerArgs);
+  const colorSetup = options?.colorSetup ?? "flag";
+  if (colorSetup === "flag") {
+    const colorOption = optionSingleValue<"auto" | "always" | "never" | "mock">(
+      {
+        long: "color",
+        type: typeChoice("color-mode", ["auto", "always", "never", "mock"]),
+        valueNotDefined: () => "auto",
+        valueNotInlined: () => "always",
+      },
+    ).registerAndMakeDecoder(readerArgs);
     preprocessors.push(() => {
       try {
         typoSupport = computeTypoSupport(colorOption.getAndDecodeValue());
@@ -84,10 +86,10 @@ export async function runAndExit<Context>(
       return undefined;
     });
   } else {
-    if (colorSupport === "env") {
+    if (colorSetup === "env") {
       typoSupport = TypoSupport.inferFromEnv();
     } else {
-      typoSupport = computeTypoSupport(colorSupport);
+      typoSupport = computeTypoSupport(colorSetup);
     }
   }
   if (options?.usageOnHelp ?? true) {
@@ -122,7 +124,6 @@ export async function runAndExit<Context>(
     longs: ["completion"],
   });
   */
-  // TODO - handle no-color/force-color flag
   const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   while (true) {
     try {

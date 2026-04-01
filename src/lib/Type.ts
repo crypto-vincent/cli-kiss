@@ -9,17 +9,17 @@ import {
 
 /**
  * Decodes a raw CLI string into a typed value.
- * A pair of a human-readable `content` name (e.g. `"Number"`) and a `decoder` function.
+ * A pair of a human-readable `content` name and a `decoder` function.
  *
  * Built-in: {@link type}, {@link typeBoolean}, {@link typeNumber},
  * {@link typeInteger}, {@link typeDatetime}, {@link typeUrl}.
- * Composite: {@link typeOneOf}, {@link typeConverted}, {@link typeTuple}, {@link typeList}.
+ * Composite: {@link typeChoice}, {@link typeConverted}, {@link typeTuple}, {@link typeList}.
  *
  * @typeParam Value - Type produced by the decoder.
  */
 export type Type<Value> = {
   /**
-   * Human-readable name shown in help and errors (e.g. `"String"`, `"Number"`).
+   * Human-readable name shown in help and errors (e.g. `"name"`, `"number"`).
    */
   content: string;
   /**
@@ -329,18 +329,18 @@ export function typePath(
  * Creates a {@link Type}`<string>` that only accepts a fixed set of values.
  * Out-of-set inputs throw {@link TypoError} listing up to 5 valid options.
  *
- * @param name - Name shown in help and errors (e.g. `"Environment"`).
+ * @param name - Name shown in help and errors.
  * @param values - Ordered list of accepted values.
  * @returns A {@link Type}`<string>`.
  *
  * @example
  * ```ts
- * const typeEnv = typeOneOf("Environment", ["dev", "staging", "prod"]);
+ * const typeEnv = typeChoice("env", ["dev", "staging", "prod"]);
  * typeEnv.decoder("prod")    // → "prod"
  * typeEnv.decoder("unknown") // throws TypoError: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
  * ```
  */
-export function typeOneOf<const Value extends string>(
+export function typeChoice<const Value extends string>(
   name: string,
   values: Array<Value>,
   caseSensitive: boolean = false,

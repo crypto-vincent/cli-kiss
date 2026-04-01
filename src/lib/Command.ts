@@ -7,7 +7,7 @@ import {
   typoStyleUserInput,
   TypoText,
 } from "./Typo";
-import { UsageCommand, UsageSegment } from "./Usage";
+import { UsageCommand } from "./Usage";
 
 /**
  * A CLI command. Created with {@link command}, {@link commandWithSubcommands}, or {@link commandChained}.
@@ -226,7 +226,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
           generateUsage() {
             const subcommandUsage = subcommandDecoder.generateUsage();
             const currentUsage = generateUsageLeaf(information, operation);
-            currentUsage.segments.push(segmentSubcommand(subcommandName));
+            currentUsage.segments.push({ subcommand: subcommandName });
             currentUsage.segments.push(...subcommandUsage.segments);
             currentUsage.information = subcommandUsage.information;
             currentUsage.positionals.push(...subcommandUsage.positionals);
@@ -252,7 +252,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         return {
           generateUsage() {
             const currentUsage = generateUsageLeaf(information, operation);
-            currentUsage.segments.push(segmentPositional("<subcommand>"));
+            currentUsage.segments.push({ positional: "<subcommand>" });
             for (const [name, subcommand] of Object.entries(subcommands)) {
               const { description, hint } = subcommand.getInformation();
               currentUsage.subcommands.push({ name, description, hint });
@@ -335,7 +335,7 @@ export function commandChained<Context, Payload, Result>(
         return {
           generateUsage() {
             const currentUsage = generateUsageLeaf(information, operation);
-            currentUsage.segments.push(segmentPositional("[REST]..."));
+            currentUsage.segments.push({ positional: "[REST]..." });
             return currentUsage;
           },
           decodeAndMakeInterpreter() {
@@ -347,23 +347,15 @@ export function commandChained<Context, Payload, Result>(
   };
 }
 
-function segmentPositional(value: string): UsageSegment {
-  return { positional: value };
-}
-
-function segmentSubcommand(value: string): UsageSegment {
-  return { subcommand: value };
-}
-
 function generateUsageLeaf(
   information: CommandInformation,
   operation: Operation<any, any>,
 ): UsageCommand {
   const { positionals, options } = operation.generateUsage();
   return {
-    segments: positionals.map((positional) =>
-      segmentPositional(positional.label),
-    ),
+    segments: positionals.map((positional) => ({
+      positional: positional.label,
+    })),
     information,
     positionals,
     subcommands: [],
