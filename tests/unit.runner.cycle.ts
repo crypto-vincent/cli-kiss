@@ -379,7 +379,7 @@ async function testCase(
               (value) => Number(value),
             ),
             description: "Option single value description",
-            valueNotDefined: () => 42,
+            defaultWhenNotDefined: () => 42,
           }),
         },
         positionals: [

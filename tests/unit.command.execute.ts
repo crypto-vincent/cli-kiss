@@ -47,7 +47,7 @@ const rootCommand = commandChained(
           string: optionSingleValue({
             long: "string-option",
             type: type(),
-            valueNotDefined: () => undefined,
+            defaultWhenNotDefined: () => undefined,
           }),
           number: optionRepeatable({
             long: "number-option",

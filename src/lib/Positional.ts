@@ -130,13 +130,7 @@ export function positionalOptional<Value>(definition: {
             try {
               return definition.default();
             } catch (error) {
-              throw new TypoError(
-                new TypoText(
-                  new TypoString(label, typoStyleUserInput),
-                  new TypoString(`: Failed to get default value`),
-                ),
-                error,
-              );
+              throwsWhenFailedToGetDefault(label);
             }
           }
           return decodeValue(label, definition.type, positional);
@@ -215,5 +209,14 @@ function decodeValue<Value>(
   return TypoError.tryWithContext(
     () => type.decoder(input),
     () => new TypoText(new TypoString(label, typoStyleUserInput)),
+  );
+}
+
+function throwsWhenFailedToGetDefault(label: string): never {
+  throw new TypoError(
+    new TypoText(
+      new TypoString(label, typoStyleUserInput),
+      new TypoString(`: Failed to get default value`),
+    ),
   );
 }

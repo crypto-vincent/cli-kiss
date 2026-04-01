@@ -37,14 +37,14 @@ const greetCommand = command(
         }),
       ],
     },
-    async (_ctx, { options: { loud }, positionals: [name] }) => {
+    async (_context, { options: { loud }, positionals: [name] }) => {
       const message = `Hello, ${name}!`;
       console.log(loud ? message.toUpperCase() : message);
     },
   ),
 );
 
-await runAndExit("greet", process.argv.slice(2), undefined, greetCommand, {
+await runAndExit("greet", process.argv.slice(2), {}, greetCommand, {
   buildVersion: "1.0.0",
 });
 ```

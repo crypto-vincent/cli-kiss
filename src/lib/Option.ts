@@ -126,8 +126,8 @@ export function optionFlag(definition: {
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.aliases - Additional names.
  * @param definition.type - Decoder for the raw string value.
- * @param definition.valueNotDefined - Default value when the option is not specified at all.
- * @param definition.valueNotInlined - Default value when the option is specified without an inline value (e.g. `--option` or `-o`).
+ * @param definition.valueWhenNotDefined - Default value when the option is not specified at all.
+ * @param definition.valueWhenNotInlined - Default value when the option is specified without an inline value (e.g. `--option` or `-o`).
  * @returns An {@link Option}`<Value>`.
  *
  * @example
@@ -137,7 +137,7 @@ export function optionFlag(definition: {
  *   short: "o",
  *   type: typePath(),
  *   description: "Output directory",
- *   valueNotDefined: () => "dist",
+ *   valueWhenNotDefined: () => "dist",
  * });
  * // Usage:
  * //   my-cli  →  "dist"
@@ -152,8 +152,8 @@ export function optionSingleValue<Value>(definition: {
   hint?: string;
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   type: Type<Value>;
-  valueNotDefined: () => Value;
-  valueNotInlined?: () => Value;
+  defaultWhenNotDefined: () => Value;
+  defaultWhenNotInlined?: () => Value;
 }): Option<Value> {
   const { long, short, description, hint, aliases, type } = definition;
   const label = `<${type.content}>`;
@@ -170,7 +170,7 @@ export function optionSingleValue<Value>(definition: {
         parsing: {
           consumeShortGroup: true,
           consumeNextArg(inlined, separated) {
-            if (definition.valueNotInlined !== undefined) {
+            if (definition.defaultWhenNotInlined !== undefined) {
               return false;
             }
             return inlined === null && separated.length === 0;
@@ -186,7 +186,7 @@ export function optionSingleValue<Value>(definition: {
           const optionResult = optionResults[0];
           if (optionResult === undefined) {
             try {
-              return definition.valueNotDefined();
+              return definition.defaultWhenNotDefined();
             } catch (error) {
               throwFailedToGetDefaultValueError(long, error, "not set");
             }
@@ -195,9 +195,9 @@ export function optionSingleValue<Value>(definition: {
             const inlined = optionResult.inlined;
             return decodeValue({ long, short, label, type, input: inlined });
           }
-          if (definition.valueNotInlined !== undefined) {
+          if (definition.defaultWhenNotInlined !== undefined) {
             try {
-              return definition.valueNotInlined();
+              return definition.defaultWhenNotInlined();
             } catch (error) {
               throwFailedToGetDefaultValueError(long, error, "not inlined");
             }

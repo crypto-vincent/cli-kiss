@@ -72,8 +72,8 @@ export async function runAndExit<Context>(
       {
         long: "color",
         type: typeChoice("color-mode", ["auto", "always", "never", "mock"]),
-        valueNotDefined: () => "auto",
-        valueNotInlined: () => "always",
+        defaultWhenNotDefined: () => "auto",
+        defaultWhenNotInlined: () => "always",
       },
     ).registerAndMakeDecoder(readerArgs);
     preprocessors.push(() => {

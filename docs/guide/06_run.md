@@ -18,14 +18,14 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 
 ### Options
 
-| Option         | Type                                          | Default        | Description                                                        |
-| -------------- | --------------------------------------------- | -------------- | ------------------------------------------------------------------ |
-| `buildVersion` | `string?`                                     | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`        |
-| `usageOnHelp`  | `boolean?`                                    | `true`         | Enables `--help` flag                                              |
-| `usageOnError` | `boolean?`                                    | `true`         | Prints usage to stderr when parsing fails                          |
-| `colorSetup`   | `"flag"\|"env"\|"always"\|"never"\|"mock"?`   | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
-| `onError`      | `(error: unknown) => void`                    | —              | Custom handler for parse and execution errors                      |
-| `onExit`       | `(code: number) => never`                     | `process.exit` | Override for testing                                               |
+| Option         | Type                                        | Default        | Description                                                                                 |
+| -------------- | ------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
+| `buildVersion` | `string?`                                   | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
+| `usageOnHelp`  | `boolean?`                                  | `true`         | Enables `--help` flag                                                                       |
+| `usageOnError` | `boolean?`                                  | `true`         | Prints usage to stderr when parsing fails                                                   |
+| `colorSetup`   | `"flag"\|"env"\|"always"\|"never"\|"mock"?` | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
+| `onError`      | `(error: unknown) => void`                  | —              | Custom handler for parse and execution errors                                               |
+| `onExit`       | `(code: number) => never`                   | `process.exit` | Override for testing                                                                        |
 
 ### Exit codes
 
@@ -37,17 +37,6 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 ## Full example
 
 ```ts
-import {
-  command,
-  commandWithSubcommands,
-  operation,
-  optionFlag,
-  optionSingleValue,
-  positionalRequired,
-  runAndExit,
-  typeUrl,
-} from "cli-kiss";
-
 type Ctx = { db: string };
 
 const deployCmd = command(
@@ -78,7 +67,7 @@ const rootCmd = commandWithSubcommands(
           long: "db",
           type: typeUrl(),
           description: "Database URL",
-          valueNotDefined: () => new URL("postgres://localhost/mydb"),
+          defaultWhenNotDefined: () => new URL("postgres://localhost/mydb"),
         }),
       },
       positionals: [],
@@ -125,7 +114,8 @@ my-cli deploy --dry-run
 
 ## Color control
 
-Colors are auto-detected by default (`colorSetup: "flag"` adds a `--color` option). Override:
+Colors are auto-detected by default (`colorSetup: "flag"` adds a `--color`
+option). Override:
 
 ```ts
 // Force colors on
@@ -146,10 +136,7 @@ await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "mock" });
 Override `onExit` to prevent process exit during tests:
 
 ```ts
-import { runAndExit } from "cli-kiss";
-
 const exitCodes: number[] = [];
-
 await runAndExit("my-cli", ["--help"], undefined, myCommand, {
   colorSetup: "never",
   onExit: (code) => {
@@ -157,6 +144,5 @@ await runAndExit("my-cli", ["--help"], undefined, myCommand, {
     return undefined as never;
   },
 });
-
 console.assert(exitCodes[0] === 0, "expected exit 0 for --help");
 ```

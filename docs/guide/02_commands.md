@@ -7,8 +7,6 @@ Three factory functions cover every use-case.
 No subcommands — directly runs an operation.
 
 ```ts
-import { command, operation, positionalRequired, type } from "cli-kiss";
-
 const greet = command(
   { description: "Greet a user" },
   operation(
@@ -28,13 +26,6 @@ const greet = command(
 User must pick one of several sub-actions.
 
 ```ts
-import {
-  command,
-  commandWithSubcommands,
-  operation,
-  runAndExit,
-} from "cli-kiss";
-
 const rootCmd = commandWithSubcommands(
   { description: "My deployment CLI" },
   // This operation runs before the subcommand is selected.
@@ -86,14 +77,6 @@ Keys are the tokens users must type.
 Splits a command into reusable steps with no extra user-visible token.
 
 ```ts
-import {
-  command,
-  commandChained,
-  operation,
-  optionSingleValue,
-  type,
-} from "cli-kiss";
-
 const authenticatedDeploy = commandChained(
   { description: "Authenticate then deploy" },
   // Stage 1: parse a --token option and forward the token as context
@@ -104,7 +87,7 @@ const authenticatedDeploy = commandChained(
           long: "token",
           type: type("SECRET"),
           description: "API token",
-          valueNotDefined: function () {
+          defaultWhenNotDefined: function () {
             const t = process.env.API_TOKEN;
             if (!t) throw new Error("API_TOKEN env var is required");
             return t;
@@ -147,13 +130,13 @@ Each `Example` entry has:
 
 Each `CommandArg` is one of:
 
-| Shape                                                                 | Renders as             |
-| --------------------------------------------------------------------- | ---------------------- |
-| `string`                                                              | literal text           |
-| `{ positional: string }`                                              | positional label       |
-| `{ subcommand: string }`                                              | subcommand name        |
-| `{ option: { long: string; inlined?: string; separated?: string[] } }` | `--long[=val] [args]` |
-| `{ option: { short: string; inlined?: string; separated?: string[] } }` | `-s[=val] [args]`    |
+| Shape                                                                   | Renders as            |
+| ----------------------------------------------------------------------- | --------------------- |
+| `string`                                                                | literal text          |
+| `{ positional: string }`                                                | positional label      |
+| `{ subcommand: string }`                                                | subcommand name       |
+| `{ option: { long: string; inlined?: string; separated?: string[] } }`  | `--long[=val] [args]` |
+| `{ option: { short: string; inlined?: string; separated?: string[] } }` | `-s[=val] [args]`     |
 
 ```ts
 command(
