@@ -8,10 +8,10 @@ npm install cli-kiss
 
 ## Your first CLI
 
-Minimal "greet" CLI with:
+Example minimal "greet" CLI with:
 
-- a required `NAME` positional
-- optional `--loud` flag:
+- a required `name` positional argument
+- optional `--loud` boolean flag
 
 ```ts
 import {
