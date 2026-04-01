@@ -115,7 +115,7 @@ export type CommandInformation = {
  * const greet = command(
  *   { description: "Greet a user" },
  *   operation(
- *     { options: {}, positionals: [positionalRequired({ type: typeString })] },
+ *     { options: {}, positionals: [positionalRequired({ type: type("name") })] },
  *     async (_ctx, { positionals: [name] }) => console.log(`Hello, ${name}!`),
  *   ),
  * );
@@ -280,18 +280,6 @@ export function commandWithSubcommands<Context, Payload, Result>(
  * @param operation - Runs first; output becomes `subcommand`'s context.
  * @param subcommand - Runs after `operation`.
  * @returns A {@link Command} composing both stages.
- *
- * @example
- * ```ts
- * const authenticatedDeploy = commandChained(
- *   { description: "Authenticate then deploy" },
- *   operation(
- *     { options: { tokens: optionSingleValue({ long: "token", type: typeString, default: () => "" }) }, positionals: [] },
- *     async (_ctx, { options: { token } }) => ({ token }),
- *   ),
- *   command({ description: "Deploy" }, deployOperation),
- * );
- * ```
  */
 export function commandChained<Context, Payload, Result>(
   information: CommandInformation,

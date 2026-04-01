@@ -39,8 +39,8 @@ const rootCommand = commandChained<any, any, any>(
           long: "choice-option",
           type: typeChoice("choice", ["unset", "empty", "choice1", "choice2"]),
           description: "choice-option description",
-          valueNotInlined: () => "empty",
-          valueNotDefined: () => "unset",
+          defaultWhenNotInlined: () => "empty",
+          defaultWhenNotDefined: () => "unset",
         }),
         booleanFlag: optionFlag({
           short: "b",
@@ -81,7 +81,7 @@ const rootCommand = commandChained<any, any, any>(
             short: "s",
             long: "string-option",
             type: type("cool-stuff"),
-            valueNotDefined: () => undefined,
+            defaultWhenNotDefined: () => undefined,
             description: "string-option description",
           }),
           complexOption: optionRepeatable({
@@ -174,7 +174,7 @@ const rootCommand = commandChained<any, any, any>(
               duduValue: optionSingleValue({
                 long: "dudu",
                 type: type("dudu-value"),
-                valueNotDefined: () => "duduDefault",
+                defaultWhenNotDefined: () => "duduDefault",
                 hint: "Dudu option hint",
                 description: "Dudu option description",
               }),

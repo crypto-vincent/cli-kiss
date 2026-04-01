@@ -8,8 +8,6 @@ Named `--` arguments (or `-` for short forms). Declared in the `options` map of
 Present or absent. Also accepts `--flag=true` / `--flag=no`.
 
 ```ts
-import { optionFlag } from "cli-kiss";
-
 const verbose = optionFlag({
   long: "verbose",
   short: "v",
@@ -41,14 +39,12 @@ multiple values.
 Exactly one typed value.
 
 ```ts
-import { optionSingleValue, type } from "cli-kiss";
-
 const output = optionSingleValue({
   long: "output",
   short: "o",
-  type: type,
+  type: typePath(),
   description: "Output directory",
-  default: () => "dist/",
+  defaultWhenNotDefined: () => "dist/",
 });
 // --output dist/   →  "dist/"
 // --output=dist/   →  "dist/"
@@ -56,23 +52,22 @@ const output = optionSingleValue({
 // (absent)         →  "dist/"
 ```
 
-| Parameter     | Type                  | Description                                                 |
-| ------------- | --------------------- | ----------------------------------------------------------- |
-| `long`        | `string`              | Long option name                                            |
-| `short`       | `string?`             | Short option name                                           |
-| `type`        | `Type<Value>`         | Decoder for the value                                       |
-| `description` | `string?`             | Help text                                                   |
-| `hint`        | `string?`             | Short note in parentheses                                   |
-| `default`     | `() => Value`         | Default when absent — **throw** to make the option required |
-| `aliases`     | `{ longs?, shorts? }` | Additional names                                            |
+| Parameter               | Type                  | Description                                                                  |
+| ----------------------- | --------------------- | ---------------------------------------------------------------------------- |
+| `long`                  | `string`              | Long option name                                                             |
+| `short`                 | `string?`             | Short option name                                                            |
+| `type`                  | `Type<Value>`         | Decoder for the value                                                        |
+| `description`           | `string?`             | Help text                                                                    |
+| `hint`                  | `string?`             | Short note in parentheses                                                    |
+| `defaultWhenNotDefined` | `() => Value`         | Value when option is absent — **throw** to make it required                  |
+| `defaultWhenNotInlined` | `() => Value?`        | Value when option is present but has no inline value (e.g. `--output` alone) |
+| `aliases`               | `{ longs?, shorts? }` | Additional names                                                             |
 
 ## `optionRepeatable` — collect multiple values
 
 Collects every occurrence into an array.
 
 ```ts
-import { optionRepeatable, type } from "cli-kiss";
-
 const files = optionRepeatable({
   long: "file",
   short: "f",

@@ -7,34 +7,48 @@ A `Type<Value>` converts a raw CLI string into a typed value:
 
 ## Built-in types
 
-| Type factory   | Content type | Accepts                                                                     |
-| -------------- | ------------ | --------------------------------------------------------------------------- |
-| `type`         | `string`     | Any string                                                                  |
+All type factories accept an optional `name` parameter that overrides the label shown in help/errors.
+
+| Type factory   | Content type | Accepts                                                                      |
+| -------------- | ------------ | ---------------------------------------------------------------------------- |
+| `type`         | `string`     | Any string                                                                   |
 | `typeBoolean`  | `boolean`    | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
-| `typeNumber`   | `number`     | Integers, floats, scientific notation                                       |
-| `typeInteger`  | `bigint`     | Integer strings only                                                        |
-| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)                  |
-| `typeUrl`      | `URL`        | Absolute URLs                                                               |
+| `typeNumber`   | `number`     | Integers, floats, scientific notation                                        |
+| `typeInteger`  | `bigint`     | Integer strings only                                                         |
+| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)                   |
+| `typeUrl`      | `URL`        | Absolute URLs                                                                |
+| `typePath`     | `string`     | Non-empty path strings; optional sync existence check                        |
 
 ```ts
-type("greentings").decoder("hello"); // → "hello"
+type("greeting").decoder("hello"); // → "hello"
 typeBoolean("flag").decoder("yes"); // → true
 typeNumber("pi").decoder("3.14"); // → 3.14
 typeInteger("id").decoder("9007199254740993"); // → 9007199254740993n
-typeDate("birthday").decoder("2024-01-15"); // → Date object
+typeDatetime("birthday").decoder("2024-01-15"); // → Date object
 typeUrl("redirect").decoder("https://example.com/path"); // → URL object
+typePath().decoder("/usr/bin"); // → "/usr/bin"
+```
+
+`typePath` also accepts a second argument for existence checks:
+
+```ts
+typePath("config", { checkSyncExistAs: "file" });     // throws if not a file
+typePath("dir",    { checkSyncExistAs: "directory" }); // throws if not a directory
 ```
 
 ## `typeChoice` — string enum
 
-Accepts only a fixed set of strings:
+Accepts only a fixed set of strings (case-insensitive by default):
 
 ```ts
 const typeEnv = typeChoice("environment", ["dev", "staging", "prod"]);
 typeEnv.decoder("prod"); // → "prod"
+typeEnv.decoder("PROD"); // → "prod"  (case-insensitive)
 typeEnv.decoder("unknown");
 // Error: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
 ```
+
+Pass `true` as third argument to make matching case-sensitive.
 
 ## `typeTuple` — fixed-length delimited value
 
@@ -58,7 +72,7 @@ typeTuple([type("name"), typeNumber()], ":");
 Splits a string into an array of typed values:
 
 ```ts
-const typeNumbers = typeList(typeNumber);
+const typeNumbers = typeList(typeNumber());
 typeNumbers.decoder("1,2,3"); // → [1, 2, 3]
 typeNumbers.decoder("1,x,3"); // → Error: at 1: Number: Unable to parse: "x"
 ```
@@ -76,6 +90,28 @@ over `typeList` when users should pass multiple values as separate flags
 (`--file a --file b` rather than `--files a,b`).
 
 :::
+
+## `typeConverted` — transform decoded value
+
+Chains a base type with a transformation function:
+
+```ts
+const typePort = typeConverted("port", typeNumber(), (n) => {
+  if (n < 1 || n > 65535) throw new Error("Out of range");
+  return n;
+});
+// "--port 8080"   →  8080
+// "--port 99999"  →  TypoError
+```
+
+## `typeRenamed` — rename a type
+
+Wraps a type with a different label for clearer errors:
+
+```ts
+const typeId = typeRenamed(typeInteger(), "user-id");
+// errors show "user-id" instead of "integer"
+```
 
 ## Custom types
 

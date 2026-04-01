@@ -30,12 +30,12 @@ import { usageToStyledLines } from "./Usage";
  *
  * @example
  * ```ts
- * import { runAndExit, command, operation, positionalRequired, typeString } from "cli-kiss";
+ * import { runAndExit, command, operation, positionalRequired, type } from "cli-kiss";
  *
  * const greetCommand = command(
  *   { description: "Greet someone" },
  *   operation(
- *     { options: {}, positionals: [positionalRequired({ type: typeString, label: "NAME" })] },
+ *     { options: {}, positionals: [positionalRequired({ type: type("name") })] },
  *     async function (_ctx, { positionals: [name] }) {
  *       console.log(`Hello, ${name}!`);
  *     },
@@ -72,8 +72,8 @@ export async function runAndExit<Context>(
       {
         long: "color",
         type: typeChoice("color-mode", ["auto", "always", "never", "mock"]),
-        valueNotDefined: () => "auto",
-        valueNotInlined: () => "always",
+        defaultWhenNotDefined: () => "auto",
+        defaultWhenNotInlined: () => "always",
       },
     ).registerAndMakeDecoder(readerArgs);
     preprocessors.push(() => {
