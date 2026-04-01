@@ -38,12 +38,12 @@ export type Type<Value> = {
  *
  * @example
  * ```ts
- * typeBoolean.decoder("true")  // → true
- * typeBoolean.decoder("yes")   // → true
- * typeBoolean.decoder("y")     // → true
- * typeBoolean.decoder("false") // → false
- * typeBoolean.decoder("no")    // → false
- * typeBoolean.decoder("n")     // → false
+ * typeBoolean("flag").decoder("true")  // → true
+ * typeBoolean("flag").decoder("yes")   // → true
+ * typeBoolean("flag").decoder("y")     // → true
+ * typeBoolean("flag").decoder("false") // → false
+ * typeBoolean("flag").decoder("no")    // → false
+ * typeBoolean("flag").decoder("n")     // → false
  * ```
  */
 export function typeBoolean(name?: string): Type<boolean> {
@@ -214,10 +214,9 @@ export function type(name?: string): Type<string> {
  * @typeParam Before - Intermediate type from `before.decoder`.
  * @typeParam After - Final type from `after.decoder`.
  *
- * @param before - Base decoder for the raw string.
- * @param after - Transformation applied to the decoded value.
- * @param after.content - Name for the resulting type (shown in errors).
- * @param after.decoder - Converts a `Before` value to `After`.
+ * @param name - Name shown in help and errors (e.g. `"my-value"`).
+ * @param before - Base type to decode the raw string.
+ * @param mapper - Transforms `before`'s output to the final value; errors are wrapped with context.
  * @returns A {@link Type}`<After>`.
  *
  * @example
@@ -335,7 +334,7 @@ export function typePath(
  *
  * @example
  * ```ts
- * const typeEnv = typeChoice("env", ["dev", "staging", "prod"]);
+ * const typeEnv = typeChoice("environment", ["dev", "staging", "prod"]);
  * typeEnv.decoder("prod")    // → "prod"
  * typeEnv.decoder("unknown") // throws TypoError: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
  * ```
@@ -393,7 +392,7 @@ export function typeChoice<const Value extends string>(
  *
  * @example
  * ```ts
- * const typePoint = typeTuple([typeNumber, typeNumber]);
+ * const typePoint = typeTuple([typeNumber("x"), typeNumber("y")]);
  * typePoint.decoder("3.14,2.71") // → [3.14, 2.71]
  * typePoint.decoder("1,2,3")     // → [1, 2]
  * typePoint.decoder("x,2")       // throws TypoError: at 0: Number: Unable to parse: "x"

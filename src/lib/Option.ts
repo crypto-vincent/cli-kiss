@@ -77,7 +77,7 @@ export function optionFlag(definition: {
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   default?: boolean;
 }): Option<boolean> {
-  const type = typeBoolean("=");
+  const type = typeBoolean("value");
   const { long, short, description, hint, aliases } = definition;
   return {
     generateUsage() {

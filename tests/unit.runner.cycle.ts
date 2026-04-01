@@ -101,13 +101,13 @@ it("run", async function () {
   await testCase(
     ["--help=invalid"],
     [],
-    [rootUsage, `Error: --help: =: Not a boolean: "invalid"`],
+    [rootUsage, `Error: --help: value: Not a boolean: "invalid"`],
     1,
   );
   await testCase(
     ["--version=invalid"],
     [],
-    [rootUsage, `Error: --version: =: Not a boolean: "invalid"`],
+    [rootUsage, `Error: --version: value: Not a boolean: "invalid"`],
     1,
   );
 
@@ -181,7 +181,7 @@ it("run", async function () {
   await testCase(
     ["--flag=42", "required1", "subcommand", "required2"],
     [],
-    [subcommandUsage, 'Error: --flag: =: Not a boolean: "42"'],
+    [subcommandUsage, 'Error: --flag: value: Not a boolean: "42"'],
     1,
   );
   await testCase(

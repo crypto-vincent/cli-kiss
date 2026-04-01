@@ -25,7 +25,7 @@ it("run", async function () {
   );
   await testCase(
     ["--flag=invalid"],
-    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{=}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{value}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+',
   );
   await testCase(
     ["--single-value=a", "--single-value=b"],
