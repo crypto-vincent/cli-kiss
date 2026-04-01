@@ -296,7 +296,20 @@ export function typePath(
         throw new Error(`Path cannot contain null characters`);
       }
       if (checks?.checkSyncExistAs !== undefined) {
-        const stats = statSync(input);
+        function safeStatSync(path: string) {
+          try {
+            return statSync(path);
+          } catch (error) {
+            throw new TypoError(
+              new TypoText(
+                new TypoString(`Path does not exist: `),
+                new TypoString(`"${path}"`, typoStyleQuote),
+              ),
+              error,
+            );
+          }
+        }
+        const stats = safeStatSync(input);
         const preview = stats.isDirectory()
           ? "directory"
           : stats.isFile()
@@ -305,7 +318,7 @@ export function typePath(
         if (checks.checkSyncExistAs === "file" && !stats.isFile()) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`Expected a 'file' but found '${preview}': `),
+              new TypoString(`Expected a file but found: ${preview}: `),
               new TypoString(`"${input}"`, typoStyleQuote),
             ),
           );
@@ -313,7 +326,7 @@ export function typePath(
         if (checks.checkSyncExistAs === "directory" && !stats.isDirectory()) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`Expected a 'directory' but found '${preview}': `),
+              new TypoString(`Expected a directory but found: ${preview}: `),
               new TypoString(`"${input}"`, typoStyleQuote),
             ),
           );
