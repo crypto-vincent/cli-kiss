@@ -69,19 +69,19 @@ greet --loud Alice
 HELLO, ALICE!
 ```
 
-Help (built-in):
+Help and color (built-in):
 
 ```sh
-greet --help
+greet --help --color
 ```
 
 ```text
-Usage: greet <NAME>
+Usage: greet <name>
 
 Greet someone
 
 Positionals:
-  <NAME>  The name to greet
+  <name>  The name of the person to greet
 
 Options:
   --loud[=no]  Print in uppercase
