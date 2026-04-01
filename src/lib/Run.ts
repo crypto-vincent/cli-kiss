@@ -64,7 +64,7 @@ export async function runAndExit<Context>(
   const preprocessors = new Array<
     (commandDecoder: CommandDecoder<Context, void>) => undefined | number
   >();
-  let typoSupport = TypoSupport.none();
+  let typoSupport = computeTypoSupport(options?.colorMode ?? "auto");
   if (options?.colorMode === "auto" || options?.colorMode === undefined) {
     const colorOption = optionChoice({
       long: "color",
@@ -92,9 +92,7 @@ export async function runAndExit<Context>(
       if (!helpOption.getAndDecodeValue()) {
         return undefined;
       }
-      console.log(
-        computeUsageString(cliName, commandDecoder, TypoSupport.none()),
-      );
+      console.log(computeUsageString(cliName, commandDecoder, typoSupport));
       return 0;
     });
   }
@@ -118,7 +116,7 @@ export async function runAndExit<Context>(
     longs: ["completion"],
   });
   */
-  // TODO - handle no-color/force-color flag ?
+  // TODO - handle no-color/force-color flag and weird errors propagation ?
   const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   while (true) {
     try {
@@ -129,13 +127,13 @@ export async function runAndExit<Context>(
     } catch (_) {}
   }
   const onExit = options?.onExit ?? process.exit;
-  for (const preprocessor of preprocessors) {
-    const preprocessorResult = preprocessor(commandDecoder);
-    if (preprocessorResult !== undefined) {
-      return onExit(preprocessorResult);
-    }
-  }
   try {
+    for (const preprocessor of preprocessors) {
+      const preprocessorResult = preprocessor(commandDecoder);
+      if (preprocessorResult !== undefined) {
+        return onExit(preprocessorResult);
+      }
+    }
     const commandInterpreter = commandDecoder.decodeAndMakeInterpreter();
     try {
       await commandInterpreter.executeWithContext(context);
@@ -178,10 +176,12 @@ function computeUsageString<Context, Result>(
 }
 
 function computeTypoSupport(
-  colorMode: "auto" | "always" | "never" | "mock",
+  colorMode: "auto" | "env" | "always" | "never" | "mock",
 ): TypoSupport {
   switch (colorMode) {
     case "auto":
+      return TypoSupport.inferFromEnv();
+    case "env":
       return TypoSupport.inferFromEnv();
     case "always":
       return TypoSupport.tty();

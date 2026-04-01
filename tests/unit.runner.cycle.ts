@@ -98,6 +98,74 @@ it("run", async function () {
   await testCase(["--version", "--help"], [rootUsage], [], 0);
   await testCase(["--help", "--version"], [rootUsage], [], 0);
 
+  // Weird help/version values inputs
+  await testCase(
+    ["--help=invalid"],
+    [],
+    [rootUsage, `Error: --help: boolean: Invalid value: "invalid"`],
+    1,
+  );
+  await testCase(
+    ["--version=invalid"],
+    [],
+    [rootUsage, `Error: --version: boolean: Invalid value: "invalid"`],
+    1,
+  );
+
+  // Test color flag exists and is parsed on top of regular flags and env
+  process.env["FORCE_COLOR"] = "1";
+  await testCase(["--color=never", "--help"], [rootUsage], [], 0, "auto");
+  await testCase(["--help", "--color=never"], [rootUsage], [], 0, "auto");
+  delete process.env["FORCE_COLOR"];
+
+  // TODO - better testing in a separate test file for color modes and flag
+  process.env["FORCE_COLOR"] = "0";
+  await testCase(["--color=auto", "--help"], [rootUsage], [], 0, "auto");
+  await testCase(["--help", "--color=auto"], [rootUsage], [], 0, "auto");
+  delete process.env["FORCE_COLOR"];
+
+  // Colorless output should not match when color is enabled
+  mustFail(async () => {
+    await testCase(["--color=always", "--help"], [rootUsage], [], 0, "auto");
+  });
+  mustFail(async () => {
+    await testCase(["--color=mock", "--help"], [rootUsage], [], 0, "auto");
+  });
+  mustFail(async () => {
+    await testCase(["--color=auto", "--help"], [rootUsage], [], 0, "auto");
+  });
+  mustFail(async () => {
+    await testCase(["--color", "--help"], [rootUsage], [], 0, "auto");
+  });
+
+  // Check that color flag is properly gated
+  await testCase(
+    ["--color=auto"],
+    [],
+    [rootUsage, "Error: Unexpected unknown option: --color"],
+    1,
+    "never",
+  );
+  process.env["NO_COLOR"] = "";
+  await testCase(
+    ["--color=invalid"],
+    [],
+    [
+      rootUsage,
+      `Error: --color: <color-mode>: Invalid value: "invalid" (expected one of: "auto" | "always" | "never"...)`,
+    ],
+    1,
+    "auto",
+  );
+  await testCase(
+    ["--color=auto"],
+    [],
+    [rootUsage, "Error: Unexpected unknown option: --color"],
+    1,
+    "env",
+  );
+  delete process.env["NO_COLOR"];
+
   // Test multiple errors at once (first one should show only)
   await testCase(
     ["--invalid1", "--invalid2", "required1", "--invalid3"],
@@ -343,6 +411,7 @@ async function testCase(
   expectStdOut: Array<string>,
   expectStdErr: Array<string>,
   expectExit: number,
+  colorMode?: "auto" | "env" | "always" | "never" | "mock",
 ) {
   const onLogStdOut = makeMocked<string, void>([
     null as unknown as void,
@@ -427,8 +496,8 @@ async function testCase(
   console.error = onLogStdErr.call;
   await runAndExit("my-cli", args, null, cmd, {
     buildVersion: "1.0.0",
-    colorMode: "never",
     onExit: onExit.call,
+    colorMode: colorMode ?? "never",
   });
   expect({
     stdOut: onLogStdOut.history,
@@ -456,4 +525,16 @@ function makeMocked<P, R>(returns: Array<R>) {
       return returns[history.length - 1]!;
     },
   };
+}
+
+async function mustFail(callback: () => Promise<unknown>) {
+  let failed = false;
+  try {
+    await callback();
+  } catch {
+    failed = true;
+  }
+  if (!failed) {
+    throw new Error(`Should have failed, but did not`);
+  }
 }

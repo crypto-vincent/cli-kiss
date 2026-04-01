@@ -352,32 +352,38 @@ export class TypoSupport {
   }
   /**
    * Deterministic textual styling for snapshot tests.
-   * Style flags appear as suffixes: `{text}@color`, `{text}+` (bold), `{text}-` (dim),
-   * `{text}*` (italic), `{text}_` (underline), `{text}~` (strikethrough).
    */
   static mock(): TypoSupport {
     return new TypoSupport("mock");
   }
   /**
-   * Auto-detects styling mode from the process environment.
-   * `FORCE_COLOR=0` / `NO_COLOR` → none; `FORCE_COLOR` (truthy); else → none.
-   * Returns `none` if `process.env` is unavailable (e.g. non-Node environment).
+   * Auto-detects styling mode from the process environment on best-effort basis.
    */
   static inferFromEnv(): TypoSupport {
     if (!process || !process.env) {
       return TypoSupport.none();
     }
-    if (process.env["FORCE_COLOR"]) {
-      if (typeBoolean.decoder(process.env["FORCE_COLOR"])) {
-        return TypoSupport.tty();
-      } else {
-        return TypoSupport.none();
+    function readEnvVar(name: string): boolean | undefined {
+      if (!(name in process.env)) {
+        return undefined;
       }
+      const value = process.env[name];
+      if (value === undefined) {
+        return undefined;
+      }
+      if (value === "") {
+        return true;
+      }
+      return typeBoolean.decoder(value);
     }
-    if ("NO_COLOR" in process.env) {
+    const forceColor = readEnvVar("FORCE_COLOR");
+    if (forceColor !== undefined) {
+      return forceColor ? TypoSupport.tty() : TypoSupport.none();
+    }
+    if (readEnvVar("NO_COLOR")) {
       return TypoSupport.none();
     }
-    if ("MOCK_COLOR" in process.env) {
+    if (readEnvVar("MOCK_COLOR")) {
       return TypoSupport.mock();
     }
     return TypoSupport.tty();
