@@ -1,23 +1,26 @@
-# Types
+# Input Types
 
 A `Type<Value>` converts a raw CLI string into a typed value:
 
 - Contains a `content` label about the type of data being decoded
 - Paired with a `decoder` function that throws if the value is invalid.
 
+A `Type<Value>` can then be used as a value for an `Option` or `Positional`
+
 ## Built-in types
 
-All type factories accept an optional `name` parameter that overrides the label shown in help/errors.
+All type factories accept an optional `name` parameter that overrides the label
+shown in help/errors.
 
-| Type factory   | Content type | Accepts                                                                      |
-| -------------- | ------------ | ---------------------------------------------------------------------------- |
-| `type`         | `string`     | Any string                                                                   |
+| Type factory   | Content type | Accepts                                                                     |
+| -------------- | ------------ | --------------------------------------------------------------------------- |
+| `type`         | `string`     | Any string                                                                  |
 | `typeBoolean`  | `boolean`    | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
-| `typeNumber`   | `number`     | Integers, floats, scientific notation                                        |
-| `typeInteger`  | `bigint`     | Integer strings only                                                         |
-| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)                   |
-| `typeUrl`      | `URL`        | Absolute URLs                                                                |
-| `typePath`     | `string`     | Non-empty path strings; optional sync existence check                        |
+| `typeNumber`   | `number`     | Integers, floats, scientific notation                                       |
+| `typeInteger`  | `bigint`     | Integer strings only                                                        |
+| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)                  |
+| `typeUrl`      | `URL`        | Absolute URLs                                                               |
+| `typePath`     | `string`     | Non-empty path strings; optional sync existence check                       |
 
 ```ts
 type("greeting").decoder("hello"); // → "hello"
@@ -32,8 +35,8 @@ typePath().decoder("/usr/bin"); // → "/usr/bin"
 `typePath` also accepts a second argument for existence checks:
 
 ```ts
-typePath("config", { checkSyncExistAs: "file" });     // throws if not a file
-typePath("dir",    { checkSyncExistAs: "directory" }); // throws if not a directory
+typePath("config", { checkSyncExistAs: "file" }); // throws if not a file
+typePath("dir", { checkSyncExistAs: "directory" }); // throws if not a directory
 ```
 
 ## `typeChoice` — string enum
@@ -109,8 +112,7 @@ const typePort = typeConverted("port", typeNumber(), (n) => {
 Wraps a type with a different label for clearer errors:
 
 ```ts
-const typeId = typeRenamed(typeInteger(), "user-id");
-// errors show "user-id" instead of "integer"
+const typeUserId = typeRenamed(typeInteger("u64"), "user-id");
 ```
 
 ## Custom types
@@ -124,7 +126,7 @@ const typeHexColor: Type<string> = {
     if (/^#[0-9a-fA-F]{6}$/.test(value)) {
       return value;
     }
-    throw new Error(`Not a valid color: "${value}"`);
+    throw new Error(`Not a valid hex color: "${value}"`);
   },
 };
 // "#ff0000"  →  "#ff0000"

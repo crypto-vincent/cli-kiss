@@ -120,15 +120,10 @@ option). Override:
 ```ts
 // Force colors on
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "always" });
-
 // Force colors off (useful in CI)
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "never" });
-
-// Read from env vars (FORCE_COLOR, NO_COLOR, MOCK_COLOR)
+// Read from env vars (FORCE_COLOR, NO_COLOR)
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "env" });
-
-// Deterministic mock output (useful in snapshot tests)
-await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "mock" });
 ```
 
 ## Testing your CLI
