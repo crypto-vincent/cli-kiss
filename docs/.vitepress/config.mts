@@ -5,6 +5,7 @@ export default defineConfig({
   title: "cli-kiss 💋",
   base: "/cli-kiss/",
   head: [
+    ["link", { rel: "icon", href: "/cli-kiss/favicon.ico" }],
     [
       "style",
       {},
