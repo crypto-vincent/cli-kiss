@@ -94,7 +94,6 @@ export function positionalRequired<Value>(definition: {
  *
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
- * @param definition.label - Label without brackets.
  * @param definition.type - Decoder for the raw token.
  * @param definition.default - Value when absent. Throw to make it required.
  * @returns A {@link Positional}`<Value>`.
@@ -102,8 +101,7 @@ export function positionalRequired<Value>(definition: {
  * @example
  * ```ts
  * const greeteePositional = positionalOptional({
- *   type: typeString,
- *   label: "NAME",
+ *   type: type("name"),
  *   description: "Name to greet (default: world)",
  *   default: () => "world",
  * });
@@ -164,7 +162,6 @@ export function positionalOptional<Value>(definition: {
  * ```ts
  * const filesPositional = positionalVariadics({
  *   type: typePath(),
- *   label: "FILE",
  *   description: "Files to process",
  * });
  * // Usage:

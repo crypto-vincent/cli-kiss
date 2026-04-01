@@ -104,7 +104,7 @@ const authenticatedDeploy = commandChained(
           long: "token",
           type: type("SECRET"),
           description: "API token",
-          default: function () {
+          valueNotDefined: function () {
             const t = process.env.API_TOKEN;
             if (!t) throw new Error("API_TOKEN env var is required");
             return t;
@@ -147,13 +147,13 @@ Each `Example` entry has:
 
 Each `CommandArg` is one of:
 
-| Shape                                           | Renders as       |
-| ----------------------------------------------- | ---------------- |
-| `string`                                        | literal text     |
-| `{ positional: string }`                        | positional label |
-| `{ subcommand: string }`                        | subcommand name  |
-| `{ option: { long: string; value?: string } }`  | `--long[=value]` |
-| `{ option: { short: string; value?: string } }` | `-s[=value]`     |
+| Shape                                                                 | Renders as             |
+| --------------------------------------------------------------------- | ---------------------- |
+| `string`                                                              | literal text           |
+| `{ positional: string }`                                              | positional label       |
+| `{ subcommand: string }`                                              | subcommand name        |
+| `{ option: { long: string; inlined?: string; separated?: string[] } }` | `--long[=val] [args]` |
+| `{ option: { short: string; inlined?: string; separated?: string[] } }` | `-s[=val] [args]`    |
 
 ```ts
 command(

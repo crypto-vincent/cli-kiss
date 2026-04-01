@@ -86,7 +86,7 @@ export type OperationInterpreter<Context, Result> = {
  *       loud: optionFlag({ long: "loud", description: "Print in uppercase", default: false }),
  *     },
  *     positionals: [
- *       positionalRequired({ type: typeString, label: "NAME", description: "Name to greet" }),
+ *       positionalRequired({ type: type("name"), description: "Name to greet" }),
  *     ],
  *   },
  *   async function (_ctx, { options: { loud }, positionals: [name] }) {

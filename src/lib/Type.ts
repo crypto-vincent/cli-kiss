@@ -222,7 +222,7 @@ export function type(name?: string): Type<string> {
  *
  * @example
  * ```ts
- * const typePort = typeRemapped("port", typeNumber(), (n) => {
+ * const typePort = typeConverted("port", typeNumber(), (n) => {
  *   if (n < 1 || n > 65535) throw new Error("Out of range");
  *   return n;
  * });

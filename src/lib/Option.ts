@@ -126,8 +126,8 @@ export function optionFlag(definition: {
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.aliases - Additional names.
  * @param definition.type - Decoder for the raw string value.
- * @param definition.valueWhenNotDefined - Default value when the option is not specified at all.
- * @param definition.valueWhenNotInlined - Default value when the option is specified without an inline value (e.g. `--option` or `-o`).
+ * @param definition.valueNotDefined - Default value when the option is not specified at all.
+ * @param definition.valueNotInlined - Default value when the option is specified without an inline value (e.g. `--option` or `-o`).
  * @returns An {@link Option}`<Value>`.
  *
  * @example
@@ -137,7 +137,7 @@ export function optionFlag(definition: {
  *   short: "o",
  *   type: typePath(),
  *   description: "Output directory",
- *   valueWhenNotDefined: () => "dist",
+ *   valueNotDefined: () => "dist",
  * });
  * // Usage:
  * //   my-cli  →  "dist"

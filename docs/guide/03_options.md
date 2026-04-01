@@ -41,14 +41,14 @@ multiple values.
 Exactly one typed value.
 
 ```ts
-import { optionSingleValue, type } from "cli-kiss";
+import { optionSingleValue, typePath } from "cli-kiss";
 
 const output = optionSingleValue({
   long: "output",
   short: "o",
-  type: type,
+  type: typePath(),
   description: "Output directory",
-  default: () => "dist/",
+  valueNotDefined: () => "dist/",
 });
 // --output dist/   →  "dist/"
 // --output=dist/   →  "dist/"
@@ -56,15 +56,16 @@ const output = optionSingleValue({
 // (absent)         →  "dist/"
 ```
 
-| Parameter     | Type                  | Description                                                 |
-| ------------- | --------------------- | ----------------------------------------------------------- |
-| `long`        | `string`              | Long option name                                            |
-| `short`       | `string?`             | Short option name                                           |
-| `type`        | `Type<Value>`         | Decoder for the value                                       |
-| `description` | `string?`             | Help text                                                   |
-| `hint`        | `string?`             | Short note in parentheses                                   |
-| `default`     | `() => Value`         | Default when absent — **throw** to make the option required |
-| `aliases`     | `{ longs?, shorts? }` | Additional names                                            |
+| Parameter        | Type                  | Description                                                 |
+| ---------------- | --------------------- | ----------------------------------------------------------- |
+| `long`           | `string`              | Long option name                                            |
+| `short`          | `string?`             | Short option name                                           |
+| `type`           | `Type<Value>`         | Decoder for the value                                       |
+| `description`    | `string?`             | Help text                                                   |
+| `hint`           | `string?`             | Short note in parentheses                                   |
+| `valueNotDefined`   | `() => Value`      | Value when option is absent — **throw** to make it required |
+| `valueNotInlined`   | `() => Value?`     | Value when option is present but has no inline value (e.g. `--output` alone) |
+| `aliases`        | `{ longs?, shorts? }` | Additional names                                            |
 
 ## `optionRepeatable` — collect multiple values
 

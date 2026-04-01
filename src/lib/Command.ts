@@ -115,7 +115,7 @@ export type CommandInformation = {
  * const greet = command(
  *   { description: "Greet a user" },
  *   operation(
- *     { options: {}, positionals: [positionalRequired({ type: typeString })] },
+ *     { options: {}, positionals: [positionalRequired({ type: type("name") })] },
  *     async (_ctx, { positionals: [name] }) => console.log(`Hello, ${name}!`),
  *   ),
  * );
@@ -286,7 +286,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
  * const authenticatedDeploy = commandChained(
  *   { description: "Authenticate then deploy" },
  *   operation(
- *     { options: { tokens: optionSingleValue({ long: "token", type: typeString, default: () => "" }) }, positionals: [] },
+ *     { options: { tokens: optionSingleValue({ long: "token", type: type("token"), valueNotDefined: () => "" }) }, positionals: [] },
  *     async (_ctx, { options: { token } }) => ({ token }),
  *   ),
  *   command({ description: "Deploy" }, deployOperation),
