@@ -59,7 +59,7 @@ deploy-cli --help
 ```
 
 ```text
-Usage: deploy-cli <SUBCOMMAND>
+Usage: deploy-cli <subcommand>
 
 My deployment CLI
 
@@ -85,7 +85,7 @@ const authenticatedDeploy = commandChained(
       options: {
         token: optionSingleValue({
           long: "token",
-          type: type("SECRET"),
+          type: type("secret"),
           description: "API token",
           defaultWhenNotDefined: function () {
             const t = process.env.API_TOKEN;

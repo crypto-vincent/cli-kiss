@@ -99,7 +99,7 @@ Subcommands:
   deploy  Deploy to production
 
 Options:
-  --db <URL>  Database URL
+  --db <url>  Database URL
 ```
 
 Try it
