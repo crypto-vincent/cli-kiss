@@ -72,9 +72,8 @@ export type UsagePositional = {
   hint: string | undefined;
   /**
    * Placeholder label shown in the usage line and the `Positionals:` section.
-   * Required: `<NAME>`, optional: `[NAME]`, variadic: `[NAME]...`.
    */
-  label: Uppercase<string>;
+  label: string;
 };
 
 /**
@@ -102,15 +101,19 @@ export type UsageOption = {
   /**
    * Short-form name without `-` (e.g. `"v"`).
    */
-  short: string | undefined;
+  short?: string | undefined;
   /**
    * Long-form name without `--` (e.g. `"verbose"`).
    */
-  long: Lowercase<string>;
+  long: string;
   /**
-   * Extra annotation appended to the option label in help (e.g. `[=no]`, ` [*]`).
+   * Value placeholder in help (e.g. `"<FILE>"`).
    */
-  annotation: string | undefined;
+  label?: string | undefined;
+  /**
+   * Extra annotation appended to the option label in help.
+   */
+  annotation?: string | undefined;
   /**
    * Help text.
    */
@@ -119,10 +122,6 @@ export type UsageOption = {
    * Short note shown in parentheses.
    */
   hint: string | undefined;
-  /**
-   * Value placeholder in help (e.g. `"<FILE>"`). `undefined` for flags.
-   */
-  label: Uppercase<string> | undefined;
 };
 
 /**
@@ -170,7 +169,7 @@ export type UsageOption = {
  * ```
  */
 export function usageToStyledLines(params: {
-  cliName: Lowercase<string>;
+  cliName: string;
   usage: UsageCommand;
   typoSupport: TypoSupport;
 }) {

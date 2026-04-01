@@ -1,3 +1,4 @@
+import { statSync } from "fs";
 import {
   TypoError,
   TypoString,
@@ -46,7 +47,7 @@ export type Type<Value> = {
  * ```
  */
 export const typeBoolean: Type<boolean> = {
-  content: "Boolean",
+  content: "boolean",
   decoder(input: string) {
     const lower = input.toLowerCase();
     if (booleanValuesTrue.has(lower)) {
@@ -78,7 +79,7 @@ const booleanValuesFalse = new Set(["false", "no", "off", "0", "n", "f"]);
  * ```
  */
 export const typeDate: Type<Date> = {
-  content: "Date",
+  content: "date",
   decoder(input: string) {
     try {
       const timestampMs = Date.parse(input);
@@ -108,7 +109,7 @@ export const typeDate: Type<Date> = {
  * ```
  */
 export const typeNumber: Type<number> = {
-  content: "Number",
+  content: "number",
   decoder(input: string) {
     try {
       const parsed = Number(input);
@@ -139,7 +140,7 @@ export const typeNumber: Type<number> = {
  * ```
  */
 export const typeInteger: Type<bigint> = {
-  content: "Integer",
+  content: "integer",
   decoder(input: string) {
     try {
       return BigInt(input);
@@ -165,7 +166,7 @@ export const typeInteger: Type<bigint> = {
  * ```
  */
 export const typeUrl: Type<URL> = {
-  content: "Url",
+  content: "url",
   decoder(input: string) {
     try {
       return new URL(input);
@@ -190,7 +191,7 @@ export const typeUrl: Type<URL> = {
  * ```
  */
 export const typeString: Type<string> = {
-  content: "String",
+  content: "string",
   decoder(input: string) {
     return input;
   },
@@ -212,7 +213,7 @@ export const typeString: Type<string> = {
  * @example
  * ```ts
  * const typePort = typeMapped(typeNumber, {
- *   content: "Port",
+ *   content: "port",
  *   decoder: (n) => {
  *     if (n < 1 || n > 65535) throw new Error("Out of range");
  *     return n;
@@ -244,6 +245,82 @@ export function typeMapped<Before, After>(
 }
 
 /**
+ * Adds a name to a {@link Type} for clearer error messages and help text.
+ *
+ * @param name - Name to use for the type.
+ * @param type - Base type to name.
+ * @returns A {@link Type} with the given name.
+ */
+export function typeNamed<Value>(type: Type<Value>, name: string): Type<Value> {
+  return {
+    content: name,
+    decoder: (input: string) => {
+      return TypoError.tryWithContext(
+        () => type.decoder(input),
+        () =>
+          new TypoText(
+            new TypoString("from: "),
+            new TypoString(type.content, typoStyleLogic),
+          ),
+      );
+    },
+  };
+}
+
+/**
+ * Creates a {@link Type} for filesystem paths with optional existence checks.
+ * @param checks - Optional checks for path existence and type (file/directory).
+ * @returns A {@link Type}`<string>` representing the path.
+ */
+export function typePath(checks?: {
+  checkSyncExistAs?: "file" | "directory" | "anything";
+}): Type<string> {
+  let content = "path";
+  if (checks?.checkSyncExistAs === "file") {
+    content = "path-file";
+  }
+  if (checks?.checkSyncExistAs === "directory") {
+    content = "path-directory";
+  }
+  return {
+    content,
+    decoder(input: string) {
+      if (input.length === 0) {
+        throw new Error(`Path cannot be empty`);
+      }
+      if (input.includes("\0")) {
+        throw new Error(`Path cannot contain null characters`);
+      }
+      if (checks?.checkSyncExistAs !== undefined) {
+        const stats = statSync(input);
+        const preview = stats.isDirectory()
+          ? "directory"
+          : stats.isFile()
+            ? "file"
+            : "unknown";
+        if (checks.checkSyncExistAs === "file" && !stats.isFile()) {
+          throw new TypoError(
+            new TypoText(
+              new TypoString(`Expected a 'file' but found '${preview}': `),
+              new TypoString(`"${input}"`, typoStyleQuote),
+            ),
+          );
+        }
+        if (checks.checkSyncExistAs === "directory" && !stats.isDirectory()) {
+          throw new TypoError(
+            new TypoText(
+              new TypoString(`Expected a 'directory' but found '${preview}': `),
+              new TypoString(`"${input}"`, typoStyleQuote),
+            ),
+          );
+        }
+      }
+      return input;
+    },
+  };
+}
+
+/**
  * Creates a {@link Type}`<string>` that only accepts a fixed set of values.
  * Out-of-set inputs throw {@link TypoError} listing up to 5 valid options.
  *
@@ -262,13 +339,13 @@ export function typeOneOf<const Value extends string>(
   content: string,
   values: Array<Value>,
 ): Type<Value> {
+  const valueSet = new Set(values.map((v) => v.toLowerCase()));
   return {
-    content: content,
+    content,
     decoder(input: string) {
-      for (const value of values) {
-        if (input === value) {
-          return value;
-        }
+      const lowerInput = input.toLowerCase();
+      if (valueSet.has(lowerInput)) {
+        return lowerInput as Value;
       }
       const valuesPreview = [];
       for (const value of values) {

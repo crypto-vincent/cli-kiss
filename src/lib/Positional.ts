@@ -1,12 +1,6 @@
 import { ReaderPositionals } from "./Reader";
 import { Type } from "./Type";
-import {
-  TypoError,
-  TypoString,
-  typoStyleLogic,
-  typoStyleUserInput,
-  TypoText,
-} from "./Typo";
+import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
 import { UsagePositional } from "./Usage";
 
 /**
@@ -45,13 +39,11 @@ export type PositionalDecoder<Value> = {
 
 /**
  * Creates a required positional — missing token throws {@link TypoError}.
- * Label defaults to uppercased `type.content` in angle brackets (e.g. `<STRING>`).
  *
  * @typeParam Value - Type produced by the decoder.
  *
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
- * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
  * @param definition.type - Decoder for the raw token.
  * @returns A {@link Positional}`<Value>`.
  *
@@ -59,26 +51,22 @@ export type PositionalDecoder<Value> = {
  * ```ts
  * const namePositional = positionalRequired({
  *   type: typeString,
- *   label: "NAME",
  *   description: "The name to greet",
  * });
- * // Parses: my-cli Alice  →  "Alice"
+ * // Usage:
+ * //   my-cli Alice  →  "Alice"
  * ```
  */
 export function positionalRequired<Value>(definition: {
   description?: string;
   hint?: string;
-  label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Value> {
-  const label = `<${definition.label ?? definition.type.content.toUpperCase()}>`;
+  const { description, hint, type } = definition;
+  const label = `<${type.content}>`;
   return {
     generateUsage() {
-      return {
-        description: definition.description,
-        hint: definition.hint,
-        label: label as Uppercase<string>,
-      };
+      return { description, hint, label };
     },
     consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
@@ -101,13 +89,12 @@ export function positionalRequired<Value>(definition: {
 
 /**
  * Creates an optional positional — absent token falls back to `default()`.
- * Label defaults to uppercased `type.content` in square brackets (e.g. `[STRING]`).
  *
  * @typeParam Value - Type produced by the decoder (or the default).
  *
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
- * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
+ * @param definition.label - Label without brackets.
  * @param definition.type - Decoder for the raw token.
  * @param definition.default - Value when absent. Throw to make it required.
  * @returns A {@link Positional}`<Value>`.
@@ -120,25 +107,22 @@ export function positionalRequired<Value>(definition: {
  *   description: "Name to greet (default: world)",
  *   default: () => "world",
  * });
- * // my-cli         →  "world"
- * // my-cli Alice   →  "Alice"
+ * // Usage:
+ * //   my-cli  →  "world"
+ * //   my-cli Alice  →  "Alice"
  * ```
  */
 export function positionalOptional<Value>(definition: {
   description?: string;
   hint?: string;
-  label?: Uppercase<string>;
   type: Type<Value>;
   default: () => Value;
 }): Positional<Value> {
-  const label = `[${definition.label ?? definition.type.content.toUpperCase()}]`;
+  const { description, hint, type } = definition;
+  const label = `[${type.content}]`;
   return {
     generateUsage() {
-      return {
-        description: definition.description,
-        hint: definition.hint,
-        label: label as Uppercase<string>,
-      };
+      return { description, hint, label };
     },
     consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
@@ -166,14 +150,13 @@ export function positionalOptional<Value>(definition: {
 
 /**
  * Creates a variadic positional that collects zero or more remaining tokens into an array.
- * Stops at `endDelimiter` (consumed, not included). Label: `[TYPE]...` notation.
+ * Optionally stops at `endDelimiter` (consumed, not included).
  *
  * @typeParam Value - Type produced by the decoder for each token.
  *
  * @param definition.endDelimiter - Sentinel token that stops collection (consumed, not included).
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
- * @param definition.label - Label without brackets; defaults to uppercased `type.content`.
  * @param definition.type - Decoder applied to each token.
  * @returns A {@link Positional}`<Array<Value>>`.
  *
@@ -184,28 +167,25 @@ export function positionalOptional<Value>(definition: {
  *   label: "FILE",
  *   description: "Files to process",
  * });
- * // my-cli a.ts b.ts c.ts  →  ["a.ts", "b.ts", "c.ts"]
- * // my-cli                  →  []
+ * // Usage:
+ * //   my-cli  →  []
+ * //   my-cli a.ts b.ts c.ts  →  ["a.ts", "b.ts", "c.ts"]
  * ```
  */
 export function positionalVariadics<Value>(definition: {
   endDelimiter?: string;
   description?: string;
   hint?: string;
-  label?: Uppercase<string>;
   type: Type<Value>;
 }): Positional<Array<Value>> {
-  const label = `[${definition.label ?? definition.type.content.toUpperCase()}]`;
+  const { description, hint, type } = definition;
+  const labelSingle = `[${type.content}]`;
+  const labelMultiple =
+    `${labelSingle}...` +
+    (definition.endDelimiter ? ` ["${definition.endDelimiter}"]` : "");
   return {
     generateUsage() {
-      return {
-        description: definition.description,
-        hint: definition.hint,
-        label: (`${label}...` +
-          (definition.endDelimiter
-            ? ` ["${definition.endDelimiter}"]`
-            : "")) as Uppercase<string>,
-      };
+      return { description, hint, label: labelMultiple };
     },
     consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positionals = new Array<string>();
@@ -222,7 +202,7 @@ export function positionalVariadics<Value>(definition: {
       return {
         decodeValue() {
           return positionals.map((positional) =>
-            decodeValue(label, definition.type, positional),
+            decodeValue(labelSingle, definition.type, positional),
           );
         },
       };
@@ -237,11 +217,6 @@ function decodeValue<Value>(
 ): Value {
   return TypoError.tryWithContext(
     () => type.decoder(input),
-    () =>
-      new TypoText(
-        new TypoString(label, typoStyleUserInput),
-        new TypoString(`: `),
-        new TypoString(type.content, typoStyleLogic),
-      ),
+    () => new TypoText(new TypoString(label, typoStyleUserInput)),
   );
 }

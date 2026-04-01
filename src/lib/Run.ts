@@ -1,4 +1,5 @@
 import { Command, CommandDecoder } from "./Command";
+import { optionChoice, optionFlag } from "./Option";
 import { ReaderArgs } from "./Reader";
 import { TypoSupport } from "./Typo";
 import { usageToStyledLines } from "./Usage";
@@ -17,8 +18,7 @@ import { usageToStyledLines } from "./Usage";
  * @param cliArgs - Raw arguments, typically `process.argv.slice(2)`.
  * @param context - Forwarded to the handler.
  * @param command - Root {@link Command}.
- * @param options.useTtyColors - Color mode: `true` (always), `false` (never),
- *   `"mock"` (snapshot-friendly), `undefined` (auto-detect from env).
+ * @param options.colorMode - Controls color support; defaults to `"auto"`.
  * @param options.usageOnHelp - Enables `--help` flag (default `true`).
  * @param options.usageOnError - Prints usage to stderr on parse error (default `true`).
  * @param options.buildVersion - Enables `--version`; prints `<cliName> <buildVersion>`.
@@ -47,12 +47,12 @@ import { usageToStyledLines } from "./Usage";
  * ```
  */
 export async function runAndExit<Context>(
-  cliName: Lowercase<string>,
+  cliName: string,
   cliArgs: ReadonlyArray<string>,
   context: Context,
   command: Command<Context, void>,
   options?: {
-    useTtyColors?: boolean | undefined | "mock"; // TODO - flag setter option
+    colorMode?: "auto" | "env" | "always" | "never" | "mock" | undefined;
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
@@ -61,26 +61,53 @@ export async function runAndExit<Context>(
   },
 ): Promise<never> {
   const readerArgs = new ReaderArgs(cliArgs);
-  const usageOnHelp = options?.usageOnHelp ?? true;
-  if (usageOnHelp) {
-    readerArgs.registerOption({
-      shorts: [],
-      longs: ["help"],
-      parsing: {
-        consumeShortGroup: false,
-        consumeNextArg: () => false,
-      },
+  const preprocessors = new Array<
+    (commandDecoder: CommandDecoder<Context, void>) => undefined | number
+  >();
+  let typoSupport = TypoSupport.none();
+  if (options?.colorMode === "auto" || options?.colorMode === undefined) {
+    const colorOption = optionChoice({
+      long: "color",
+      choices: ["auto", "always", "never", "mock"],
+      content: "color-mode",
+      defaultUnset: () => "auto",
+      defaultEmpty: () => "always",
+    }).registerAndMakeDecoder(readerArgs);
+    preprocessors.push(() => {
+      typoSupport = computeTypoSupport(colorOption.getAndDecodeValue());
+      return undefined;
+    });
+  } else {
+    if (options.colorMode === "env") {
+      typoSupport = TypoSupport.inferFromEnv();
+    } else {
+      typoSupport = computeTypoSupport(options.colorMode);
+    }
+  }
+  if (options?.usageOnHelp ?? true) {
+    const helpOption = optionFlag({ long: "help" }).registerAndMakeDecoder(
+      readerArgs,
+    );
+    preprocessors.push((commandDecoder) => {
+      if (!helpOption.getAndDecodeValue()) {
+        return undefined;
+      }
+      console.log(
+        computeUsageString(cliName, commandDecoder, TypoSupport.none()),
+      );
+      return 0;
     });
   }
-  const buildVersion = options?.buildVersion;
-  if (buildVersion) {
-    readerArgs.registerOption({
-      shorts: [],
-      longs: ["version"],
-      parsing: {
-        consumeShortGroup: false,
-        consumeNextArg: () => false,
-      },
+  if (options?.buildVersion) {
+    const versionOption = optionFlag({
+      long: "version",
+    }).registerAndMakeDecoder(readerArgs);
+    preprocessors.push(() => {
+      if (!versionOption.getAndDecodeValue()) {
+        return undefined;
+      }
+      console.log([cliName, options.buildVersion].join(" "));
+      return 0;
     });
   }
   /*
@@ -91,7 +118,7 @@ export async function runAndExit<Context>(
     longs: ["completion"],
   });
   */
-  // TODO - handle color flag ?
+  // TODO - handle no-color/force-color flag ?
   const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   while (true) {
     try {
@@ -101,18 +128,11 @@ export async function runAndExit<Context>(
       }
     } catch (_) {}
   }
-  const typoSupport = computeTypoSupport(options?.useTtyColors);
   const onExit = options?.onExit ?? process.exit;
-  if (usageOnHelp) {
-    if (readerArgs.getOptionValues("--help" as any).length > 0) {
-      console.log(computeUsageString(cliName, commandDecoder, typoSupport));
-      return onExit(0);
-    }
-  }
-  if (buildVersion) {
-    if (readerArgs.getOptionValues("--version" as any).length > 0) {
-      console.log([cliName, buildVersion].join(" "));
-      return onExit(0);
+  for (const preprocessor of preprocessors) {
+    const preprocessorResult = preprocessor(commandDecoder);
+    if (preprocessorResult !== undefined) {
+      return onExit(preprocessorResult);
     }
   }
   try {
@@ -146,7 +166,7 @@ function handleError(
 }
 
 function computeUsageString<Context, Result>(
-  cliName: Lowercase<string>,
+  cliName: string,
   commandDecoder: CommandDecoder<Context, Result>,
   typoSupport: TypoSupport,
 ) {
@@ -158,13 +178,16 @@ function computeUsageString<Context, Result>(
 }
 
 function computeTypoSupport(
-  useTtyColors: boolean | undefined | "mock",
+  colorMode: "auto" | "always" | "never" | "mock",
 ): TypoSupport {
-  return useTtyColors === undefined
-    ? TypoSupport.inferFromProcess()
-    : useTtyColors === "mock"
-      ? TypoSupport.mock()
-      : useTtyColors
-        ? TypoSupport.tty()
-        : TypoSupport.none();
+  switch (colorMode) {
+    case "auto":
+      return TypoSupport.inferFromEnv();
+    case "always":
+      return TypoSupport.tty();
+    case "never":
+      return TypoSupport.none();
+    case "mock":
+      return TypoSupport.mock();
+  }
 }

@@ -1,5 +1,5 @@
 import { ReaderOptionParsing, ReaderArgs as ReaderOptions } from "./Reader";
-import { Type, typeBoolean } from "./Type";
+import { Type, typeBoolean, typeOneOf } from "./Type";
 import {
   TypoError,
   TypoString,
@@ -44,15 +44,15 @@ export type OptionDecoder<Value> = {
 /**
  * Creates a boolean flag option (`--verbose`, optionally `--flag=no`).
  *
- * Parsing: absent → `false`; `--flag` / `--flag=yes` → `true`; `--flag=no` → `false`;
- * specified more than once → {@link TypoError}.
+ * Parsing: absent → default value; `--flag` / `--flag=yes` → `true`; `--flag=no` → `false`;
+ * specified more than once → throws {@link TypoError}.
  *
  * @param definition.long - Long-form name (without `--`).
  * @param definition.short - Short-form name (without `-`).
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.aliases - Additional names.
- * @param definition.default - Default when absent. Defaults to `false`.
+ * @param definition.default - Default value when absent.
  * @returns An {@link Option}`<boolean>`.
  *
  * @example
@@ -62,32 +62,31 @@ export type OptionDecoder<Value> = {
  *   short: "v",
  *   description: "Enable verbose output",
  * });
+ * // Usage:
+ * //   my-cli  →  false
+ * //   my-cli --verbose  →  true
+ * //   my-cli --verbose=yes  →  true
+ * //   my-cli -v=no  →  false
  * ```
  */
 export function optionFlag(definition: {
-  long: Lowercase<string>;
+  long: string;
   short?: string;
   description?: string;
   hint?: string;
-  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
+  aliases?: { longs?: Array<string>; shorts?: Array<string> };
   default?: boolean;
 }): Option<boolean> {
-  const label = `<${typeBoolean.content.toUpperCase()}>`;
+  const type = typeBoolean;
+  const { long, short, description, hint, aliases } = definition;
   return {
     generateUsage() {
-      return {
-        short: definition.short,
-        long: definition.long,
-        label: undefined,
-        annotation: "[=no]",
-        description: definition.description,
-        hint: definition.hint,
-      };
+      return { short, long, annotation: "[=no]", description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
-      const longNegative = `no-${definition.long}` as Lowercase<string>;
-      const aliasesLongsNegatives = definition.aliases?.longs?.map(
-        (aliasLong) => `no-${aliasLong}` as Lowercase<string>,
+      const longNegative = `no-${long}`;
+      const aliasesLongsNegatives = aliases?.longs?.map(
+        (aliasLong) => `no-${aliasLong}`,
       );
       const keyNegative = registerOption(readerOptions, {
         long: longNegative,
@@ -97,10 +96,10 @@ export function optionFlag(definition: {
         parsing: { consumeShortGroup: false, consumeNextArg: () => false },
       });
       const keyPositive = registerOption(readerOptions, {
-        long: definition.long,
-        short: definition.short,
-        aliasesLongs: definition.aliases?.longs,
-        aliasesShorts: definition.aliases?.shorts,
+        long,
+        short,
+        aliasesLongs: aliases?.longs,
+        aliasesShorts: aliases?.shorts,
         parsing: { consumeShortGroup: false, consumeNextArg: () => false },
       });
       return {
@@ -108,25 +107,15 @@ export function optionFlag(definition: {
           const negativeResults = readerOptions.getOptionValues(keyNegative);
           const positiveResults = readerOptions.getOptionValues(keyPositive);
           if (positiveResults.length > 1) {
-            throw new TypoError(
-              new TypoText(
-                new TypoString(`--${definition.long}`, typoStyleConstants),
-                new TypoString(`: Must not be set multiple times`),
-              ),
-            );
+            throwSetMultipleTimesError(long);
           }
           if (negativeResults.length > 1) {
-            throw new TypoError(
-              new TypoText(
-                new TypoString(`--${longNegative}`, typoStyleConstants),
-                new TypoString(`: Must not be set multiple times`),
-              ),
-            );
+            throwSetMultipleTimesError(longNegative);
           }
           if (negativeResults.length > 0 && positiveResults.length > 0) {
             throw new TypoError(
               new TypoText(
-                new TypoString(`--${definition.long}`, typoStyleConstants),
+                new TypoString(`--${long}`, typoStyleConstants),
                 new TypoString(`: Must not be set in combination with: `),
                 new TypoString(`--${longNegative}`, typoStyleConstants),
               ),
@@ -144,20 +133,95 @@ export function optionFlag(definition: {
             }
             return false;
           }
-          if (positiveResults.length > 0) {
-            const positiveResult = positiveResults[0]!;
-            return decodeValue({
-              long: definition.long,
-              short: definition.short,
-              label,
-              type: typeBoolean,
-              input:
-                positiveResult.inlined === null
-                  ? "true"
-                  : positiveResult.inlined,
-            });
+          if (positiveResults.length === 0) {
+            return definition.default === undefined
+              ? false
+              : definition.default;
           }
-          return definition.default ?? false;
+          const positiveResult = positiveResults[0]!;
+          const input =
+            positiveResult.inlined === null ? "true" : positiveResult.inlined;
+          return decodeValue({ long, short, type, input });
+        },
+      };
+    },
+  };
+}
+
+/**
+ * Creates an option that accepts one value from a predefined set of strings (e.g. `--color=auto`).
+ *
+ * Parsing: absent → `defaultUnset()`; present with no value → `defaultEmpty()`; present with value → decoded with `typeOneOf`.
+ * Value syntax: `--choice=value`, `-c=value`, `-cvalue`, `--choice`, `-c`.
+ * Note: `--choice` and `-c` are treated as present with no value, not with an empty string value.
+ *
+ * @param definition
+ * @param definition.long - Long-form name (without `--`).
+ * @param definition.short - Short-form name (without `-`).
+ * @param definition.description - Help text.
+ * @param definition.hint - Short note shown in parentheses.
+ * @param definition.aliases - Additional names.
+ * @param definition.content - Value placeholder in help.
+ * @param definition.choices - Allowed values.
+ * @param definition.defaultUnset - Default when the option is absent. Throw to make the option required.
+ * @param definition.defaultEmpty - Default when the option is present with no value. Throw to disallow this syntax.
+ * @returns An {@link Option}`<Value>`.
+ *
+ * @example
+ * ```ts
+ * const colorOption = optionChoice({
+ *   long: "color",
+ *   content: "color-mode",
+ *   choices: ["auto", "always", "never"],
+ *   defaultUnset: () => "auto",
+ *   defaultEmpty: () => "always",
+ * });
+ * // Usage:
+ * //   my-cli  →  "auto"
+ * //   my-cli --color  →  "always"
+ * //   my-cli --color=never  →  "never"
+ * ```
+ */
+export function optionChoice<const Value extends string>(definition: {
+  long: string;
+  short?: string;
+  description?: string;
+  hint?: string;
+  aliases?: { longs?: Array<string>; shorts?: Array<string> };
+  content: string;
+  choices: Array<Value>;
+  defaultUnset: () => Value;
+  defaultEmpty: () => Value;
+}): Option<Value> {
+  const type = typeOneOf(definition.content, definition.choices);
+  const { long, short, description, hint, aliases } = definition;
+  const label = `<${type.content}>`;
+  return {
+    generateUsage() {
+      return { short, long, label, description, hint };
+    },
+    registerAndMakeDecoder(readerOptions: ReaderOptions) {
+      const key = registerOption(readerOptions, {
+        long,
+        short,
+        aliasesLongs: aliases?.longs,
+        aliasesShorts: aliases?.shorts,
+        parsing: { consumeShortGroup: false, consumeNextArg: () => false },
+      });
+      return {
+        getAndDecodeValue() {
+          const optionResults = readerOptions.getOptionValues(key);
+          if (optionResults.length > 1) {
+            throwSetMultipleTimesError(long);
+          }
+          if (optionResults.length === 0) {
+            return definition.defaultUnset();
+          }
+          if (optionResults[0]!.inlined === null) {
+            return definition.defaultEmpty();
+          }
+          const input = optionResults[0]!.inlined!;
+          return decodeValue({ long, short, label, type, input });
         },
       };
     },
@@ -177,7 +241,6 @@ export function optionFlag(definition: {
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.aliases - Additional names.
- * @param definition.label - Value placeholder in help. Defaults to uppercased `type.content`.
  * @param definition.type - Decoder for the raw string value.
  * @param definition.default - Default when absent. Throw to make the option required.
  * @returns An {@link Option}`<Value>`.
@@ -188,40 +251,36 @@ export function optionFlag(definition: {
  *   long: "output",
  *   short: "o",
  *   type: typeString,
- *   label: "PATH",
  *   description: "Output directory",
- *   default: () => "dist/",
+ *   default: () => "dist",
  * });
+ * // Usage:
+ * //   my-cli  →  "dist"
+ * //   my-cli --output folder  →  "folder"
+ * //   my-cli -o folder  →  "folder"
  * ```
  */
 export function optionSingleValue<Value>(definition: {
-  long: Lowercase<string>;
+  long: string;
   short?: string;
   description?: string;
   hint?: string;
-  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
-  label?: Uppercase<string>;
+  aliases?: { longs?: Array<string>; shorts?: Array<string> };
   type: Type<Value>;
   default: () => Value;
 }): Option<Value> {
-  const label = `<${definition.label ?? definition.type.content.toUpperCase()}>`;
+  const { long, short, description, hint, aliases, type } = definition;
+  const label = `<${type.content}>`;
   return {
     generateUsage() {
-      return {
-        short: definition.short,
-        long: definition.long,
-        label: label as Uppercase<string>,
-        annotation: undefined,
-        description: definition.description,
-        hint: definition.hint,
-      };
+      return { short, long, label, description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
-        long: definition.long,
-        short: definition.short,
-        aliasesLongs: definition.aliases?.longs,
-        aliasesShorts: definition.aliases?.shorts,
+        long,
+        short,
+        aliasesLongs: aliases?.longs,
+        aliasesShorts: aliases?.shorts,
         parsing: {
           consumeShortGroup: true,
           consumeNextArg: (inlined, separated) =>
@@ -234,7 +293,7 @@ export function optionSingleValue<Value>(definition: {
           if (optionResults.length > 1) {
             throw new TypoError(
               new TypoText(
-                new TypoString(`--${definition.long}`, typoStyleConstants),
+                new TypoString(`--${long}`, typoStyleConstants),
                 new TypoString(`: Requires a single value, but got multiple`),
               ),
             );
@@ -246,20 +305,15 @@ export function optionSingleValue<Value>(definition: {
             } catch (error) {
               throw new TypoError(
                 new TypoText(
-                  new TypoString(`--${definition.long}`, typoStyleConstants),
+                  new TypoString(`--${long}`, typoStyleConstants),
                   new TypoString(`: Failed to get default value`),
                 ),
                 error,
               );
             }
           }
-          return decodeValue({
-            long: definition.long,
-            short: definition.short,
-            label,
-            type: definition.type,
-            input: optionResult.inlined ?? optionResult.separated[0]!,
-          });
+          const input = optionResult.inlined ?? optionResult.separated[0]!;
+          return decodeValue({ long, short, label, type, input });
         },
       };
     },
@@ -279,7 +333,6 @@ export function optionSingleValue<Value>(definition: {
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.aliases - Additional names.
- * @param definition.label - Value placeholder in help. Defaults to uppercased `type.content`.
  * @param definition.type - Decoder applied to each raw string value.
  * @returns An {@link Option}`<Array<Value>>`.
  *
@@ -296,33 +349,25 @@ export function optionSingleValue<Value>(definition: {
  * ```
  */
 export function optionRepeatable<Value>(definition: {
-  long: Lowercase<string>;
+  long: string;
   short?: string;
   description?: string;
   hint?: string;
-  aliases?: { longs?: Array<Lowercase<string>>; shorts?: Array<string> };
-  label?: Uppercase<string>;
+  aliases?: { longs?: Array<string>; shorts?: Array<string> };
   type: Type<Value>;
 }): Option<Array<Value>> {
-  const label = `<${definition.label ?? definition.type.content.toUpperCase()}>`;
+  const { long, short, description, hint, aliases, type } = definition;
+  const label = `<${type.content}>`;
   return {
     generateUsage() {
-      // TODO - showcase that it can be repeated ?
-      return {
-        short: definition.short,
-        long: definition.long,
-        label: label as Uppercase<string>,
-        annotation: " [*]",
-        description: definition.description,
-        hint: definition.hint,
-      };
+      return { short, long, label, annotation: " [*]", description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
       const key = registerOption(readerOptions, {
-        long: definition.long,
-        short: definition.short,
-        aliasesLongs: definition.aliases?.longs,
-        aliasesShorts: definition.aliases?.shorts,
+        long,
+        short,
+        aliasesLongs: aliases?.longs,
+        aliasesShorts: aliases?.shorts,
         parsing: {
           consumeShortGroup: true,
           consumeNextArg: (inlined, separated) =>
@@ -332,15 +377,10 @@ export function optionRepeatable<Value>(definition: {
       return {
         getAndDecodeValue() {
           const optionResults = readerOptions.getOptionValues(key);
-          return optionResults.map((optionResult) =>
-            decodeValue({
-              long: definition.long,
-              short: definition.short,
-              label,
-              type: definition.type,
-              input: optionResult.inlined ?? optionResult.separated[0]!,
-            }),
-          );
+          return optionResults.map((optionResult) => {
+            const input = optionResult.inlined ?? optionResult.separated[0]!;
+            return decodeValue({ long, short, label, type, input });
+          });
         },
       };
     },
@@ -349,8 +389,8 @@ export function optionRepeatable<Value>(definition: {
 
 function decodeValue<Value>(params: {
   long: string;
-  short: string | undefined;
-  label: string;
+  short?: string | undefined;
+  label?: string | undefined;
   type: Type<Value>;
   input: string;
 }): Value {
@@ -363,10 +403,13 @@ function decodeValue<Value>(params: {
         text.push(new TypoString(`, `));
       }
       text.push(new TypoString(`--${params.long}`, typoStyleConstants));
-      text.push(new TypoString(`: `));
-      text.push(new TypoString(params.label, typoStyleUserInput));
-      text.push(new TypoString(`: `));
-      text.push(new TypoString(params.type.content, typoStyleLogic));
+      if (params.label) {
+        text.push(new TypoString(`: `));
+        text.push(new TypoString(params.label, typoStyleUserInput));
+      } else {
+        text.push(new TypoString(`: `));
+        text.push(new TypoString(params.type.content, typoStyleLogic));
+      }
       return text;
     },
   );
@@ -375,9 +418,9 @@ function decodeValue<Value>(params: {
 function registerOption(
   readerOptions: ReaderOptions,
   definition: {
-    long: Lowercase<string>;
+    long: string;
     short: undefined | string;
-    aliasesLongs: undefined | Array<Lowercase<string>>;
+    aliasesLongs: undefined | Array<string>;
     aliasesShorts: undefined | Array<string>;
     parsing: ReaderOptionParsing;
   },
@@ -392,4 +435,13 @@ function registerOption(
     shorts.push(...aliasesShorts);
   }
   return readerOptions.registerOption({ longs, shorts, parsing });
+}
+
+function throwSetMultipleTimesError(long: string): never {
+  throw new TypoError(
+    new TypoText(
+      new TypoString(`--${long}`, typoStyleConstants),
+      new TypoString(`: Must not be set multiple times`),
+    ),
+  );
 }

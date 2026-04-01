@@ -6,6 +6,7 @@ import {
   optionRepeatable,
   optionSingleValue,
   runAndExit,
+  typeNamed,
   typeNumber,
   typeUrl,
 } from "../src";
@@ -32,20 +33,24 @@ it("run", async function () {
     "{{Error:}@darkRed}+ {{--no-flag}@darkCyan}+: Must not be set multiple times",
   );
   await testCase(
+    ["--flag=invalid"],
+    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{boolean}@darkMagenta}+: Invalid value: {{"invalid"}@darkYellow}+',
+  );
+  await testCase(
     ["--single-value=a", "--single-value=b"],
     "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Requires a single value, but got multiple",
   );
   await testCase(
-    ["--flag=invalid"],
-    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{<BOOLEAN>}@darkBlue}+: {{Boolean}@darkMagenta}+: Invalid value: {{"invalid"}@darkYellow}+',
+    ["--single-value"],
+    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Requires a value, but got end of input",
   );
   await testCase(
     ["--single-value=invalid"],
-    '{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<LOCATION>}@darkBlue}+: {{Url}@darkMagenta}+: Unable to parse: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: from: {{url}@darkMagenta}+: Unable to parse: {{"invalid"}@darkYellow}+',
   );
   await testCase(
     ["--repeatable=invalid"],
-    '{{Error:}@darkRed}+ {{--repeatable}@darkCyan}+: {{<INDEX>}@darkBlue}+: {{Number}@darkMagenta}+: Unable to parse: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--repeatable}@darkCyan}+: {{<index>}@darkBlue}+: from: {{number}@darkMagenta}+: Unable to parse: {{"invalid"}@darkYellow}+',
   );
 });
 
@@ -58,19 +63,15 @@ async function testCase(args: Array<string>, error: string) {
     operation(
       {
         options: {
-          optionFlag: optionFlag({
-            long: "flag",
-          }),
+          optionFlag: optionFlag({ long: "flag" }),
           optionSingleValue: optionSingleValue({
-            label: "LOCATION",
             long: "single-value",
-            type: typeUrl,
+            type: typeNamed(typeUrl, "location"),
             default: () => undefined,
           }),
           optionRepeatable: optionRepeatable({
-            label: "INDEX",
             long: "repeatable",
-            type: typeNumber,
+            type: typeNamed(typeNumber, "index"),
           }),
         },
         positionals: [],
@@ -83,7 +84,7 @@ async function testCase(args: Array<string>, error: string) {
   await runAndExit("my-cli", args, null, rootCommand, {
     buildVersion: "1.0.0",
     usageOnError: false,
-    useTtyColors: "mock",
+    colorMode: "mock",
     onExit: onExit.call,
   });
   expect(onLogStdOut.history).toEqual([]);

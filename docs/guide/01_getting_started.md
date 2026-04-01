@@ -32,9 +32,8 @@ const greetCommand = command(
       },
       positionals: [
         positionalRequired({
-          type: typeString,
-          label: "NAME",
-          description: "The name to greet",
+          type: typeNamed(typeString, "person"),
+          description: "The name of the person to greet",
         }),
       ],
     },

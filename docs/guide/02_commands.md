@@ -14,7 +14,7 @@ const greet = command(
   operation(
     {
       options: {},
-      positionals: [positionalRequired({ type: typeString, label: "NAME" })],
+      positionals: [positionalRequired({ type: typeString })],
     },
     async function (_ctx, { positionals: [name] }) {
       console.log(`Hello, ${name}!`);
@@ -79,7 +79,7 @@ Subcommands:
 
 ### Subcommand names
 
-Keys are the tokens users type — must be lowercase strings.
+Keys are the tokens users must type.
 
 ## `commandChained` — sequential stages
 

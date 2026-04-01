@@ -8,13 +8,13 @@
 await runAndExit(cliName, cliArgs, context, command, options?);
 ```
 
-| Parameter | Type                               | Description                                       |
-| --------- | ---------------------------------- | ------------------------------------------------- |
-| `cliName` | `Lowercase<string>`                | Program name used in help and `--version` output  |
-| `cliArgs` | `ReadonlyArray<string>`            | Raw arguments — typically `process.argv.slice(2)` |
-| `context` | `Context`                          | Value forwarded to every command handler          |
-| `command` | `Command<Context, void>`           | The root command                                  |
-| `options` | `object?`                          | See below                                         |
+| Parameter | Type                     | Description                                       |
+| --------- | ------------------------ | ------------------------------------------------- |
+| `cliName` | `string`                 | Program name used in help and `--version` output  |
+| `cliArgs` | `ReadonlyArray<string>`  | Raw arguments — typically `process.argv.slice(2)` |
+| `context` | `Context`                | Value forwarded to every command handler          |
+| `command` | `Command<Context, void>` | The root command                                  |
+| `options` | `object?`                | See below                                         |
 
 ### Options
 
@@ -23,7 +23,6 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 | `buildVersion` | `string?`                  | —              | Enables `--version` flag; prints `<cliName> <buildVersion>` |
 | `usageOnHelp`  | `boolean?`                 | `true`         | Enables `--help` flag                                       |
 | `usageOnError` | `boolean?`                 | `true`         | Prints usage to stderr when parsing fails                   |
-| `useTtyColors` | `boolean \| "mock"?`       | auto           | Controls ANSI color output                                  |
 | `onError`      | `(error: unknown) => void` | —              | Custom handler for parse and execution errors               |
 | `onExit`       | `(code: number) => never`  | `process.exit` | Override for testing                                        |
 
@@ -103,7 +102,7 @@ my-cli --help
 ```
 
 ```text
-Usage: my-cli <SUBCOMMAND>
+Usage: my-cli <subcommand>
 
 My deployment CLI
 

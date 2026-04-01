@@ -115,7 +115,7 @@ export type CommandInformation = {
  * const greet = command(
  *   { description: "Greet a user" },
  *   operation(
- *     { options: {}, positionals: [positionalRequired({ type: typeString, label: "NAME" })] },
+ *     { options: {}, positionals: [positionalRequired({ type: typeString })] },
  *     async (_ctx, { positionals: [name] }) => console.log(`Hello, ${name}!`),
  *   ),
  * );
@@ -192,7 +192,7 @@ export function command<Context, Result>(
 export function commandWithSubcommands<Context, Payload, Result>(
   information: CommandInformation,
   operation: Operation<Context, Payload>,
-  subcommands: { [subcommand: Lowercase<string>]: Command<Payload, Result> },
+  subcommands: { [subcommand: string]: Command<Payload, Result> },
 ): Command<Context, Result> {
   return {
     getInformation() {
@@ -205,17 +205,16 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandName === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`<SUBCOMMAND>`, typoStyleUserInput),
+              new TypoString(`<subcommand>`, typoStyleUserInput),
               new TypoString(`: Is required, but was not provided`),
             ),
           );
         }
-        const subcommandInput =
-          subcommands[subcommandName as Lowercase<string>];
+        const subcommandInput = subcommands[subcommandName];
         if (subcommandInput === undefined) {
           throw new TypoError(
             new TypoText(
-              new TypoString(`<SUBCOMMAND>`, typoStyleUserInput),
+              new TypoString(`<subcommand>`, typoStyleUserInput),
               new TypoString(`: Invalid value: `),
               new TypoString(`"${subcommandName}"`, typoStyleQuote),
             ),
@@ -253,7 +252,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
         return {
           generateUsage() {
             const currentUsage = generateUsageLeaf(information, operation);
-            currentUsage.segments.push(segmentPositional("<SUBCOMMAND>"));
+            currentUsage.segments.push(segmentPositional("<subcommand>"));
             for (const [name, subcommand] of Object.entries(subcommands)) {
               const { description, hint } = subcommand.getInformation();
               currentUsage.subcommands.push({ name, description, hint });
@@ -287,7 +286,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
  * const authenticatedDeploy = commandChained(
  *   { description: "Authenticate then deploy" },
  *   operation(
- *     { options: { token: optionSingleValue({ long: "token", type: typeString, default: () => "" }) }, positionals: [] },
+ *     { options: { tokens: optionSingleValue({ long: "token", type: typeString, default: () => "" }) }, positionals: [] },
  *     async (_ctx, { options: { token } }) => ({ token }),
  *   ),
  *   command({ description: "Deploy" }, deployOperation),

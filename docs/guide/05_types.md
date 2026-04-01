@@ -1,28 +1,22 @@
 # Types
 
-A `Type<Value>` converts a raw CLI string into a typed value: a `content` label paired with a `decoder`.
+A `Type<Value>` converts a raw CLI string into a typed value:
+
+- Contains a `content` label about the type of data being decoded
+- Paired with a `decoder` function that throws if the value is invalid.
 
 ## Built-in types
 
-| Export        | TypeScript type | Accepts                                                    |
-| ------------- | --------------- | ---------------------------------------------------------- |
-| `typeString`  | `string`        | Any string                                                 |
+| Export        | TypeScript type | Accepts                                                                     |
+| ------------- | --------------- | --------------------------------------------------------------------------- |
+| `typeString`  | `string`        | Any string                                                                  |
 | `typeBoolean` | `boolean`       | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
-| `typeNumber`  | `number`        | Integers, floats, scientific notation                      |
-| `typeInteger` | `bigint`        | Integer strings only                                       |
-| `typeDate`    | `Date`          | Any format accepted by `Date.parse` (ISO 8601 recommended) |
-| `typeUrl`     | `URL`           | Absolute URLs                                              |
+| `typeNumber`  | `number`        | Integers, floats, scientific notation                                       |
+| `typeInteger` | `bigint`        | Integer strings only                                                        |
+| `typeDate`    | `Date`          | Any format accepted by `Date.parse` (ISO 8601 recommended)                  |
+| `typeUrl`     | `URL`           | Absolute URLs                                                               |
 
 ```ts
-import {
-  typeBoolean,
-  typeDate,
-  typeInteger,
-  typeNumber,
-  typeString,
-  typeUrl,
-} from "cli-kiss";
-
 typeString.decoder("hello"); // → "hello"
 typeBoolean.decoder("yes"); // → true
 typeNumber.decoder("3.14"); // → 3.14
@@ -36,10 +30,7 @@ typeUrl.decoder("https://example.com/path"); // → URL object
 Accepts only a fixed set of strings:
 
 ```ts
-import { typeOneOf } from "cli-kiss";
-
-const typeEnv = typeOneOf("Environment", ["dev", "staging", "prod"]);
-
+const typeEnv = typeOneOf("environment", ["dev", "staging", "prod"]);
 typeEnv.decoder("prod"); // → "prod"
 typeEnv.decoder("unknown");
 // Error: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
@@ -50,12 +41,12 @@ typeEnv.decoder("unknown");
 Chain a `before` type with an `after` transformation:
 
 ```ts
-import { typeMapped, typeNumber } from "cli-kiss";
-
 const typePort = typeMapped(typeNumber, {
-  content: "Port",
-  decoder: (n) => {
-    if (n < 1 || n > 65535) throw new Error("Out of range");
+  content: "port",
+  decoder(n) {
+    if (n < 1 || n > 65535) {
+      throw new Error("Out of range");
+    }
     return n;
   },
 });
@@ -70,8 +61,6 @@ Errors from the `before` decoder are prefixed with `from: <content>`.
 Splits a string into a fixed-length typed tuple:
 
 ```ts
-import { typeTuple, typeNumber } from "cli-kiss";
-
 const typePoint = typeTuple([typeNumber, typeNumber]);
 
 typePoint.decoder("3.14,2.71"); // → [3.14, 2.71]
@@ -90,10 +79,7 @@ typeTuple([typeString, typeNumber], ":");
 Splits a string into an array of typed values:
 
 ```ts
-import { typeList, typeNumber } from "cli-kiss";
-
 const typeNumbers = typeList(typeNumber);
-
 typeNumbers.decoder("1,2,3"); // → [1, 2, 3]
 typeNumbers.decoder("1,x,3"); // → Error: at 1: Number: Unable to parse: "x"
 ```
@@ -118,15 +104,15 @@ Implement the `Type<Value>` interface directly:
 
 ```ts
 import type { Type } from "cli-kiss";
-
 const typeHexColor: Type<string> = {
-  content: "HexColor",
+  content: "hex-color",
   decoder(value) {
-    if (/^#[0-9a-fA-F]{6}$/.test(value)) return value;
+    if (/^#[0-9a-fA-F]{6}$/.test(value)) {
+      return value;
+    }
     throw new Error(`Not a valid value: "${value}"`);
   },
 };
-
-// "--color #ff0000"  →  "#ff0000"
-// "--color red"      →  Error: --color: <HEXCOLOR>: HexColor: Not a valid value: "red"
+// "#ff0000"  →  "#ff0000"
+// "red"  →  Error: HexColor: Not a valid value: "red"
 ```

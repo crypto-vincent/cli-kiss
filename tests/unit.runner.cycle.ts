@@ -11,6 +11,7 @@ import {
   positionalVariadics,
   runAndExit,
   typeMapped,
+  typeNamed,
   typeOneOf,
   typeString,
   typeUrl,
@@ -18,38 +19,38 @@ import {
 
 it("run", async function () {
   const rootUsage = [
-    "Usage: my-cli <REQUIRED1> <SUBCOMMAND>",
+    "Usage: my-cli <required1> <subcommand>",
     "",
     "Root Description",
     "",
     "Positionals:",
-    "  <REQUIRED1>  Required1 positional description",
+    "  <required1>  Required1 positional description",
     "",
     "Subcommands:",
     "  subcommand  Subcommand Description",
     "",
     "Options:",
-    "  --flag[=no]                   Option flag description",
-    "  --repeatable <STRING> [*]     Option repeatable description",
-    "  --single-value <NUMBER-ENUM>  Option single value description",
+    "  --flag[=no]                    Option flag description",
+    "  --repeatable <string> [*]      Option repeatable description",
+    "  --single-value <enum(number)>  Option single value description",
     "",
   ].join("\n");
   const subcommandUsage = [
-    "Usage: my-cli <REQUIRED1> subcommand <REQUIRED2> [OPTIONAL] [VARIADICS]...",
+    "Usage: my-cli <required1> subcommand <required2> [optional] [variadic]...",
     "",
     "Subcommand Description",
     "",
     "Positionals:",
-    "  <REQUIRED1>     Required1 positional description",
-    "  <REQUIRED2>     Required2 positional description",
-    "  [OPTIONAL]      Optional positional description",
-    "  [VARIADICS]...  Variadics positional description",
+    "  <required1>    Required1 positional description",
+    "  <required2>    Required2 positional description",
+    "  [optional]     Optional positional description",
+    "  [variadic]...  Variadics positional description",
     "",
     "Options:",
-    "  --flag[=no]                   Option flag description",
-    "  --repeatable <STRING> [*]     Option repeatable description",
-    "  --single-value <NUMBER-ENUM>  Option single value description",
-    "  --url <URL> [*]               Option url description",
+    "  --flag[=no]                    Option flag description",
+    "  --repeatable <string> [*]      Option repeatable description",
+    "  --single-value <enum(number)>  Option single value description",
+    "  --url <url> [*]                Option url description",
     "",
   ].join("\n");
 
@@ -107,7 +108,7 @@ it("run", async function () {
   await testCase(
     ["required1", "unknown", "-wut", "--flag", "--single-value"],
     [],
-    [rootUsage, 'Error: <SUBCOMMAND>: Invalid value: "unknown"'],
+    [rootUsage, 'Error: <subcommand>: Invalid value: "unknown"'],
     1,
   );
 
@@ -115,19 +116,19 @@ it("run", async function () {
   await testCase(
     [],
     [],
-    [rootUsage, "Error: <REQUIRED1>: Is required, but was not provided"],
+    [rootUsage, "Error: <required1>: Is required, but was not provided"],
     1,
   );
   await testCase(
     ["required1"],
     [],
-    [rootUsage, "Error: <SUBCOMMAND>: Is required, but was not provided"],
+    [rootUsage, "Error: <subcommand>: Is required, but was not provided"],
     1,
   );
   await testCase(
     ["required1", "subcommand"],
     [],
-    [subcommandUsage, "Error: <REQUIRED2>: Is required, but was not provided"],
+    [subcommandUsage, "Error: <required2>: Is required, but was not provided"],
     1,
   );
 
@@ -147,7 +148,7 @@ it("run", async function () {
   await testCase(
     ["required1", "subcommand", "--url", "https://example.com"],
     [],
-    [subcommandUsage, "Error: <REQUIRED2>: Is required, but was not provided"],
+    [subcommandUsage, "Error: <required2>: Is required, but was not provided"],
     1,
   );
   await testCase(
@@ -167,7 +168,7 @@ it("run", async function () {
   await testCase(
     ["--flag=42", "required1", "subcommand", "required2"],
     [],
-    [subcommandUsage, 'Error: --flag: <BOOLEAN>: Boolean: Invalid value: "42"'],
+    [subcommandUsage, 'Error: --flag: boolean: Invalid value: "42"'],
     1,
   );
   await testCase(
@@ -178,6 +179,18 @@ it("run", async function () {
   );
   await testCase(
     ["--flag=yes", "required1", "subcommand", "required2"],
+    ["Has executed root command", "Has executed subcommand"],
+    [],
+    0,
+  );
+  await testCase(
+    ["--flag", "required1", "subcommand", "required2"],
+    ["Has executed root command", "Has executed subcommand"],
+    [],
+    0,
+  );
+  await testCase(
+    ["--no-flag", "required1", "subcommand", "required2"],
     ["Has executed root command", "Has executed subcommand"],
     [],
     0,
@@ -219,7 +232,7 @@ it("run", async function () {
   await testCase(
     ["invalid"],
     [],
-    [rootUsage, "Error: <SUBCOMMAND>: Is required, but was not provided"],
+    [rootUsage, "Error: <subcommand>: Is required, but was not provided"],
     1,
   );
   await testCase(
@@ -227,7 +240,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <REQUIRED1>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
     ],
     1,
   );
@@ -236,7 +249,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <REQUIRED1>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
     ],
     1,
   );
@@ -245,7 +258,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <REQUIRED2>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
+      'Error: <required2>: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
     ],
     1,
   );
@@ -254,7 +267,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <REQUIRED1>: STRING-ENUM: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
     ],
     1,
   );
@@ -265,7 +278,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <NUMBER-ENUM>: NUMBER-ENUM: from: STRING-ENUM: Invalid value: "dodo" (expected one of: "42" | "43")',
+      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "dodo" (expected one of: "42" | "43")',
     ],
     1,
   );
@@ -274,7 +287,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <NUMBER-ENUM>: NUMBER-ENUM: from: STRING-ENUM: Invalid value: "44" (expected one of: "42" | "43")',
+      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "44" (expected one of: "42" | "43")',
     ],
     1,
   );
@@ -289,7 +302,7 @@ it("run", async function () {
   await testCase(
     ["required1", "subcommand", "required2", "--url", "not-a-url"],
     [],
-    [subcommandUsage, 'Error: --url: <URL>: Url: Unable to parse: "not-a-url"'],
+    [subcommandUsage, 'Error: --url: <url>: Unable to parse: "not-a-url"'],
     1,
   );
 
@@ -356,8 +369,8 @@ async function testCase(
           }),
           optionSingleValue: optionSingleValue({
             long: "single-value",
-            type: typeMapped(typeOneOf("STRING-ENUM", ["42", "43"]), {
-              content: "NUMBER-ENUM",
+            type: typeMapped(typeOneOf("enum(string)", ["42", "43"]), {
+              content: "enum(number)",
               decoder: (value) => Number(value),
             }),
             description: "Option single value description",
@@ -366,14 +379,13 @@ async function testCase(
         },
         positionals: [
           positionalRequired({
-            type: typeOneOf("STRING-ENUM", ["required1", "required1-bis"]),
-            label: "REQUIRED1",
+            type: typeOneOf("required1", ["required1", "required1-bis"]),
             description: "Required1 positional description",
           }),
         ],
       },
-      async function () {
-        console.log("Has executed root command");
+      async function (_, _inputs) {
+        console.log(`Has executed root command`);
       },
     ),
     {
@@ -390,25 +402,22 @@ async function testCase(
             },
             positionals: [
               positionalRequired({
-                type: typeOneOf("STRING-ENUM", ["required2", "required2-bis"]),
-                label: "REQUIRED2",
+                type: typeOneOf("required2", ["required2", "required2-bis"]),
                 description: "Required2 positional description",
               }),
               positionalOptional({
-                label: "OPTIONAL",
-                type: typeString,
+                type: typeNamed(typeString, "optional"),
                 description: "Optional positional description",
                 default: () => "world !",
               }),
               positionalVariadics({
-                label: "VARIADICS",
-                type: typeString,
+                type: typeNamed(typeString, "variadic"),
                 description: "Variadics positional description",
               }),
             ],
           },
-          async function () {
-            console.log("Has executed subcommand");
+          async function (_, _inputs) {
+            console.log(`Has executed subcommand`);
           },
         ),
       ),
@@ -418,7 +427,7 @@ async function testCase(
   console.error = onLogStdErr.call;
   await runAndExit("my-cli", args, null, cmd, {
     buildVersion: "1.0.0",
-    useTtyColors: false,
+    colorMode: "never",
     onExit: onExit.call,
   });
   expect({

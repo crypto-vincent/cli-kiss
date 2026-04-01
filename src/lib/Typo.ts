@@ -1,3 +1,5 @@
+import { typeBoolean } from "./Type";
+
 /**
  * Color names for terminal styling, used by {@link TypoStyle}.
  * `dark*` = standard ANSI (30–37); `bright*` = high-intensity (90–97).
@@ -228,7 +230,7 @@ export class TypoGrid {
    * Renders as an array of styled, column-padded strings.
    *
    * @param typoSupport - Rendering mode.
-   * @returns 2-D array of styled strings.
+   * @returns Array of styled strings.
    */
   computeStyledLines(typoSupport: TypoSupport): Array<string> {
     const widths = new Array<number>();
@@ -354,28 +356,27 @@ export class TypoSupport {
   }
   /**
    * Auto-detects styling mode from the process environment.
-   * `FORCE_COLOR=0` / `NO_COLOR` → none; `FORCE_COLOR` (truthy) / `isTTY` → tty; else → none.
-   * Falls back to none if `process` is unavailable.
+   * `FORCE_COLOR=0` / `NO_COLOR` → none; `FORCE_COLOR` (truthy); else → none.
+   * Returns `none` if `process.env` is unavailable (e.g. non-Node environment).
    */
-  static inferFromProcess(): TypoSupport {
-    if (!process) {
+  static inferFromEnv(): TypoSupport {
+    if (!process || !process.env) {
       return TypoSupport.none();
     }
-    if (process.env) {
-      if (process.env["FORCE_COLOR"] === "0") {
-        return TypoSupport.none();
-      }
-      if (process.env["FORCE_COLOR"]) {
+    if (process.env["FORCE_COLOR"]) {
+      if (typeBoolean.decoder(process.env["FORCE_COLOR"])) {
         return TypoSupport.tty();
-      }
-      if ("NO_COLOR" in process.env) {
+      } else {
         return TypoSupport.none();
       }
     }
-    if (process.stdout && process.stdout.isTTY) {
-      return TypoSupport.tty();
+    if ("NO_COLOR" in process.env) {
+      return TypoSupport.none();
     }
-    return TypoSupport.none();
+    if ("MOCK_COLOR" in process.env) {
+      return TypoSupport.mock();
+    }
+    return TypoSupport.tty();
   }
   /**
    * Applies `typoStyle` to `value` according to the current mode.

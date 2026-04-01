@@ -23,7 +23,7 @@ const verbose = optionFlag({
 
 | Parameter     | Type                  | Description                          |
 | ------------- | --------------------- | ------------------------------------ |
-| `long`        | `Lowercase<string>`   | Long flag name (without `--`)        |
+| `long`        | `string`              | Long flag name (without `--`)        |
 | `short`       | `string?`             | Short flag name (without `-`)        |
 | `description` | `string?`             | Help text                            |
 | `hint`        | `string?`             | Short note in parentheses            |
@@ -47,7 +47,6 @@ const output = optionSingleValue({
   long: "output",
   short: "o",
   type: typeString,
-  label: "PATH",
   description: "Output directory",
   default: () => "dist/",
 });
@@ -59,10 +58,9 @@ const output = optionSingleValue({
 
 | Parameter     | Type                  | Description                                                 |
 | ------------- | --------------------- | ----------------------------------------------------------- |
-| `long`        | `Lowercase<string>`   | Long option name                                            |
+| `long`        | `string`              | Long option name                                            |
 | `short`       | `string?`             | Short option name                                           |
 | `type`        | `Type<Value>`         | Decoder for the value                                       |
-| `label`       | `Uppercase<string>?`  | Placeholder in help (defaults to uppercased type content)   |
 | `description` | `string?`             | Help text                                                   |
 | `hint`        | `string?`             | Short note in parentheses                                   |
 | `default`     | `() => Value`         | Default when absent — **throw** to make the option required |
@@ -79,7 +77,6 @@ const files = optionRepeatable({
   long: "file",
   short: "f",
   type: typeString,
-  label: "PATH",
   description: "Input file (may be repeated)",
 });
 // --file a.ts --file b.ts   →  ["a.ts", "b.ts"]
@@ -88,10 +85,9 @@ const files = optionRepeatable({
 
 | Parameter     | Type                  | Description                        |
 | ------------- | --------------------- | ---------------------------------- |
-| `long`        | `Lowercase<string>`   | Long option name                   |
+| `long`        | `string`              | Long option name                   |
 | `short`       | `string?`             | Short option name                  |
 | `type`        | `Type<Value>`         | Decoder applied to each occurrence |
-| `label`       | `Uppercase<string>?`  | Placeholder in help                |
 | `description` | `string?`             | Help text                          |
 | `hint`        | `string?`             | Short note in parentheses          |
 | `aliases`     | `{ longs?, shorts? }` | Additional names                   |

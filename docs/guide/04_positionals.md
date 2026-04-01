@@ -1,6 +1,7 @@
 # Positionals
 
-Bare (non-`--`) arguments, consumed in order. Declared in the `positionals` array of [`operation`](/guide/02_commands).
+Bare (non-`--`) arguments, consumed in order. Declared in the `positionals`
+array of [`operation`](/guide/02_commands).
 
 ## `positionalRequired` — must be present
 
@@ -10,20 +11,18 @@ Fails if missing.
 import { positionalRequired, typeString } from "cli-kiss";
 
 const name = positionalRequired({
-  type: typeString,
-  label: "NAME",
-  description: "The name to greet",
+  type: typeNamed(typeString, "person"),
+  description: "The name of the person to greet",
 });
 // my-cli Alice   →  "Alice"
-// my-cli         →  Error: <NAME>: Is required, but was not provided
+// my-cli         →  Error: <PERSON>: Is required, but was not provided
 ```
 
-| Parameter     | Type                 | Description                                               |
-| ------------- | -------------------- | --------------------------------------------------------- |
-| `type`        | `Type<Value>`        | Decoder for the raw string token                          |
-| `label`       | `Uppercase<string>?` | Placeholder in help (defaults to uppercased type content) |
-| `description` | `string?`            | Help text                                                 |
-| `hint`        | `string?`            | Short note in parentheses                                 |
+| Parameter     | Type          | Description                      |
+| ------------- | ------------- | -------------------------------- |
+| `type`        | `Type<Value>` | Decoder for the raw string token |
+| `description` | `string?`     | Help text                        |
+| `hint`        | `string?`     | Short note in parentheses        |
 
 ## `positionalOptional` — may be absent
 
@@ -33,8 +32,7 @@ Falls back to a default when absent.
 import { positionalOptional, typeString } from "cli-kiss";
 
 const greeting = positionalOptional({
-  type: typeString,
-  label: "GREETING",
+  type: typeNamed(typeString, "greeting"),
   description: "Custom greeting (default: Hello)",
   default: () => "Hello",
 });
@@ -42,13 +40,12 @@ const greeting = positionalOptional({
 // my-cli Howdy    →  "Howdy"
 ```
 
-| Parameter     | Type                 | Description                                       |
-| ------------- | -------------------- | ------------------------------------------------- |
-| `type`        | `Type<Value>`        | Decoder for the raw string token                  |
-| `label`       | `Uppercase<string>?` | Placeholder in help                               |
-| `description` | `string?`            | Help text                                         |
-| `hint`        | `string?`            | Short note in parentheses                         |
-| `default`     | `() => Value`        | Value when absent — **throw** to make it required |
+| Parameter     | Type          | Description                                       |
+| ------------- | ------------- | ------------------------------------------------- |
+| `type`        | `Type<Value>` | Decoder for the raw string token                  |
+| `description` | `string?`     | Help text                                         |
+| `hint`        | `string?`     | Short note in parentheses                         |
+| `default`     | `() => Value` | Value when absent — **throw** to make it required |
 
 ## `positionalVariadics` — zero or more
 
@@ -58,8 +55,7 @@ Consumes all remaining tokens into an array.
 import { positionalVariadics, typeString } from "cli-kiss";
 
 const files = positionalVariadics({
-  type: typeString,
-  label: "FILE",
+  type: typePath(),
   description: "Files to process",
 });
 // my-cli a.ts b.ts c.ts   →  ["a.ts", "b.ts", "c.ts"]
@@ -72,21 +68,19 @@ Optionally stop collecting at a specific sentinel token:
 
 ```ts
 const args = positionalVariadics({
-  type: typeString,
-  label: "ARG",
+  type: typeNamed("argument", typeString),
   endDelimiter: "STOP",
   description: "Arguments (end with STOP)",
 });
 // my-cli foo bar STOP   →  ["foo", "bar"]
 ```
 
-| Parameter      | Type                 | Description                          |
-| -------------- | -------------------- | ------------------------------------ |
-| `type`         | `Type<Value>`        | Decoder applied to each token        |
-| `label`        | `Uppercase<string>?` | Placeholder in help                  |
-| `description`  | `string?`            | Help text                            |
-| `hint`         | `string?`            | Short note in parentheses            |
-| `endDelimiter` | `string?`            | Sentinel token that stops collection |
+| Parameter      | Type          | Description                          |
+| -------------- | ------------- | ------------------------------------ |
+| `type`         | `Type<Value>` | Decoder applied to each token        |
+| `description`  | `string?`     | Help text                            |
+| `hint`         | `string?`     | Short note in parentheses            |
+| `endDelimiter` | `string?`     | Sentinel token that stops collection |
 
 ## Ordering rules
 
@@ -97,20 +91,17 @@ operation(
   {
     options: {},
     positionals: [
-      positionalRequired({ type: typeString, label: "SOURCE" }),
-      positionalRequired({ type: typeString, label: "DEST" }),
-      positionalOptional({
-        type: typeString,
-        label: "TAG",
-        default: () => "latest",
-      }),
-      positionalVariadics({ type: typeString, label: "EXTRA" }),
+      positionalRequired({ type: typeNamed("src", typeString) }),
+      positionalRequired({ type: typeNamed("dst", typeString) }),
+      positionalOptional({ type: typeString, default: () => "latest" }),
+      positionalVariadics({ type: typeString }),
     ],
   },
-  async (_ctx, { positionals: [source, dest, tag, extras] }) => {
+  async function (_ctx, { positionals: [src, dst, tag, extras] }) {
     /* ... */
   },
 );
-// my-cli src/ dst/                →  source="src/", dest="dst/", tag="latest", extras=[]
-// my-cli src/ dst/ v2 a b c       →  source="src/", dest="dst/", tag="v2", extras=["a","b","c"]
+// Usage:
+//   my-cli in out  →  src="in", src="out", tag="latest", extras=[]
+//   my-cli in out v2 a b c  →  src="in", src="out", tag="v2", extras=["a","b","c"]
 ```

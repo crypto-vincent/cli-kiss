@@ -17,11 +17,11 @@ export type ReaderOptionKey = (string | { __brand: "ReaderOptionKey" }) & {
  * Parsing behaviour for a registered option, passed to {@link ReaderArgs.registerOption}.
  */
 export type ReaderOptionParsing = {
-  consumeShortGroup: boolean;
+  consumeShortGroup: boolean; // TODO - this doesnt matter when no short option
   consumeNextArg: (
     inlined: string | null,
     separated: Array<string>,
-    next: string | undefined,
+    nextArg: string | undefined,
   ) => boolean;
 };
 

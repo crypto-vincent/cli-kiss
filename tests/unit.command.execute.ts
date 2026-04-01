@@ -33,7 +33,7 @@ const rootCommand = commandChained(
           default: false,
         }),
       },
-      positionals: [positionalRequired({ label: "POS-1", type: typeNumber })],
+      positionals: [positionalRequired({ type: typeNumber })],
     },
     async function (context, inputs) {
       return { at: "root", context, inputs };
