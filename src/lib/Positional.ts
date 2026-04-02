@@ -102,7 +102,8 @@ export function positionalRequired<Value>(definition: {
  * ```ts
  * const greeteePositional = positionalOptional({
  *   type: type("name"),
- *   description: "Name to greet (default: world)",
+ *   description: "Name to greet",
+ *   hint: "Defaults to \"world\"",
  *   default: () => "world",
  * });
  * // Usage:

@@ -83,7 +83,7 @@ export type OperationInterpreter<Context, Result> = {
  * const greetOperation = operation(
  *   {
  *     options: {
- *       loud: optionFlag({ long: "loud", description: "Print in uppercase", default: false }),
+ *       loud: optionFlag({ long: "loud", description: "Print in uppercase" }),
  *     },
  *     positionals: [
  *       positionalRequired({ type: type("name"), description: "Name to greet" }),

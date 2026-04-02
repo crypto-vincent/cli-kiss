@@ -44,7 +44,7 @@ const output = optionSingleValue({
   short: "o",
   type: typePath(),
   description: "Output directory",
-  defaultWhenNotDefined: () => "dist/",
+  defaultIfNotSpecified: () => "dist/",
 });
 // --output dist/   →  "dist/"
 // --output=dist/   →  "dist/"
@@ -59,8 +59,8 @@ const output = optionSingleValue({
 | `type`                  | `Type<Value>`         | Decoder for the value                                                        |
 | `description`           | `string?`             | Help text                                                                    |
 | `hint`                  | `string?`             | Short note in parentheses                                                    |
-| `defaultWhenNotDefined` | `() => Value`         | Value when option is absent — **throw** to make it required                  |
-| `defaultWhenNotInlined` | `() => Value?`        | Value when option is present but has no inline value (e.g. `--output` alone) |
+| `defaultIfNotSpecified` | `() => Value`         | Value when option is absent — **throw** to make it required                  |
+| `valueIfNothingInlined` | `() => Value?`        | Value when option is present but has no inline value (e.g. `--output` alone) |
 | `aliases`               | `{ longs?, shorts? }` | Additional names                                                             |
 
 ## `optionRepeatable` — collect multiple values

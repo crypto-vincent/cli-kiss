@@ -58,7 +58,7 @@ async function testCase(args: Array<string>, error: string) {
           optionSingleValue: optionSingleValue({
             long: "single-value",
             type: typeUrl("location"),
-            defaultWhenNotDefined: () => undefined,
+            defaultIfNotSpecified: () => undefined,
           }),
           optionRepeatable: optionRepeatable({
             long: "repeatable",
