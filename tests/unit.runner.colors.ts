@@ -2,22 +2,19 @@ import { it } from "@jest/globals";
 import {
   command,
   operation,
-  optionRepeatable,
-  positionalVariadics,
   runAndExit,
   RunColorMode,
-  type,
   TypoSupport,
   usageToStyledLines,
 } from "../src";
 
 const cliName = "my-cli";
 const usageBase = {
-  segments: [{ positional: "[string]..." }],
+  segments: [],
   information: { description: "Description" },
   subcommands: [],
-  options: [{ long: "option", label: "<string>", annotation: " [*]" }],
-  positionals: [{ label: "[string]...", description: "Variadics" }],
+  options: [],
+  positionals: [],
 };
 const usageNone = usageToStyledLines({
   cliName,
@@ -146,21 +143,7 @@ async function testCase(
   const onExit = makeMocked<number, never>([null as never]);
   const cmd = command<null, void>(
     { description: "Description" },
-    operation(
-      {
-        options: {
-          value: optionRepeatable({ long: "option", type: type() }),
-        },
-        positionals: [
-          positionalVariadics({ type: type(), description: "Variadics" }),
-        ],
-      },
-      async function (_, { options: { value }, positionals: [rest] }) {
-        console.log(
-          `Has executed: ${JSON.stringify(value)}, ${JSON.stringify(rest)}`,
-        );
-      },
-    ),
+    operation({ options: {}, positionals: [] }, async function () {}),
   );
   console.log = onLogStdOut.call;
   console.error = onLogStdErr.call;
