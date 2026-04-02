@@ -352,6 +352,15 @@ it("run", async function () {
     1,
   );
   await testCase(
+    ["required1", "subcommand", "required2", "-flag"],
+    [],
+    [
+      subcommandUsage,
+      'Error: Unexpected unknown option: "-flag": did you mean: --flag ?',
+    ],
+    1,
+  );
+  await testCase(
     ["required1", "subcommand", "required2", "--uri"],
     [],
     [
@@ -379,7 +388,7 @@ it("run", async function () {
     1,
   );
   await testCase(
-    ["required1", "subcomm", "-wut", "--flag", "--single-value"],
+    ["required1", "subcomm"],
     [],
     [
       rootUsage,
