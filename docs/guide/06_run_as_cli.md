@@ -118,17 +118,12 @@ Colors are auto-detected by default (`colorSetup: "flag"` adds a `--color`
 option). Override:
 
 ```ts
+// Read from env vars (FORCE_COLOR, NO_COLOR), same as `--color=auto`
+await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "env" });
 // Force colors on
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "always" });
-
 // Force colors off (useful in CI)
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "never" });
-
-// Read from env vars (FORCE_COLOR, NO_COLOR, MOCK_COLOR)
-await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "env" });
-
-// Deterministic mock output (useful in snapshot tests)
-await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "mock" });
 ```
 
 ## Testing your CLI

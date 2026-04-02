@@ -1,9 +1,11 @@
-# Types
+# Input Types
 
 A `Type<Value>` converts a raw CLI string into a typed value:
 
 - Contains a `content` label about the type of data being decoded
 - Paired with a `decoder` function that throws if the value is invalid.
+
+A `Type<Value>` can then be used as a value for an `Option` or `Positional`
 
 ## Built-in types
 
@@ -110,8 +112,7 @@ const typePort = typeConverted("port", typeNumber(), (n) => {
 Wraps a type with a different label for clearer errors:
 
 ```ts
-const typeId = typeRenamed(typeInteger(), "user-id");
-// errors show "user-id" instead of "integer"
+const typeUserId = typeRenamed(typeInteger("u64"), "user-id");
 ```
 
 ## Custom types
@@ -125,7 +126,7 @@ const typeHexColor: Type<string> = {
     if (/^#[0-9a-fA-F]{6}$/.test(value)) {
       return value;
     }
-    throw new Error(`Not a valid color: "${value}"`);
+    throw new Error(`Not a valid hex color: "${value}"`);
   },
 };
 // "#ff0000"  →  "#ff0000"

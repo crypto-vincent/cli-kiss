@@ -57,12 +57,7 @@ export function typeBoolean(name?: string): Type<boolean> {
       if (typeBooleanValuesFalse.has(lower)) {
         return false;
       }
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Not a boolean: `),
-          new TypoString(`"${input}"`, typoStyleQuote),
-        ),
-      );
+      throwInvalidValue("a boolean", input);
     },
   };
 }
@@ -92,12 +87,7 @@ export function typeDatetime(name?: string): Type<Date> {
         }
         return new Date(timestampMs);
       } catch {
-        throw new TypoError(
-          new TypoText(
-            new TypoString(`Not a valid ISO_8601 datetime: `),
-            new TypoString(`"${input}"`, typoStyleQuote),
-          ),
-        );
+        throwInvalidValue("a valid ISO_8601 datetime", input);
       }
     },
   };
@@ -110,7 +100,7 @@ export function typeDatetime(name?: string): Type<Date> {
  * ```ts
  * typeNumber("my-number").decoder("3.14")  // → 3.14
  * typeNumber("my-number").decoder("-1")    // → -1
- * typeNumber("my-number").decoder("hello") // throws TypoError
+ * typeNumber("my-number").decoder("hello") // throws
  * ```
  */
 export function typeNumber(name?: string): Type<number> {
@@ -124,12 +114,7 @@ export function typeNumber(name?: string): Type<number> {
         }
         return parsed;
       } catch {
-        throw new TypoError(
-          new TypoText(
-            new TypoString(`Not a number: `),
-            new TypoString(`"${input}"`, typoStyleQuote),
-          ),
-        );
+        throwInvalidValue("a number", input);
       }
     },
   };
@@ -142,8 +127,8 @@ export function typeNumber(name?: string): Type<number> {
  * @example
  * ```ts
  * typeInteger("my-integer").decoder("42")   // → 42n
- * typeInteger("my-integer").decoder("3.14") // throws TypoError
- * typeInteger("my-integer").decoder("abc")  // throws TypoError
+ * typeInteger("my-integer").decoder("3.14") // throws
+ * typeInteger("my-integer").decoder("abc")  // throws
  * ```
  */
 export function typeInteger(name?: string): Type<bigint> {
@@ -153,12 +138,7 @@ export function typeInteger(name?: string): Type<bigint> {
       try {
         return BigInt(input);
       } catch {
-        throw new TypoError(
-          new TypoText(
-            new TypoString(`Not an integer: `),
-            new TypoString(`"${input}"`, typoStyleQuote),
-          ),
-        );
+        throwInvalidValue("an integer", input);
       }
     },
   };
@@ -171,7 +151,7 @@ export function typeInteger(name?: string): Type<bigint> {
  * @example
  * ```ts
  * typeUrl("my-url").decoder("https://example.com") // → URL { href: "https://example.com/", ... }
- * typeUrl("my-url").decoder("not-a-url")           // throws TypoError
+ * typeUrl("my-url").decoder("not-a-url")           // throws
  * ```
  */
 export function typeUrl(name?: string): Type<URL> {
@@ -181,12 +161,7 @@ export function typeUrl(name?: string): Type<URL> {
       try {
         return new URL(input);
       } catch {
-        throw new TypoError(
-          new TypoText(
-            new TypoString(`Not an URL: `),
-            new TypoString(`"${input}"`, typoStyleQuote),
-          ),
-        );
+        throwInvalidValue("an URL", input);
       }
     },
   };
@@ -487,4 +462,13 @@ export function typeList<Value>(
       );
     },
   };
+}
+
+function throwInvalidValue(kind: string, input: string): never {
+  throw new TypoError(
+    new TypoText(
+      new TypoString(`Not ${kind}: `),
+      new TypoString(`"${input}"`, typoStyleQuote),
+    ),
+  );
 }

@@ -116,16 +116,16 @@ export type UsageOption = {
  * <detail lines...>
  *
  * Positionals:
- *   <LABEL>  <description> (<hint>)
+ *   <label>  <description> (<hint>)
  *
  * Subcommands:
  *   <name>  <description> (<hint>)
  *
  * Options:
- *   -s, --long <LABEL><annotation>  <description> (<hint>)
+ *   -s, --long <label><annotation>  <description> (<hint>)
  *
  * Examples:
- *   <description>
+ *   <explanation>
  *   <command line>
  *
  * ```

@@ -360,14 +360,20 @@ export class TypoSupport {
    * Auto-detects styling mode from the process environment on best-effort basis.
    */
   static inferFromEnv(): TypoSupport {
+    /*
+    console.warn({
+      no: readEnvVar("NO_COLOR"),
+      force: readEnvVar("FORCE_COLOR"),
+      mock: readEnvVar("MOCK_COLOR"),
+      term: readEnvVar("TERM"),
+      tty: process.stdout.isTTY,
+    });
+    */
     if (!process || !process.env || !process.stdout) {
       return TypoSupport.none();
     }
-    function readEnvVar(name: string) {
-      if (!(name in process.env)) {
-        return undefined;
-      }
-      return process.env[name];
+    if (readEnvVar("NO_COLOR")) {
+      return TypoSupport.none();
     }
     const envForceColor = readEnvVar("FORCE_COLOR");
     if (envForceColor === "0") {
@@ -378,16 +384,13 @@ export class TypoSupport {
         return TypoSupport.tty();
       }
     }
-    if (readEnvVar("NO_COLOR")) {
-      return TypoSupport.none();
-    }
     if (readEnvVar("MOCK_COLOR")) {
       return TypoSupport.mock();
     }
-    if (readEnvVar("TERM") === "dumb") {
+    if (!process.stdout.isTTY) {
       return TypoSupport.none();
     }
-    if (!process.stdout.isTTY) {
+    if (readEnvVar("TERM")?.toLowerCase() === "dumb") {
       return TypoSupport.none();
     }
     return TypoSupport.tty();
@@ -506,3 +509,10 @@ const ttyCodeBgColors: Record<TypoColor, string> = {
   brightCyan: "\x1b[106m",
   brightWhite: "\x1b[107m",
 };
+
+function readEnvVar(name: string) {
+  if (!(name in process.env)) {
+    return undefined;
+  }
+  return process.env[name];
+}

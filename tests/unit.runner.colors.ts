@@ -5,151 +5,131 @@ import {
   optionRepeatable,
   positionalVariadics,
   runAndExit,
+  RunColorMode,
   type,
   TypoSupport,
   usageToStyledLines,
 } from "../src";
 
 const cliName = "my-cli";
+const usageBase = {
+  segments: [{ positional: "[string]..." }],
+  information: { description: "Description" },
+  subcommands: [],
+  options: [{ long: "option", label: "<string>", annotation: " [*]" }],
+  positionals: [{ label: "[string]...", description: "Variadics" }],
+};
+const usageNone = usageToStyledLines({
+  cliName,
+  usage: usageBase,
+  typoSupport: TypoSupport.none(),
+}).join("\n");
+const usageMock = usageToStyledLines({
+  cliName,
+  usage: usageBase,
+  typoSupport: TypoSupport.mock(),
+}).join("\n");
+const usageTty = usageToStyledLines({
+  cliName,
+  usage: usageBase,
+  typoSupport: TypoSupport.tty(),
+}).join("\n");
+
+const unexpectedNone = "Error: Unexpected unknown option: --color";
+const unexpectedMock =
+  "{{Error:}@darkRed}+ Unexpected unknown option: {{--color}@darkYellow}+";
 
 it("run", async function () {
-  const usage = {
-    segments: [{ positional: "[string]..." }],
-    information: { description: "Description" },
-    subcommands: [],
-    options: [{ long: "option", label: "<string>", annotation: " [*]" }],
-    positionals: [{ label: "[string]...", description: "Variadics" }],
-  };
-  const usageNone = usageToStyledLines({
-    cliName,
-    usage,
-    typoSupport: TypoSupport.none(),
-  }).join("\n");
-  const usageMock = usageToStyledLines({
-    cliName,
-    usage,
-    typoSupport: TypoSupport.mock(),
-  }).join("\n");
-  const usageTty = usageToStyledLines({
-    cliName,
-    usage,
-    typoSupport: TypoSupport.tty(),
-  }).join("\n");
+  await withEnv("FORCE_COLOR", "false", async () => {
+    if (process.stdout.isTTY) {
+      await testAllHelpsSuccesses(usageTty);
+    } else {
+      await testAllHelpsSuccesses(usageNone);
+    }
 
-  await testCase("flag", ["--color=auto", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
-  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--help"], [usageTty], [], 0);
-  await testCase("env", ["--help"], [usageTty], [], 0);
-  await testCase("always", ["--help"], [usageTty], [], 0);
-  await testCase("never", ["--help"], [usageNone], [], 0);
-  await testCase("mock", ["--help"], [usageMock], [], 0);
+    await withEnv("FORCE_COLOR", "1", async () => {
+      await withEnv("NO_COLOR", "1", async () => {
+        await testAllHelpsSuccesses(usageNone);
+      });
+      await withEnv("NO_COLOR", "true", async () => {
+        await testAllHelpsSuccesses(usageNone);
+      });
+      await withEnv("NO_COLOR", "", async () => {
+        await testAllHelpsSuccesses(usageTty);
+      });
+      await withEnv("MOCK_COLOR", "", async () => {
+        await testAllHelpsSuccesses(usageTty);
+      });
+      await withEnv("TERM", "dumb", async () => {
+        await testAllHelpsSuccesses(usageTty);
+      });
+    });
 
-  process.env["TERM"] = "dumb";
-  await testCase("flag", ["--color=auto", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
-  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--help"], [usageNone], [], 0);
-  await testCase("env", ["--help"], [usageNone], [], 0);
-  await testCase("always", ["--help"], [usageTty], [], 0);
-  await testCase("never", ["--help"], [usageNone], [], 0);
-  await testCase("mock", ["--help"], [usageMock], [], 0);
-  delete process.env["TERM"];
+    await withEnv("FORCE_COLOR", "2", async () => {
+      await testAllHelpsSuccesses(usageTty);
+    });
+    await withEnv("FORCE_COLOR", "1", async () => {
+      await testAllHelpsSuccesses(usageTty);
+    });
+    await withEnv("FORCE_COLOR", "0", async () => {
+      await testAllHelpsSuccesses(usageNone);
+    });
+    await withEnv("MOCK_COLOR", "true", async () => {
+      await testAllHelpsSuccesses(usageMock);
+    });
 
-  process.env["NO_COLOR"] = "true";
-  await testCase("flag", ["--color=auto", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
-  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--help"], [usageNone], [], 0);
-  await testCase("env", ["--help"], [usageNone], [], 0);
-  await testCase("always", ["--help"], [usageTty], [], 0);
-  await testCase("never", ["--help"], [usageNone], [], 0);
-  await testCase("mock", ["--help"], [usageMock], [], 0);
-  delete process.env["NO_COLOR"];
+    await withEnv("MOCK_COLOR", "1", async () => {
+      await testCase(
+        "flag",
+        ["--color=42"],
+        [],
+        [
+          usageMock,
+          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Invalid value: {{"42"}@darkYellow}+ (expected one of: {{"auto"}@darkYellow}+ | {{"always"}@darkYellow}+ | {{"never"}@darkYellow}+...)',
+        ],
+        1,
+      );
+    });
 
-  process.env["FORCE_COLOR"] = "1";
-  await testCase("flag", ["--color=auto", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
-  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--help"], [usageTty], [], 0);
-  await testCase("env", ["--help"], [usageTty], [], 0);
-  await testCase("always", ["--help"], [usageTty], [], 0);
-  await testCase("never", ["--help"], [usageNone], [], 0);
-  await testCase("mock", ["--help"], [usageMock], [], 0);
-  delete process.env["FORCE_COLOR"];
+    await withEnv("MOCK_COLOR", "1", async () => {
+      await testAllFlagsFailures("env", usageMock, unexpectedMock);
+    });
+    await withEnv("FORCE_COLOR", "0", async () => {
+      await testAllFlagsFailures("env", usageNone, unexpectedNone);
+    });
 
-  process.env["FORCE_COLOR"] = "0";
-  await testCase("flag", ["--color=auto", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
-  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--help"], [usageNone], [], 0);
-  await testCase("env", ["--help"], [usageNone], [], 0);
-  await testCase("always", ["--help"], [usageTty], [], 0);
-  await testCase("never", ["--help"], [usageNone], [], 0);
-  await testCase("mock", ["--help"], [usageMock], [], 0);
-  delete process.env["FORCE_COLOR"];
-
-  process.env["MOCK_COLOR"] = "true";
-  await testCase("flag", ["--color=auto", "--help"], [usageMock], [], 0);
-  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
-  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
-  await testCase("flag", ["--help"], [usageMock], [], 0);
-  await testCase("env", ["--help"], [usageMock], [], 0);
-  await testCase("always", ["--help"], [usageTty], [], 0);
-  await testCase("never", ["--help"], [usageNone], [], 0);
-  await testCase("mock", ["--help"], [usageMock], [], 0);
-  await testCase(
-    "flag",
-    ["--color=42"],
-    [],
-    [
-      usageMock,
-      '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Invalid value: {{"42"}@darkYellow}+ (expected one of: {{"auto"}@darkYellow}+ | {{"always"}@darkYellow}+ | {{"never"}@darkYellow}+...)',
-    ],
-    1,
-  );
-  delete process.env["MOCK_COLOR"];
-
-  const unexpected1 = "Error: Unexpected unknown option: --color";
-
-  await testCase("never", ["--color=auto"], [], [usageNone, unexpected1], 1);
-  await testCase("never", ["--color=always"], [], [usageNone, unexpected1], 1);
-  await testCase("never", ["--color=never"], [], [usageNone, unexpected1], 1);
-  await testCase("never", ["--color=mock"], [], [usageNone, unexpected1], 1);
-  await testCase("never", ["--color"], [], [usageNone, unexpected1], 1);
-
-  process.env["FORCE_COLOR"] = "0";
-  await testCase("env", ["--color=auto"], [], [usageNone, unexpected1], 1);
-  await testCase("env", ["--color=always"], [], [usageNone, unexpected1], 1);
-  await testCase("env", ["--color=never"], [], [usageNone, unexpected1], 1);
-  await testCase("env", ["--color=mock"], [], [usageNone, unexpected1], 1);
-  await testCase("env", ["--color"], [], [usageNone, unexpected1], 1);
-  delete process.env["FORCE_COLOR"];
-
-  const unexpected2 =
-    "{{Error:}@darkRed}+ Unexpected unknown option: {{--color}@darkYellow}+";
-
-  await testCase("mock", ["--color=auto"], [], [usageMock, unexpected2], 1);
-  await testCase("mock", ["--color=always"], [], [usageMock, unexpected2], 1);
-  await testCase("mock", ["--color=never"], [], [usageMock, unexpected2], 1);
-  await testCase("mock", ["--color=mock"], [], [usageMock, unexpected2], 1);
-  await testCase("mock", ["--color"], [], [usageMock, unexpected2], 1);
+    await testAllFlagsFailures("mock", usageMock, unexpectedMock);
+    await testAllFlagsFailures("never", usageNone, unexpectedNone);
+  });
 });
 
+async function testAllFlagsFailures(
+  colorSetup: "flag" | RunColorMode,
+  usageErr: string,
+  message: string,
+) {
+  await testCase(colorSetup, ["--color=auto"], [], [usageErr, message], 1);
+  await testCase(colorSetup, ["--color=always"], [], [usageErr, message], 1);
+  await testCase(colorSetup, ["--color=never"], [], [usageErr, message], 1);
+  await testCase(colorSetup, ["--color=mock"], [], [usageErr, message], 1);
+  await testCase(colorSetup, ["--color"], [], [usageErr, message], 1);
+}
+
+async function testAllHelpsSuccesses(usageFromEnv: string) {
+  await testCase("flag", ["--color=auto", "--help"], [usageFromEnv], [], 0);
+  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
+  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
+  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
+  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
+  await testCase("flag", ["--help"], [usageFromEnv], [], 0);
+  await testCase("env", ["--help"], [usageFromEnv], [], 0);
+  await testCase("always", ["--help"], [usageTty], [], 0);
+  await testCase("never", ["--help"], [usageNone], [], 0);
+  await testCase("mock", ["--help"], [usageMock], [], 0);
+}
+
 async function testCase(
-  colorSetup: "flag" | "env" | "always" | "never" | "mock",
+  colorSetup: "flag" | RunColorMode,
   cliArgs: Array<string>,
   expectStdOut: Array<string>,
   expectStdErr: Array<string>,
@@ -215,4 +195,22 @@ function makeMocked<P, R>(returns: Array<R>) {
       return returns[history.length - 1]!;
     },
   };
+}
+
+async function withEnv(
+  envName: string,
+  envValue: string,
+  callback: () => Promise<void>,
+) {
+  let beforeEnvValue = undefined;
+  if (envName in process.env) {
+    beforeEnvValue = process.env[envName];
+  }
+  process.env[envName] = envValue;
+  await callback();
+  if (beforeEnvValue === undefined) {
+    delete process.env[envName];
+  } else {
+    process.env[envName] = beforeEnvValue;
+  }
 }

@@ -6,6 +6,11 @@ import { TypoSupport } from "./Typo";
 import { usageToStyledLines } from "./Usage";
 
 /**
+ * Color selection modes availables
+ */
+export type RunColorMode = "env" | "always" | "never" | "mock";
+
+/**
  * Main entry point: parses CLI arguments, executes the matched command, and exits.
  * Handles `--help`, `--version`, usage-on-error, and exit codes.
  *
@@ -53,7 +58,7 @@ export async function runAndExit<Context>(
   context: Context,
   command: Command<Context, void>,
   options?: {
-    colorSetup?: "flag" | "env" | "always" | "never" | "mock" | undefined;
+    colorSetup?: "flag" | RunColorMode | undefined;
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
@@ -68,14 +73,12 @@ export async function runAndExit<Context>(
   let typoSupport = TypoSupport.none();
   const colorSetup = options?.colorSetup ?? "flag";
   if (colorSetup === "flag") {
-    const colorOption = optionSingleValue<"auto" | "always" | "never" | "mock">(
-      {
-        long: "color",
-        type: typeChoice("color-mode", ["auto", "always", "never", "mock"]),
-        defaultWhenNotDefined: () => "auto",
-        defaultWhenNotInlined: () => "always",
-      },
-    ).registerAndMakeDecoder(readerArgs);
+    const colorOption = optionSingleValue<"auto" | RunColorMode>({
+      long: "color",
+      type: typeChoice("color-mode", ["auto", "always", "never", "mock"]),
+      defaultWhenNotDefined: () => "auto",
+      defaultWhenNotInlined: () => "always",
+    }).registerAndMakeDecoder(readerArgs);
     preprocessors.push(() => {
       try {
         typoSupport = computeTypoSupport(colorOption.getAndDecodeValue());
@@ -86,11 +89,7 @@ export async function runAndExit<Context>(
       return undefined;
     });
   } else {
-    if (colorSetup === "env") {
-      typoSupport = TypoSupport.inferFromEnv();
-    } else {
-      typoSupport = computeTypoSupport(colorSetup);
-    }
+    typoSupport = computeTypoSupport(colorSetup);
   }
   if (options?.usageOnHelp ?? true) {
     const helpOption = optionFlag({ long: "help" }).registerAndMakeDecoder(
@@ -182,11 +181,11 @@ function computeUsageString<Context, Result>(
   }).join("\n");
 }
 
-function computeTypoSupport(
-  colorMode: "auto" | "always" | "never" | "mock",
-): TypoSupport {
+function computeTypoSupport(colorMode: "auto" | RunColorMode): TypoSupport {
   switch (colorMode) {
     case "auto":
+      return TypoSupport.inferFromEnv();
+    case "env":
       return TypoSupport.inferFromEnv();
     case "always":
       return TypoSupport.tty();
