@@ -7,23 +7,16 @@ export function fuzzedAlternatives(
   const normalizedInput = input.toLowerCase();
   const ranked = candidates.map((candidate) => {
     const normalizedCandidate = candidate.toLowerCase();
-    const dist = damerauLevenshtein(normalizedInput, normalizedCandidate);
-    const norm =
-      dist / Math.max(normalizedInput.length, normalizedCandidate.length);
-    let bonus = 0;
-    if (normalizedCandidate.startsWith(normalizedInput)) {
-      bonus -= 0.15;
-    }
-    if (normalizedCandidate[0] === normalizedInput[0]) {
-      bonus -= 0.05;
-    }
-    return { candidate, score: norm + bonus };
+    const score =
+      damerauLevenshtein(normalizedInput, normalizedCandidate) /
+      Math.max(normalizedInput.length, normalizedCandidate.length);
+    return { candidate, score };
   });
   ranked.sort((a, b) => a.score - b.score);
   return ranked
     .filter((r) => r.score <= 0.4)
     .map((r) => r.candidate)
-    .slice(0, 5);
+    .slice(0, 3);
 }
 
 function damerauLevenshtein(

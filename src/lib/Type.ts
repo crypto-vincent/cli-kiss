@@ -362,19 +362,20 @@ export function typeChoice<const Value extends string>(
           text.push(new TypoString(`"${suggestions[i]}"`, typoStyleQuote));
         }
         text.push(new TypoString(` ?`));
-      }
-      text.push(new TypoString(` (expected one of: `));
-      for (let i = 0; i < values.length; i++) {
-        if (i > 5) {
-          text.push(new TypoString(`...`));
-          break;
+      } else {
+        text.push(new TypoString(` (expected one of: `));
+        for (let i = 0; i < values.length; i++) {
+          if (i > 5) {
+            text.push(new TypoString(`...`));
+            break;
+          }
+          if (i > 0) {
+            text.push(new TypoString(`, `));
+          }
+          text.push(new TypoString(`"${values[i]}"`, typoStyleQuote));
         }
-        if (i > 0) {
-          text.push(new TypoString(`, `));
-        }
-        text.push(new TypoString(`"${values[i]}"`, typoStyleQuote));
+        text.push(new TypoString(`)`));
       }
-      text.push(new TypoString(`)`));
       throw new TypoError(text);
     },
   };

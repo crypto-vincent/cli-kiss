@@ -29,9 +29,9 @@ it("run", async function () {
     "  subcommand  Subcommand Description",
     "",
     "Options:",
-    "  -f, --flag[=no]                    Option flag description",
-    "  -r, --repeatable <string> [*]      Option repeatable description",
-    "  -s, --single-value <enum(number)>  Option single value description",
+    "  -ff, --flag[=no]                    Option flag description",
+    "  -r,  --repeatable <string> [*]      Option repeatable description",
+    "  -s,  --single-value <enum(number)>  Option single value description",
     "",
   ].join("\n");
   const subcommandUsage = [
@@ -46,10 +46,10 @@ it("run", async function () {
     "  [variadic]...  Variadics positional description",
     "",
     "Options:",
-    "  -f, --flag[=no]                    Option flag description",
-    "  -r, --repeatable <string> [*]      Option repeatable description",
-    "  -s, --single-value <enum(number)>  Option single value description",
-    "  -u, --url <url> [*]                Option url description",
+    "  -ff, --flag[=no]                    Option flag description",
+    "  -r,  --repeatable <string> [*]      Option repeatable description",
+    "  -s,  --single-value <enum(number)>  Option single value description",
+    "  -u,  --url <url> [*]                Option url description",
     "",
   ].join("\n");
 
@@ -343,11 +343,11 @@ it("run", async function () {
 
   // Test suggestions
   await testCase(
-    ["required1", "subcommand", "required2", "-"],
+    ["required1", "subcommand", "required2", "-f"],
     [],
     [
       subcommandUsage,
-      'Error: Unexpected unknown option: "-": did you mean: -f, -r, -s, -u ?',
+      'Error: Unexpected unknown option: "-f": did you mean: -ff ?',
     ],
     1,
   );
@@ -370,11 +370,11 @@ it("run", async function () {
     1,
   );
   await testCase(
-    ["required", "subcommand", "required2"],
+    ["required-bis1", "subcommand", "required2"],
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "required": did you mean: "required1", "required1-bis" ? (expected one of: "required1", "required1-bis")',
+      'Error: <required1>: Invalid value: "required-bis1": did you mean: "required1-bis", "required1" ?',
     ],
     1,
   );
@@ -411,7 +411,7 @@ async function testCase(
         options: {
           optionFlag: optionFlag({
             long: "flag",
-            short: "f",
+            short: "ff",
             description: "Option flag description",
           }),
           optionRepeatable: optionRepeatable({
