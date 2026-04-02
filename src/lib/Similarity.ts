@@ -1,4 +1,4 @@
-export function similarityOrdered<Value>(
+export function similaritySort<Value>(
   reference: string,
   candidates: { [key: string]: Value } | Array<{ key: string; value: Value }>,
 ): Array<Value> {

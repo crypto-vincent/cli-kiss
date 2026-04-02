@@ -1,5 +1,5 @@
 import { statSync } from "fs";
-import { similarityOrdered } from "./Similarity";
+import { similaritySort } from "./Similarity";
 import {
   TypoError,
   TypoString,
@@ -353,7 +353,7 @@ export function typeChoice<const Value extends string>(
       const text = new TypoText();
       text.push(new TypoString(`Unknown value: `));
       text.push(new TypoString(`"${input}"`, typoStyleQuote));
-      const suggestions = similarityOrdered(
+      const suggestions = similaritySort(
         normalizedKey,
         [...valueByNormalizedKey.entries()].map(([normalizedKey, value]) => ({
           key: normalizedKey,

@@ -1,4 +1,4 @@
-import { similarityOrdered } from "./Similarity";
+import { similaritySort } from "./Similarity";
 import {
   TypoError,
   TypoString,
@@ -244,7 +244,7 @@ export class ReaderArgs {
         }
         shortIndexEnd++;
       }
-      this.#throwUnexpectedOptionError(`-${arg.slice(shortIndexStart)}`);
+      this.#throwUnknownOptionError(`-${arg.slice(shortIndexStart)}`);
     }
     return false;
   }
@@ -255,7 +255,7 @@ export class ReaderArgs {
     if (optionContext !== undefined) {
       return this.#consumeOptionValues(optionContext, constant, inlined);
     }
-    this.#throwUnexpectedOptionError(constant);
+    this.#throwUnknownOptionError(constant);
   }
 
   #tryConsumeOptionShort(
@@ -334,7 +334,7 @@ export class ReaderArgs {
     return name.length > 0 && !name.includes("=") && !name.includes("\0");
   }
 
-  #throwUnexpectedOptionError(constant: string): never {
+  #throwUnknownOptionError(constant: string): never {
     const candidatesConstants = [];
     for (const optionLong of this.#optionContextByLong.keys()) {
       candidatesConstants.push(`--${optionLong}`);
@@ -346,7 +346,7 @@ export class ReaderArgs {
     text.push(new TypoString(`Unknown option: `));
     text.push(new TypoString(`"${constant}"`, typoStyleQuote));
     if (candidatesConstants.length > 0) {
-      const suggestionsConstants = similarityOrdered(
+      const suggestionsConstants = similaritySort(
         constant,
         candidatesConstants.map((candidateConstant) => ({
           key: candidateConstant,

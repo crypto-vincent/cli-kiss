@@ -1,6 +1,6 @@
 import { Operation } from "./Operation";
 import { ReaderArgs } from "./Reader";
-import { similarityOrdered } from "./Similarity";
+import { similaritySort } from "./Similarity";
 import {
   TypoError,
   TypoString,
@@ -222,7 +222,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
           text.push(new TypoString(`<subcommand>`, typoStyleUserInput));
           text.push(new TypoString(`: Unknown name: `));
           text.push(new TypoString(`"${subcommandName}"`, typoStyleQuote));
-          const suggestions = similarityOrdered(
+          const suggestions = similaritySort(
             subcommandName,
             subcommandNames.map((subcommandName) => ({
               key: subcommandName,

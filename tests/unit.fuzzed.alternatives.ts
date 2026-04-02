@@ -1,9 +1,9 @@
 import { it } from "@jest/globals";
-import { similarityOrdered } from "../src/lib/Similarity";
+import { similaritySort } from "../src/lib/Similarity";
 
 it("run", async function () {
   expect(
-    orderBySimilarity("--inst", ["--install", "--flag", "--blah"]),
+    orderBySimilarity("--inst", ["--flag", "--blah", "--install"]),
   ).toStrictEqual(["--install", "--flag", "--blah"]);
 
   expect(
@@ -27,7 +27,7 @@ it("run", async function () {
 });
 
 function orderBySimilarity(reference: string, candidates: Array<string>) {
-  return similarityOrdered(
+  return similaritySort(
     reference,
     candidates.map((key) => ({ key, value: key })),
   );
