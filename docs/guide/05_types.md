@@ -7,17 +7,18 @@ A `Type<Value>` converts a raw CLI string into a typed value:
 
 ## Built-in types
 
-All type factories accept an optional `name` parameter that overrides the label shown in help/errors.
+All type factories accept an optional `name` parameter that overrides the label
+shown in help/errors.
 
-| Type factory   | Content type | Accepts                                                                      |
-| -------------- | ------------ | ---------------------------------------------------------------------------- |
-| `type`         | `string`     | Any string                                                                   |
-| `typeBoolean`  | `boolean`    | `true/yes/on/1/y/t` → true, `false/no/off/0/n/f` → false (case-insensitive) |
-| `typeNumber`   | `number`     | Integers, floats, scientific notation                                        |
-| `typeInteger`  | `bigint`     | Integer strings only                                                         |
-| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)                   |
-| `typeUrl`      | `URL`        | Absolute URLs                                                                |
-| `typePath`     | `string`     | Non-empty path strings; optional sync existence check                        |
+| Type factory   | Content type | Accepts                                                             |
+| -------------- | ------------ | ------------------------------------------------------------------- |
+| `type`         | `string`     | Any string                                                          |
+| `typeBoolean`  | `boolean`    | `true/yes/on/y` → true, `false/no/off/n` → false (case-insensitive) |
+| `typeNumber`   | `number`     | Integers, floats, scientific notation                               |
+| `typeInteger`  | `bigint`     | Integer strings only                                                |
+| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)          |
+| `typeUrl`      | `URL`        | Absolute URLs                                                       |
+| `typePath`     | `string`     | Non-empty path strings; optional sync existence check               |
 
 ```ts
 type("greeting").decoder("hello"); // → "hello"
@@ -32,8 +33,8 @@ typePath().decoder("/usr/bin"); // → "/usr/bin"
 `typePath` also accepts a second argument for existence checks:
 
 ```ts
-typePath("config", { checkSyncExistAs: "file" });     // throws if not a file
-typePath("dir",    { checkSyncExistAs: "directory" }); // throws if not a directory
+typePath("config", { checkSyncExistAs: "file" }); // throws if not a file
+typePath("dir", { checkSyncExistAs: "directory" }); // throws if not a directory
 ```
 
 ## `typeChoice` — string enum

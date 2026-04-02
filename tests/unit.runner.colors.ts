@@ -40,17 +40,32 @@ it("run", async function () {
   await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
   await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
+  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--help"], [usageTty], [], 0);
   await testCase("env", ["--help"], [usageTty], [], 0);
   await testCase("always", ["--help"], [usageTty], [], 0);
   await testCase("never", ["--help"], [usageNone], [], 0);
   await testCase("mock", ["--help"], [usageMock], [], 0);
 
-  process.env["NO_COLOR"] = "";
+  process.env["TERM"] = "dumb";
   await testCase("flag", ["--color=auto", "--help"], [usageNone], [], 0);
   await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
   await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
+  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
+  await testCase("flag", ["--help"], [usageNone], [], 0);
+  await testCase("env", ["--help"], [usageNone], [], 0);
+  await testCase("always", ["--help"], [usageTty], [], 0);
+  await testCase("never", ["--help"], [usageNone], [], 0);
+  await testCase("mock", ["--help"], [usageMock], [], 0);
+  delete process.env["TERM"];
+
+  process.env["NO_COLOR"] = "true";
+  await testCase("flag", ["--color=auto", "--help"], [usageNone], [], 0);
+  await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
+  await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
+  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
+  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--help"], [usageNone], [], 0);
   await testCase("env", ["--help"], [usageNone], [], 0);
   await testCase("always", ["--help"], [usageTty], [], 0);
@@ -58,11 +73,12 @@ it("run", async function () {
   await testCase("mock", ["--help"], [usageMock], [], 0);
   delete process.env["NO_COLOR"];
 
-  process.env["FORCE_COLOR"] = "";
+  process.env["FORCE_COLOR"] = "1";
   await testCase("flag", ["--color=auto", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
   await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
+  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--help"], [usageTty], [], 0);
   await testCase("env", ["--help"], [usageTty], [], 0);
   await testCase("always", ["--help"], [usageTty], [], 0);
@@ -75,6 +91,7 @@ it("run", async function () {
   await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
   await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
+  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--help"], [usageNone], [], 0);
   await testCase("env", ["--help"], [usageNone], [], 0);
   await testCase("always", ["--help"], [usageTty], [], 0);
@@ -82,19 +99,17 @@ it("run", async function () {
   await testCase("mock", ["--help"], [usageMock], [], 0);
   delete process.env["FORCE_COLOR"];
 
-  process.env["MOCK_COLOR"] = "";
+  process.env["MOCK_COLOR"] = "true";
   await testCase("flag", ["--color=auto", "--help"], [usageMock], [], 0);
   await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
   await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
+  await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--help"], [usageMock], [], 0);
   await testCase("env", ["--help"], [usageMock], [], 0);
   await testCase("always", ["--help"], [usageTty], [], 0);
   await testCase("never", ["--help"], [usageNone], [], 0);
   await testCase("mock", ["--help"], [usageMock], [], 0);
-  delete process.env["MOCK_COLOR"];
-
-  process.env["MOCK_COLOR"] = "";
   await testCase(
     "flag",
     ["--color=42"],
@@ -108,23 +123,29 @@ it("run", async function () {
   delete process.env["MOCK_COLOR"];
 
   const unexpected1 = "Error: Unexpected unknown option: --color";
+
   await testCase("never", ["--color=auto"], [], [usageNone, unexpected1], 1);
   await testCase("never", ["--color=always"], [], [usageNone, unexpected1], 1);
   await testCase("never", ["--color=never"], [], [usageNone, unexpected1], 1);
   await testCase("never", ["--color=mock"], [], [usageNone, unexpected1], 1);
+  await testCase("never", ["--color"], [], [usageNone, unexpected1], 1);
+
   process.env["FORCE_COLOR"] = "0";
   await testCase("env", ["--color=auto"], [], [usageNone, unexpected1], 1);
   await testCase("env", ["--color=always"], [], [usageNone, unexpected1], 1);
   await testCase("env", ["--color=never"], [], [usageNone, unexpected1], 1);
   await testCase("env", ["--color=mock"], [], [usageNone, unexpected1], 1);
+  await testCase("env", ["--color"], [], [usageNone, unexpected1], 1);
   delete process.env["FORCE_COLOR"];
 
   const unexpected2 =
     "{{Error:}@darkRed}+ Unexpected unknown option: {{--color}@darkYellow}+";
+
   await testCase("mock", ["--color=auto"], [], [usageMock, unexpected2], 1);
   await testCase("mock", ["--color=always"], [], [usageMock, unexpected2], 1);
   await testCase("mock", ["--color=never"], [], [usageMock, unexpected2], 1);
   await testCase("mock", ["--color=mock"], [], [usageMock, unexpected2], 1);
+  await testCase("mock", ["--color"], [], [usageMock, unexpected2], 1);
 });
 
 async function testCase(

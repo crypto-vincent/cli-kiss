@@ -51,10 +51,10 @@ export function typeBoolean(name?: string): Type<boolean> {
     content: name ?? "boolean",
     decoder(input: string) {
       const lower = input.toLowerCase();
-      if (booleanValuesTrue.has(lower)) {
+      if (typeBooleanValuesTrue.has(lower)) {
         return true;
       }
-      if (booleanValuesFalse.has(lower)) {
+      if (typeBooleanValuesFalse.has(lower)) {
         return false;
       }
       throw new TypoError(
@@ -66,8 +66,9 @@ export function typeBoolean(name?: string): Type<boolean> {
     },
   };
 }
-const booleanValuesTrue = new Set(["true", "yes", "on", "1", "y", "t"]);
-const booleanValuesFalse = new Set(["false", "no", "off", "0", "n", "f"]);
+
+export const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
+export const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);
 
 /**
  * Parses a date/time string via `Date.parse`.
