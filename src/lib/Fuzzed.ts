@@ -20,7 +20,10 @@ export function fuzzedAlternatives(
     return { candidate, score: norm + bonus };
   });
   ranked.sort((a, b) => a.score - b.score);
-  return ranked.filter((r) => r.score <= 0.4).map((r) => r.candidate);
+  return ranked
+    .filter((r) => r.score <= 0.4)
+    .map((r) => r.candidate)
+    .slice(0, 5);
 }
 
 function damerauLevenshtein(
