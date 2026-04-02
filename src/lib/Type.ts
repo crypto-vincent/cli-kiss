@@ -356,6 +356,7 @@ export function typeChoice<const Value extends string>(
         }
         valuesPreview.push(new TypoString(`"${value}"`, typoStyleQuote));
       }
+      // TODO - suggestion via fuzzedAlternative(input, values)
       throw new TypoError(
         new TypoText(
           new TypoString(`Invalid value: `),

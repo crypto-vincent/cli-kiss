@@ -105,7 +105,7 @@ export function optionFlag(definition: {
           const positiveResult = optionResults[0]!;
           const value =
             positiveResult.inlined === null ? "true" : positiveResult.inlined;
-          return decodeValue({ long, short, type, input: value });
+          return decodeValue({ long, type, input: value });
         },
       };
     },
@@ -188,22 +188,24 @@ export function optionSingleValue<Value>(definition: {
             try {
               return definition.defaultWhenNotDefined();
             } catch (error) {
-              throwFailedToGetDefaultValueError(long, error, "not set");
+              const context = "not set";
+              throwFailedToGetDefaultValueError({ long, error, context });
             }
           }
           if (optionResult.inlined) {
             const inlined = optionResult.inlined;
-            return decodeValue({ long, short, label, type, input: inlined });
+            return decodeValue({ long, label, type, input: inlined });
           }
           if (definition.defaultWhenNotInlined !== undefined) {
             try {
               return definition.defaultWhenNotInlined();
             } catch (error) {
-              throwFailedToGetDefaultValueError(long, error, "not inlined");
+              const context = "not inlined";
+              throwFailedToGetDefaultValueError({ long, error, context });
             }
           }
           const separated = optionResult.separated[0]!;
-          return decodeValue({ long, short, label, type, input: separated });
+          return decodeValue({ long, label, type, input: separated });
         },
       };
     },
@@ -269,7 +271,7 @@ export function optionRepeatable<Value>(definition: {
           const optionResults = readerOptions.getOptionValues(key);
           return optionResults.map((optionResult) => {
             const input = optionResult.inlined ?? optionResult.separated[0]!;
-            return decodeValue({ long, short, label, type, input });
+            return decodeValue({ long, label, type, input });
           });
         },
       };
@@ -279,7 +281,6 @@ export function optionRepeatable<Value>(definition: {
 
 function decodeValue<Value>(params: {
   long: string;
-  short?: string | undefined;
   label?: string | undefined;
   type: Type<Value>;
   input: string;
@@ -288,10 +289,6 @@ function decodeValue<Value>(params: {
     () => params.type.decoder(params.input),
     () => {
       const text = new TypoText();
-      if (params.short) {
-        text.push(new TypoString(`-${params.short}`, typoStyleConstants));
-        text.push(new TypoString(`, `));
-      }
       text.push(new TypoString(`--${params.long}`, typoStyleConstants));
       if (params.label) {
         text.push(new TypoString(`: `));
@@ -336,16 +333,15 @@ function throwSetMultipleTimesError(long: string): never {
   );
 }
 
-function throwFailedToGetDefaultValueError(
-  long: string,
-  error: unknown,
-  context: string,
-): never {
-  throw new TypoError(
-    new TypoText(
-      new TypoString(`--${long}`, typoStyleConstants),
-      new TypoString(`: Failed to get default value (${context})`),
-    ),
-    error,
+function throwFailedToGetDefaultValueError(params: {
+  long: string;
+  error: unknown;
+  context: string;
+}): never {
+  const text = new TypoText();
+  text.push(new TypoString(`--${params.long}`, typoStyleConstants));
+  text.push(
+    new TypoString(`: Failed to generate default value (${params.context})`),
   );
+  throw new TypoError(text, params.error);
 }

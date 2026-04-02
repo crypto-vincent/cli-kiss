@@ -32,9 +32,9 @@ const usageTty = usageToStyledLines({
   typoSupport: TypoSupport.tty(),
 }).join("\n");
 
-const unexpectedNone = "Error: Unexpected unknown option: --color";
+const unexpectedNone = 'Error: Unexpected unknown option: "--color"';
 const unexpectedMock =
-  "{{Error:}@darkRed}+ Unexpected unknown option: {{--color}@darkYellow}+";
+  '{{Error:}@darkRed}+ Unexpected unknown option: {{"--color"}@darkYellow}+';
 
 it("run", async function () {
   await withEnv("FORCE_COLOR", "false", async () => {

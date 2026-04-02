@@ -1,3 +1,4 @@
+import { fuzzedAlternatives } from "./Fuzzed";
 import {
   TypoError,
   TypoString,
@@ -243,12 +244,7 @@ export class ReaderArgs {
         }
         shortIndexEnd++;
       }
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Unexpected unknown option(s): `),
-          new TypoString(`-${arg.slice(shortIndexStart)}`, typoStyleQuote),
-        ),
-      );
+      this.#throwUnexpectedOptionError(`-${arg.slice(shortIndexStart)}`);
     }
     return false;
   }
@@ -259,12 +255,7 @@ export class ReaderArgs {
     if (optionContext !== undefined) {
       return this.#consumeOptionValues(optionContext, constant, inlined);
     }
-    throw new TypoError(
-      new TypoText(
-        new TypoString(`Unexpected unknown option: `),
-        new TypoString(constant, typoStyleQuote),
-      ),
-    );
+    this.#throwUnexpectedOptionError(constant);
   }
 
   #tryConsumeOptionShort(
@@ -341,6 +332,31 @@ export class ReaderArgs {
 
   #isValidOptionName(name: string): boolean {
     return name.length > 0 && !name.includes("=") && !name.includes("\0");
+  }
+
+  #throwUnexpectedOptionError(constant: string): never {
+    const candidates = [];
+    for (const optionLong of this.#optionContextByLong.keys()) {
+      candidates.push(`--${optionLong}`);
+    }
+    for (const optionShort of this.#optionContextByShort.keys()) {
+      candidates.push(`-${optionShort}`);
+    }
+    const text = new TypoText();
+    text.push(new TypoString(`Unexpected unknown option: `));
+    text.push(new TypoString(`"${constant}"`, typoStyleQuote));
+    const suggestions = fuzzedAlternatives(constant, candidates);
+    if (suggestions.length > 0) {
+      text.push(`: did you mean: `);
+      for (let i = 0; i < suggestions.length; i++) {
+        if (i > 0) {
+          text.push(", ");
+        }
+        text.push(new TypoString(suggestions[i]!, typoStyleConstants));
+      }
+      text.push(` ?`);
+    }
+    throw new TypoError(text);
   }
 }
 

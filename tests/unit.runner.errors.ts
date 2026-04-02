@@ -17,7 +17,7 @@ it("run", async function () {
   );
   await testCase(
     ["--nope"],
-    "{{Error:}@darkRed}+ Unexpected unknown option: {{--nope}@darkYellow}+",
+    '{{Error:}@darkRed}+ Unexpected unknown option: {{"--nope"}@darkYellow}+',
   );
   await testCase(
     ["--flag", "--flag"],

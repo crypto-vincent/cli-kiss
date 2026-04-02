@@ -29,9 +29,9 @@ it("run", async function () {
     "  subcommand  Subcommand Description",
     "",
     "Options:",
-    "  --flag[=no]                    Option flag description",
-    "  --repeatable <string> [*]      Option repeatable description",
-    "  --single-value <enum(number)>  Option single value description",
+    "  -f, --flag[=no]                    Option flag description",
+    "  -r, --repeatable <string> [*]      Option repeatable description",
+    "  -s, --single-value <enum(number)>  Option single value description",
     "",
   ].join("\n");
   const subcommandUsage = [
@@ -46,10 +46,10 @@ it("run", async function () {
     "  [variadic]...  Variadics positional description",
     "",
     "Options:",
-    "  --flag[=no]                    Option flag description",
-    "  --repeatable <string> [*]      Option repeatable description",
-    "  --single-value <enum(number)>  Option single value description",
-    "  --url <url> [*]                Option url description",
+    "  -f, --flag[=no]                    Option flag description",
+    "  -r, --repeatable <string> [*]      Option repeatable description",
+    "  -s, --single-value <enum(number)>  Option single value description",
+    "  -u, --url <url> [*]                Option url description",
     "",
   ].join("\n");
 
@@ -115,7 +115,7 @@ it("run", async function () {
   await testCase(
     ["--invalid1", "--invalid2", "required1", "--invalid3"],
     [],
-    [rootUsage, "Error: Unexpected unknown option: --invalid1"],
+    [rootUsage, `Error: Unexpected unknown option: "--invalid1"`],
     1,
   );
   await testCase(
@@ -149,13 +149,13 @@ it("run", async function () {
   await testCase(
     ["--url", "https://example.com"],
     [],
-    [rootUsage, "Error: Unexpected unknown option: --url"],
+    [rootUsage, 'Error: Unexpected unknown option: "--url"'],
     1,
   );
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
-    [rootUsage, "Error: Unexpected unknown option: --url"],
+    [rootUsage, 'Error: Unexpected unknown option: "--url"'],
     1,
   );
   await testCase(
@@ -207,13 +207,13 @@ it("run", async function () {
   await testCase(
     ["--invalid", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, "Error: Unexpected unknown option: --invalid"],
+    [rootUsage, 'Error: Unexpected unknown option: "--invalid"'],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--nope"],
     [],
-    [subcommandUsage, "Error: Unexpected unknown option: --nope"],
+    [subcommandUsage, 'Error: Unexpected unknown option: "--nope"'],
     1,
   );
   await testCase(
@@ -303,7 +303,7 @@ it("run", async function () {
   await testCase(
     ["--url", "not-a-url", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, "Error: Unexpected unknown option: --url"],
+    [rootUsage, 'Error: Unexpected unknown option: "--url"'],
     1,
   );
   await testCase(
@@ -340,6 +340,35 @@ it("run", async function () {
     [subcommandUsage, "Error: --single-value: Must not be set multiple times"],
     1,
   );
+
+  // Test suggestions
+  await testCase(
+    ["required1", "subcommand", "required2", "-"],
+    [],
+    [
+      subcommandUsage,
+      'Error: Unexpected unknown option: "-": did you mean: -f, -r, -s, -u ?',
+    ],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--uri"],
+    [],
+    [
+      subcommandUsage,
+      'Error: Unexpected unknown option: "--uri": did you mean: --url ?',
+    ],
+    1,
+  );
+  await testCase(
+    ["required1", "subcommand", "required2", "--single-"],
+    [],
+    [
+      subcommandUsage,
+      'Error: Unexpected unknown option: "--single-": did you mean: --single-value ?',
+    ],
+    1,
+  );
 });
 
 async function testCase(
@@ -364,15 +393,18 @@ async function testCase(
         options: {
           optionFlag: optionFlag({
             long: "flag",
+            short: "f",
             description: "Option flag description",
           }),
           optionRepeatable: optionRepeatable({
             long: "repeatable",
+            short: "r",
             type: type(),
             description: "Option repeatable description",
           }),
           optionSingleValue: optionSingleValue({
             long: "single-value",
+            short: "s",
             type: typeConverted(
               "enum(number)",
               typeChoice("enum(string)", ["42", "43"]),
@@ -401,8 +433,9 @@ async function testCase(
             options: {
               optionExtra: optionRepeatable({
                 long: "url",
+                short: "u",
                 description: "Option url description",
-                type: typeUrl("url"),
+                type: typeUrl(),
               }),
             },
             positionals: [
