@@ -104,7 +104,7 @@ const typePort = typeConverted("port", typeNumber(), (n) => {
   return n;
 });
 // "--port 8080"   →  8080
-// "--port 99999"  →  TypoError
+// "--port 99999"  →  throws
 ```
 
 ## `typeRenamed` — rename a type

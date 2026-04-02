@@ -18,14 +18,14 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 
 ### Options
 
-| Option         | Type                                        | Default        | Description                                                                                 |
-| -------------- | ------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
-| `buildVersion` | `string?`                                   | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
-| `usageOnHelp`  | `boolean?`                                  | `true`         | Enables `--help` flag                                                                       |
-| `usageOnError` | `boolean?`                                  | `true`         | Prints usage to stderr when parsing fails                                                   |
-| `colorSetup`   | `"flag"\|"env"\|"always"\|"never"\|"mock"?` | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
-| `onError`      | `(error: unknown) => void`                  | —              | Custom handler for parse and execution errors                                               |
-| `onExit`       | `(code: number) => never`                   | `process.exit` | Override for testing                                                                        |
+| Option         | Type                                | Default        | Description                                                                                 |
+| -------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
+| `buildVersion` | `string?`                           | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
+| `usageOnHelp`  | `boolean?`                          | `true`         | Enables `--help` flag                                                                       |
+| `usageOnError` | `boolean?`                          | `true`         | Prints usage to stderr when parsing fails                                                   |
+| `colorSetup`   | `flag` / `env` / `always` / `never` | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
+| `onError`      | `(error: unknown) => void`          | —              | Custom handler for parse and execution errors                                               |
+| `onExit`       | `(code: number) => never`           | `process.exit` | Override for testing                                                                        |
 
 ### Exit codes
 
