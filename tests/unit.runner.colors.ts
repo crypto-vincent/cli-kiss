@@ -32,9 +32,10 @@ const usageTty = usageToStyledLines({
   typoSupport: TypoSupport.tty(),
 }).join("\n");
 
-const unexpectedNone = 'Error: Unexpected unknown option: "--color"';
-const unexpectedMock =
-  '{{Error:}@darkRed}+ Unexpected unknown option: {{"--color"}@darkYellow}+';
+const unknownOptionNone =
+  'Error: Unknown option: "--color": did you mean: --help, --version ?';
+const unknownOptionMock =
+  '{{Error:}@darkRed}+ Unknown option: {{"--color"}@darkYellow}+: did you mean: {{--help}@darkCyan}+, {{--version}@darkCyan}+ ?';
 
 it("run", async function () {
   await withEnv("FORCE_COLOR", "false", async () => {
@@ -82,21 +83,21 @@ it("run", async function () {
         [],
         [
           usageMock,
-          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Invalid value: {{"42"}@darkYellow}+ (expected one of: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+, {{"mock"}@darkYellow}+)',
+          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Unknown value: {{"42"}@darkYellow}+: did you mean: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+ ?',
         ],
         1,
       );
     });
 
     await withEnv("MOCK_COLOR", "1", async () => {
-      await testAllFlagsFailures("env", usageMock, unexpectedMock);
+      await testAllFlagsFailures("env", usageMock, unknownOptionMock);
     });
     await withEnv("FORCE_COLOR", "0", async () => {
-      await testAllFlagsFailures("env", usageNone, unexpectedNone);
+      await testAllFlagsFailures("env", usageNone, unknownOptionNone);
     });
 
-    await testAllFlagsFailures("mock", usageMock, unexpectedMock);
-    await testAllFlagsFailures("never", usageNone, unexpectedNone);
+    await testAllFlagsFailures("mock", usageMock, unknownOptionMock);
+    await testAllFlagsFailures("never", usageNone, unknownOptionNone);
   });
 });
 

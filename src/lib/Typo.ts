@@ -151,6 +151,11 @@ export class TypoString {
 }
 
 /**
+ * A segment of styled text, a string, or an array of segments.
+ */
+export type TypoSegment = TypoText | TypoString | string | Array<TypoSegment>;
+
+/**
  * Mutable sequence of {@link TypoString} segments.
  */
 export class TypoText {
@@ -158,10 +163,10 @@ export class TypoText {
   /**
    * @param segments - Initial text segments
    */
-  constructor(...segments: Array<TypoText | Array<TypoString> | TypoString>) {
+  constructor(...segments: TypoSegment[]) {
     this.#typoStrings = [];
-    for (const typoPart of segments) {
-      this.push(typoPart);
+    for (const segment of segments) {
+      this.push(segment);
     }
   }
   /**
@@ -169,14 +174,14 @@ export class TypoText {
    *
    * @param segment - Text segment(s) to append.
    */
-  push(segment: TypoText | Array<TypoString> | TypoString) {
+  push(segment: TypoSegment) {
     if (typeof segment === "string") {
       this.#typoStrings.push(new TypoString(segment));
     } else if (segment instanceof TypoText) {
       this.#typoStrings.push(...segment.#typoStrings);
     } else if (Array.isArray(segment)) {
       for (const typoString of segment) {
-        this.#typoStrings.push(typoString);
+        this.push(typoString);
       }
     } else {
       this.#typoStrings.push(segment);
@@ -208,6 +213,20 @@ export class TypoText {
       length += typoString.getRawString().length;
     }
     return length;
+  }
+  /**
+   * Joins multiple segments with a separator.
+   * @returns A new {@link TypoText} containing the joined segments.
+   */
+  static join(segments: Array<TypoSegment>, separator: TypoSegment): TypoText {
+    const result = new TypoText();
+    for (let index = 0; index < segments.length; index++) {
+      if (index > 0) {
+        result.push(separator);
+      }
+      result.push(segments[index]!);
+    }
+    return result;
   }
 }
 

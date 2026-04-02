@@ -1,4 +1,4 @@
-import { fuzzedAlternatives } from "./Fuzzed";
+import { similarityOrdered } from "./Similarity";
 import {
   TypoError,
   TypoString,
@@ -335,26 +335,29 @@ export class ReaderArgs {
   }
 
   #throwUnexpectedOptionError(constant: string): never {
-    const candidates = [];
+    const candidatesConstants = [];
     for (const optionLong of this.#optionContextByLong.keys()) {
-      candidates.push(`--${optionLong}`);
+      candidatesConstants.push(`--${optionLong}`);
     }
     for (const optionShort of this.#optionContextByShort.keys()) {
-      candidates.push(`-${optionShort}`);
+      candidatesConstants.push(`-${optionShort}`);
     }
     const text = new TypoText();
-    text.push(new TypoString(`Unexpected unknown option: `));
+    text.push(new TypoString(`Unknown option: `));
     text.push(new TypoString(`"${constant}"`, typoStyleQuote));
-    const suggestions = fuzzedAlternatives(constant, candidates);
-    if (suggestions.length > 0) {
+    if (candidatesConstants.length > 0) {
+      const suggestionsConstants = similarityOrdered(
+        constant,
+        candidatesConstants.map((candidateConstant) => ({
+          key: candidateConstant,
+          value: new TypoString(candidateConstant, typoStyleConstants),
+        })),
+      ).slice(0, 3);
       text.push(new TypoString(`: did you mean: `));
-      for (let i = 0; i < suggestions.length; i++) {
-        if (i > 0) {
-          text.push(new TypoString(", "));
-        }
-        text.push(new TypoString(suggestions[i]!, typoStyleConstants));
-      }
+      text.push(TypoText.join(suggestionsConstants, new TypoString(`, `)));
       text.push(new TypoString(` ?`));
+    } else {
+      text.push(new TypoString(`, no options are registered`));
     }
     throw new TypoError(text);
   }

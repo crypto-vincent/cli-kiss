@@ -1,24 +1,20 @@
-// TODO - clean this up (and take objects with context as parameters instead)
-
-export function fuzzedAlternatives(
-  input: string,
-  candidates: string[],
-): Array<string> {
-  const normalizedInput = input.toLowerCase();
-  const ranked = candidates.map((candidate) => {
-    const normalizedCandidate = candidate.toLowerCase();
+export function similarityOrdered<Value>(
+  reference: string,
+  candidates: { [key: string]: Value } | Array<{ key: string; value: Value }>,
+): Array<Value> {
+  let entries = Array.isArray(candidates)
+    ? candidates.map(({ key, value }) => [key, value] as const)
+    : Object.entries(candidates);
+  const ranked = entries.map(([key, value]) => {
     const score =
-      damerauLevenshtein(normalizedInput, normalizedCandidate) /
-      Math.max(normalizedInput.length, normalizedCandidate.length);
-    return { candidate, score };
+      damerauLevenshtein(reference, key) /
+      Math.max(reference.length, key.length);
+    return { key, value, score };
   });
-  ranked.sort((a, b) => a.score - b.score);
-  return ranked
-    .filter((r) => r.score <= 0.4)
-    .map((r) => r.candidate)
-    .slice(0, 3);
+  return ranked.sort((a, b) => a.score - b.score).map((v) => v.value);
 }
 
+// TODO - clean this up
 function damerauLevenshtein(
   normalizedInput: string,
   normalizedCandidate: string,
@@ -49,7 +45,7 @@ function damerauLevenshtein(
         normalizedInput[i - 1] === normalizedCandidate[j - 2] &&
         normalizedInput[i - 2] === normalizedCandidate[j - 1]
       ) {
-        dp[i]![j] = Math.min(dp[i]![j]!, dp[i - 2]![j - 2]! + cost); // transposition
+        dp[i]![j] = Math.min(dp[i]![j]!, dp[i - 2]![j - 2]! + cost);
       }
     }
   }

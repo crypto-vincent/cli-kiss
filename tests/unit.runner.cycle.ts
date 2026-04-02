@@ -115,13 +115,19 @@ it("run", async function () {
   await testCase(
     ["--invalid1", "--invalid2", "required1", "--invalid3"],
     [],
-    [rootUsage, `Error: Unexpected unknown option: "--invalid1"`],
+    [
+      rootUsage,
+      'Error: Unknown option: "--invalid1": did you mean: --single-value, --help, --version ?',
+    ],
     1,
   );
   await testCase(
     ["required1", "unknown", "-wut", "--flag", "--single-value"],
     [],
-    [rootUsage, 'Error: <subcommand>: Unknown value: "unknown"'],
+    [
+      rootUsage,
+      'Error: <subcommand>: Unknown name: "unknown": did you mean: subcommand ?',
+    ],
     1,
   );
 
@@ -149,13 +155,19 @@ it("run", async function () {
   await testCase(
     ["--url", "https://example.com"],
     [],
-    [rootUsage, 'Error: Unexpected unknown option: "--url"'],
+    [
+      rootUsage,
+      'Error: Unknown option: "--url": did you mean: --help, -r, --version ?',
+    ],
     1,
   );
   await testCase(
     ["required1", "--url", "https://example.com"],
     [],
-    [rootUsage, 'Error: Unexpected unknown option: "--url"'],
+    [
+      rootUsage,
+      'Error: Unknown option: "--url": did you mean: --help, -r, --version ?',
+    ],
     1,
   );
   await testCase(
@@ -207,13 +219,19 @@ it("run", async function () {
   await testCase(
     ["--invalid", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, 'Error: Unexpected unknown option: "--invalid"'],
+    [
+      rootUsage,
+      'Error: Unknown option: "--invalid": did you mean: --single-value, --help, --flag ?',
+    ],
     1,
   );
   await testCase(
     ["required1", "subcommand", "required2", "--nope"],
     [],
-    [subcommandUsage, 'Error: Unexpected unknown option: "--nope"'],
+    [
+      subcommandUsage,
+      'Error: Unknown option: "--nope": did you mean: --help, --flag, --repeatable ?',
+    ],
     1,
   );
   await testCase(
@@ -247,7 +265,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1", "required1-bis")',
+      'Error: <required1>: Unknown value: "invalid": did you mean: "required1-bis", "required1" ?',
     ],
     1,
   );
@@ -256,7 +274,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1", "required1-bis")',
+      'Error: <required1>: Unknown value: "invalid": did you mean: "required1-bis", "required1" ?',
     ],
     1,
   );
@@ -265,7 +283,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required2>: Invalid value: "invalid" (expected one of: "required2", "required2-bis")',
+      'Error: <required2>: Unknown value: "invalid": did you mean: "required2-bis", "required2" ?',
     ],
     1,
   );
@@ -274,7 +292,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1", "required1-bis")',
+      'Error: <required1>: Unknown value: "invalid": did you mean: "required1-bis", "required1" ?',
     ],
     1,
   );
@@ -285,7 +303,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "dodo" (expected one of: "42", "43")',
+      'Error: --single-value: <enum(number)>: from: enum(string): Unknown value: "dodo": did you mean: "42", "43" ?',
     ],
     1,
   );
@@ -294,7 +312,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "44" (expected one of: "42", "43")',
+      'Error: --single-value: <enum(number)>: from: enum(string): Unknown value: "44": did you mean: "42", "43" ?',
     ],
     1,
   );
@@ -303,7 +321,10 @@ it("run", async function () {
   await testCase(
     ["--url", "not-a-url", "required1", "subcommand", "required2"],
     [],
-    [rootUsage, 'Error: Unexpected unknown option: "--url"'],
+    [
+      rootUsage,
+      'Error: Unknown option: "--url": did you mean: --help, -r, --version ?',
+    ],
     1,
   );
   await testCase(
@@ -347,7 +368,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: Unexpected unknown option: "-f": did you mean: -ff ?',
+      'Error: Unknown option: "-f": did you mean: -ff, -r, -s ?',
     ],
     1,
   );
@@ -356,7 +377,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: Unexpected unknown option: "-flag": did you mean: --flag ?',
+      'Error: Unknown option: "-flag": did you mean: --flag, -ff, --single-value ?',
     ],
     1,
   );
@@ -365,7 +386,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: Unexpected unknown option: "--uri": did you mean: --url ?',
+      'Error: Unknown option: "--uri": did you mean: --url, --version, -r ?',
     ],
     1,
   );
@@ -374,7 +395,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: Unexpected unknown option: "--single-": did you mean: --single-value ?',
+      'Error: Unknown option: "--single-": did you mean: --single-value, --help, --flag ?',
     ],
     1,
   );
@@ -383,7 +404,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "required-bis1": did you mean: "required1-bis", "required1" ?',
+      'Error: <required1>: Unknown value: "required-bis1": did you mean: "required1-bis", "required1" ?',
     ],
     1,
   );
@@ -392,7 +413,7 @@ it("run", async function () {
     [],
     [
       rootUsage,
-      'Error: <subcommand>: Unknown value: "subcomm": did you mean: subcommand ?',
+      'Error: <subcommand>: Unknown name: "subcomm": did you mean: subcommand ?',
     ],
     1,
   );

@@ -1,23 +1,34 @@
 import { it } from "@jest/globals";
-import { fuzzedAlternatives } from "../src/lib/Fuzzed";
+import { similarityOrdered } from "../src/lib/Similarity";
 
 it("run", async function () {
   expect(
-    fuzzedAlternatives("--inst", ["--install", "--flag", "--blah"]),
-  ).toStrictEqual(["--install"]);
+    orderBySimilarity("--inst", ["--install", "--flag", "--blah"]),
+  ).toStrictEqual(["--install", "--flag", "--blah"]);
 
   expect(
-    fuzzedAlternatives("instlal", ["install", "dudu", "--blah"]),
-  ).toStrictEqual(["install"]);
+    orderBySimilarity("instlal", ["install", "dudu", "--blah"]),
+  ).toStrictEqual(["install", "--blah", "dudu"]);
 
   expect(
-    fuzzedAlternatives("cat", ["cats", "catz", "cut", "kat", "hello", "world"]),
-  ).toStrictEqual(["cats", "catz", "cut"]);
+    orderBySimilarity("cat", ["cats", "catz", "cut", "kat", "hello", "world"]),
+  ).toStrictEqual(["cats", "catz", "cut", "kat", "hello", "world"]);
 
-  expect(fuzzedAlternatives("cat", ["cut", "kat"])).toStrictEqual([
+  expect(orderBySimilarity("cat", ["cut", "kat"])).toStrictEqual([
     "cut",
     "kat",
   ]);
 
-  expect(fuzzedAlternatives("acb", ["abc"])).toStrictEqual(["abc"]);
+  expect(orderBySimilarity("acb", ["abc", "ac", "ab"])).toStrictEqual([
+    "abc",
+    "ac",
+    "ab",
+  ]);
 });
+
+function orderBySimilarity(reference: string, candidates: Array<string>) {
+  return similarityOrdered(
+    reference,
+    candidates.map((key) => ({ key, value: key })),
+  );
+}

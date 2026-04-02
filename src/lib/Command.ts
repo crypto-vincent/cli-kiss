@@ -1,6 +1,6 @@
-import { fuzzedAlternatives } from "./Fuzzed";
 import { Operation } from "./Operation";
 import { ReaderArgs } from "./Reader";
+import { similarityOrdered } from "./Similarity";
 import {
   TypoError,
   TypoString,
@@ -196,6 +196,10 @@ export function commandWithSubcommands<Context, Payload, Result>(
   operation: Operation<Context, Payload>,
   subcommands: { [subcommand: string]: Command<Payload, Result> },
 ): Command<Context, Result> {
+  const subcommandNames = Object.keys(subcommands);
+  if (subcommandNames.length === 0) {
+    throw new Error("At least one subcommand is required");
+  }
   return {
     getInformation() {
       return information;
@@ -216,20 +220,18 @@ export function commandWithSubcommands<Context, Payload, Result>(
         if (subcommandInput === undefined) {
           const text = new TypoText();
           text.push(new TypoString(`<subcommand>`, typoStyleUserInput));
-          text.push(new TypoString(`: Unknown value: `));
+          text.push(new TypoString(`: Unknown name: `));
           text.push(new TypoString(`"${subcommandName}"`, typoStyleQuote));
-          const candidates = Object.keys(subcommands);
-          const suggestions = fuzzedAlternatives(subcommandName, candidates);
-          if (suggestions.length > 0) {
-            text.push(new TypoString(`: did you mean: `));
-            for (let i = 0; i < suggestions.length; i++) {
-              if (i > 0) {
-                text.push(new TypoString(`, `));
-              }
-              text.push(new TypoString(suggestions[i]!, typoStyleConstants));
-            }
-            text.push(new TypoString(` ?`));
-          }
+          const suggestions = similarityOrdered(
+            subcommandName,
+            subcommandNames.map((subcommandName) => ({
+              key: subcommandName,
+              value: new TypoString(subcommandName, typoStyleConstants),
+            })),
+          ).slice(0, 3);
+          text.push(new TypoString(`: did you mean: `));
+          text.push(TypoText.join(suggestions, new TypoString(`, `)));
+          text.push(new TypoString(` ?`));
           throw new TypoError(text);
         }
         const subcommandDecoder =

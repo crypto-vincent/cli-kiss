@@ -1,5 +1,5 @@
 import { statSync } from "fs";
-import { fuzzedAlternatives } from "./Fuzzed";
+import { similarityOrdered } from "./Similarity";
 import {
   TypoError,
   TypoString,
@@ -334,48 +334,36 @@ export function typeChoice<const Value extends string>(
   values: Array<Value>,
   caseSensitive: boolean = false,
 ): Type<Value> {
+  if (values.length === 0) {
+    throw new Error("At least one value is required");
+  }
   const normalize = caseSensitive
     ? (s: string) => s
     : (s: string) => s.toLowerCase();
-  const valueMap = new Map(values.map((value) => [normalize(value), value]));
+  const valueByNormalizedKey = new Map(
+    values.map((value) => [normalize(value), value]),
+  );
   return {
     content: name,
     decoder(input: string) {
-      const normalized = normalize(input);
-      const original = valueMap.get(normalized);
-      if (original !== undefined) {
-        return original;
+      const normalizedKey = normalize(input);
+      const value = valueByNormalizedKey.get(normalizedKey);
+      if (value !== undefined) {
+        return value;
       }
       const text = new TypoText();
-      text.push(new TypoString(`Invalid value: `));
+      text.push(new TypoString(`Unknown value: `));
       text.push(new TypoString(`"${input}"`, typoStyleQuote));
-      const suggestions = fuzzedAlternatives(normalized, [...valueMap.keys()]);
-      if (suggestions.length > 0) {
-        for (let i = 0; i < suggestions.length; i++) {
-          suggestions[i] = valueMap.get(suggestions[i]!)!;
-        }
-        text.push(new TypoString(`: did you mean: `));
-        for (let i = 0; i < suggestions.length; i++) {
-          if (i > 0) {
-            text.push(new TypoString(`, `));
-          }
-          text.push(new TypoString(`"${suggestions[i]}"`, typoStyleQuote));
-        }
-        text.push(new TypoString(` ?`));
-      } else {
-        text.push(new TypoString(` (expected one of: `));
-        for (let i = 0; i < values.length; i++) {
-          if (i > 5) {
-            text.push(new TypoString(`...`));
-            break;
-          }
-          if (i > 0) {
-            text.push(new TypoString(`, `));
-          }
-          text.push(new TypoString(`"${values[i]}"`, typoStyleQuote));
-        }
-        text.push(new TypoString(`)`));
-      }
+      const suggestions = similarityOrdered(
+        normalizedKey,
+        [...valueByNormalizedKey.entries()].map(([normalizedKey, value]) => ({
+          key: normalizedKey,
+          value: new TypoString(`"${value}"`, typoStyleQuote),
+        })),
+      ).slice(0, 3);
+      text.push(new TypoString(`: did you mean: `));
+      text.push(TypoText.join(suggestions, new TypoString(`, `)));
+      text.push(new TypoString(` ?`));
       throw new TypoError(text);
     },
   };
