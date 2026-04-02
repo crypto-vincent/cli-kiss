@@ -82,7 +82,7 @@ it("run", async function () {
         [],
         [
           usageMock,
-          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Invalid value: {{"42"}@darkYellow}+ (expected one of: {{"auto"}@darkYellow}+ | {{"always"}@darkYellow}+ | {{"never"}@darkYellow}+...)',
+          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Invalid value: {{"42"}@darkYellow}+ (expected one of: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+, {{"mock"}@darkYellow}+)',
         ],
         1,
       );

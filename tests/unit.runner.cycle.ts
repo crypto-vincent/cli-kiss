@@ -247,7 +247,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1", "required1-bis")',
     ],
     1,
   );
@@ -256,7 +256,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1", "required1-bis")',
     ],
     1,
   );
@@ -265,7 +265,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required2>: Invalid value: "invalid" (expected one of: "required2" | "required2-bis")',
+      'Error: <required2>: Invalid value: "invalid" (expected one of: "required2", "required2-bis")',
     ],
     1,
   );
@@ -274,7 +274,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1" | "required1-bis")',
+      'Error: <required1>: Invalid value: "invalid" (expected one of: "required1", "required1-bis")',
     ],
     1,
   );
@@ -285,7 +285,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "dodo" (expected one of: "42" | "43")',
+      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "dodo" (expected one of: "42", "43")',
     ],
     1,
   );
@@ -294,7 +294,7 @@ it("run", async function () {
     [],
     [
       subcommandUsage,
-      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "44" (expected one of: "42" | "43")',
+      'Error: --single-value: <enum(number)>: from: enum(string): Invalid value: "44" (expected one of: "42", "43")',
     ],
     1,
   );
@@ -366,6 +366,15 @@ it("run", async function () {
     [
       subcommandUsage,
       'Error: Unexpected unknown option: "--single-": did you mean: --single-value ?',
+    ],
+    1,
+  );
+  await testCase(
+    ["required", "subcommand", "required2"],
+    [],
+    [
+      subcommandUsage,
+      'Error: <required1>: Invalid value: "required": did you mean: "required1", "required1-bis" ? (expected one of: "required1", "required1-bis")',
     ],
     1,
   );

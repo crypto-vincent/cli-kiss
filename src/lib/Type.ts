@@ -1,4 +1,5 @@
 import { statSync } from "fs";
+import { fuzzedAlternatives } from "./Fuzzed";
 import {
   TypoError,
   TypoString,
@@ -345,27 +346,36 @@ export function typeChoice<const Value extends string>(
       if (original !== undefined) {
         return original;
       }
-      const valuesPreview = [];
-      for (const value of values) {
-        if (valuesPreview.length >= 5) {
-          valuesPreview.push(new TypoString(`...`));
+      const text = new TypoText();
+      text.push(new TypoString(`Invalid value: `));
+      text.push(new TypoString(`"${input}"`, typoStyleQuote));
+      const suggestions = fuzzedAlternatives(normalized, [...valueMap.keys()]);
+      if (suggestions.length > 0) {
+        for (let i = 0; i < suggestions.length; i++) {
+          suggestions[i] = valueMap.get(suggestions[i]!)!;
+        }
+        text.push(new TypoString(`: did you mean: `));
+        for (let i = 0; i < suggestions.length; i++) {
+          if (i > 0) {
+            text.push(new TypoString(`, `));
+          }
+          text.push(new TypoString(`"${suggestions[i]}"`, typoStyleQuote));
+        }
+        text.push(new TypoString(` ?`));
+      }
+      text.push(new TypoString(` (expected one of: `));
+      for (let i = 0; i < values.length; i++) {
+        if (i > 5) {
+          text.push(new TypoString(`...`));
           break;
         }
-        if (valuesPreview.length > 0) {
-          valuesPreview.push(new TypoString(` | `));
+        if (i > 0) {
+          text.push(new TypoString(`, `));
         }
-        valuesPreview.push(new TypoString(`"${value}"`, typoStyleQuote));
+        text.push(new TypoString(`"${values[i]}"`, typoStyleQuote));
       }
-      // TODO - suggestion via fuzzedAlternative(input, values)
-      throw new TypoError(
-        new TypoText(
-          new TypoString(`Invalid value: `),
-          new TypoString(`"${input}"`, typoStyleQuote),
-          new TypoString(` (expected one of: `),
-          ...valuesPreview,
-          new TypoString(`)`),
-        ),
-      );
+      text.push(new TypoString(`)`));
+      throw new TypoError(text);
     },
   };
 }
