@@ -51,18 +51,17 @@ export function typeBoolean(name?: string): Type<boolean> {
   return {
     content: name ?? "boolean",
     decoder(input: string) {
-      const lower = input.toLowerCase();
-      if (typeBooleanValuesTrue.has(lower)) {
+      const lowerInput = input.toLowerCase();
+      if (typeBooleanValuesTrue.has(lowerInput)) {
         return true;
       }
-      if (typeBooleanValuesFalse.has(lower)) {
+      if (typeBooleanValuesFalse.has(lowerInput)) {
         return false;
       }
       throwInvalidValue("a boolean", input);
     },
   };
 }
-
 export const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
 export const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);
 

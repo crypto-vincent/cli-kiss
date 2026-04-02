@@ -77,7 +77,7 @@ export function optionFlag(definition: {
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   default?: boolean;
 }): Option<boolean> {
-  const type = typeBoolean("value");
+  const typeBool = typeBoolean("value");
   const { long, short, description, hint, aliases } = definition;
   return {
     generateUsage() {
@@ -105,7 +105,7 @@ export function optionFlag(definition: {
           const positiveResult = optionResults[0]!;
           const value =
             positiveResult.inlined === null ? "true" : positiveResult.inlined;
-          return decodeValue({ long, type, input: value });
+          return decodeValue({ long, type: typeBool, input: value });
         },
       };
     },
@@ -341,7 +341,7 @@ function throwFailedToGetDefaultValueError(params: {
   const text = new TypoText();
   text.push(new TypoString(`--${params.long}`, typoStyleConstants));
   text.push(
-    new TypoString(`: Failed to generate default value (${params.context})`),
+    new TypoString(`: ${params.context}: Failed to generate default value`),
   );
   throw new TypoError(text, params.error);
 }
