@@ -188,7 +188,7 @@ export function optionSingleValue<Value>(definition: {
             try {
               return definition.defaultIfNotSpecified();
             } catch (error) {
-              const context = "not set";
+              const context = "Not specified";
               throwFailedToGetDefaultValueError({ long, error, context });
             }
           }
@@ -200,7 +200,7 @@ export function optionSingleValue<Value>(definition: {
             try {
               return definition.valueIfNothingInlined();
             } catch (error) {
-              const context = "not inlined";
+              const context = "Nothing inlined";
               throwFailedToGetDefaultValueError({ long, error, context });
             }
           }

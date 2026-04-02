@@ -20,6 +20,10 @@ it("run", async function () {
     '{{Error:}@darkRed}+ Unexpected unknown option: {{"--nope"}@darkYellow}+',
   );
   await testCase(
+    ["--repeat"],
+    '{{Error:}@darkRed}+ Unexpected unknown option: {{"--repeat"}@darkYellow}+: did you mean: {{--repeatable}@darkCyan}+ ?',
+  );
+  await testCase(
     ["--flag", "--flag"],
     "{{Error:}@darkRed}+ {{--flag}@darkCyan}+: Must not be set multiple times",
   );

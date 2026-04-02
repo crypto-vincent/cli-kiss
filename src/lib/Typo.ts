@@ -125,12 +125,12 @@ export const typoStyleRegularWeaker: TypoStyle = {
  */
 export class TypoString {
   #value: string;
-  #typoStyle: TypoStyle;
+  #typoStyle: TypoStyle | undefined;
   /**
    * @param value - Raw text content.
-   * @param typoStyle - Style to apply when rendering. Defaults to `{}` (no style).
+   * @param typoStyle - Style to apply when rendering. Defaults to `undefined` (no style).
    */
-  constructor(value: string, typoStyle: TypoStyle = {}) {
+  constructor(value: string, typoStyle?: TypoStyle) {
     this.#value = value;
     this.#typoStyle = typoStyle;
   }
@@ -158,9 +158,7 @@ export class TypoText {
   /**
    * @param segments - Initial text segments
    */
-  constructor(
-    ...segments: Array<TypoText | Array<TypoString> | TypoString | string>
-  ) {
+  constructor(...segments: Array<TypoText | Array<TypoString> | TypoString>) {
     this.#typoStrings = [];
     for (const typoPart of segments) {
       this.push(typoPart);
@@ -171,7 +169,7 @@ export class TypoText {
    *
    * @param segment - Text segment(s) to append.
    */
-  push(segment: TypoText | Array<TypoString> | TypoString | string) {
+  push(segment: TypoText | Array<TypoString> | TypoString) {
     if (typeof segment === "string") {
       this.#typoStrings.push(new TypoString(segment));
     } else if (segment instanceof TypoText) {
@@ -334,8 +332,8 @@ export class TypoError extends Error {
  * Controls ANSI terminal styling. Create via the static factory methods.
  */
 export class TypoSupport {
-  #kind: "none" | "tty" | "mock";
-  private constructor(kind: "none" | "tty" | "mock") {
+  #kind: TypoSupportKind;
+  private constructor(kind: TypoSupportKind) {
     this.#kind = kind;
   }
   /**
@@ -402,7 +400,10 @@ export class TypoSupport {
    * @param typoStyle - Style to apply.
    * @returns Styled string.
    */
-  computeStyledString(value: string, typoStyle: TypoStyle): string {
+  computeStyledString(value: string, typoStyle: TypoStyle | undefined): string {
+    if (typoStyle === undefined) {
+      return value;
+    }
     let styledValue = value;
     if (typoStyle.case === "upper") {
       styledValue = styledValue.toUpperCase();
@@ -516,3 +517,5 @@ function readEnvVar(name: string) {
   }
   return process.env[name];
 }
+
+type TypoSupportKind = "none" | "tty" | "mock";

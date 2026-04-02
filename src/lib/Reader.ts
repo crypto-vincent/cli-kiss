@@ -347,14 +347,14 @@ export class ReaderArgs {
     text.push(new TypoString(`"${constant}"`, typoStyleQuote));
     const suggestions = fuzzedAlternatives(constant, candidates);
     if (suggestions.length > 0) {
-      text.push(`: did you mean: `);
+      text.push(new TypoString(`: did you mean: `));
       for (let i = 0; i < suggestions.length; i++) {
         if (i > 0) {
-          text.push(", ");
+          text.push(new TypoString(", "));
         }
         text.push(new TypoString(suggestions[i]!, typoStyleConstants));
       }
-      text.push(` ?`);
+      text.push(new TypoString(` ?`));
     }
     throw new TypoError(text);
   }

@@ -121,7 +121,7 @@ it("run", async function () {
   await testCase(
     ["required1", "unknown", "-wut", "--flag", "--single-value"],
     [],
-    [rootUsage, 'Error: <subcommand>: Invalid value: "unknown"'],
+    [rootUsage, 'Error: <subcommand>: Unknown value: "unknown"'],
     1,
   );
 
@@ -375,6 +375,15 @@ it("run", async function () {
     [
       subcommandUsage,
       'Error: <required1>: Invalid value: "required": did you mean: "required1", "required1-bis" ? (expected one of: "required1", "required1-bis")',
+    ],
+    1,
+  );
+  await testCase(
+    ["required1", "subcomm", "-wut", "--flag", "--single-value"],
+    [],
+    [
+      rootUsage,
+      'Error: <subcommand>: Unknown value: "subcomm": did you mean: subcommand ?',
     ],
     1,
   );

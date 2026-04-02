@@ -1,8 +1,10 @@
+import { fuzzedAlternatives } from "./Fuzzed";
 import { Operation } from "./Operation";
 import { ReaderArgs } from "./Reader";
 import {
   TypoError,
   TypoString,
+  typoStyleConstants,
   typoStyleQuote,
   typoStyleUserInput,
   TypoText,
@@ -212,13 +214,23 @@ export function commandWithSubcommands<Context, Payload, Result>(
         }
         const subcommandInput = subcommands[subcommandName];
         if (subcommandInput === undefined) {
-          throw new TypoError(
-            new TypoText(
-              new TypoString(`<subcommand>`, typoStyleUserInput),
-              new TypoString(`: Invalid value: `),
-              new TypoString(`"${subcommandName}"`, typoStyleQuote),
-            ),
-          );
+          const text = new TypoText();
+          text.push(new TypoString(`<subcommand>`, typoStyleUserInput));
+          text.push(new TypoString(`: Unknown value: `));
+          text.push(new TypoString(`"${subcommandName}"`, typoStyleQuote));
+          const candidates = Object.keys(subcommands);
+          const suggestions = fuzzedAlternatives(subcommandName, candidates);
+          if (suggestions.length > 0) {
+            text.push(new TypoString(`: did you mean: `));
+            for (let i = 0; i < suggestions.length; i++) {
+              if (i > 0) {
+                text.push(new TypoString(`, `));
+              }
+              text.push(new TypoString(suggestions[i]!, typoStyleConstants));
+            }
+            text.push(new TypoString(` ?`));
+          }
+          throw new TypoError(text);
         }
         const subcommandDecoder =
           subcommandInput.consumeAndMakeDecoder(readerArgs);

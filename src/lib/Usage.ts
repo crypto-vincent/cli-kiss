@@ -262,7 +262,7 @@ export function usageToStyledLines(params: {
       for (const commandArg of example.commandArgs) {
         commandLineText.push(textDelimiter(" "));
         if (typeof commandArg === "string") {
-          commandLineText.push(commandArg);
+          commandLineText.push(new TypoString(commandArg));
         } else if ("positional" in commandArg) {
           commandLineText.push(textUserInput(commandArg.positional));
         } else if ("subcommand" in commandArg) {
