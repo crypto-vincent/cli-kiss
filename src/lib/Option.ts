@@ -159,7 +159,7 @@ export function optionSingleValue<Value>(definition: {
   hint?: string;
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   type: Type<Value>;
-  defaultIfNotSpecified: () => Value;
+  defaultIfNotSpecified: () => Value; // TODO - should this be optional ?
   valueIfNothingInlined?: () => Value;
 }): Option<Value> {
   const { long, short, description, hint, aliases, type } = definition;
