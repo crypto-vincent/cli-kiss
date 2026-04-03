@@ -82,6 +82,7 @@ export type CommandInformation = {
    * Shown in the `Examples:` section.
    */
   examples?: Array<{
+    // TODO - a nicer example system, maybe with --help=example support
     /**
      * Explanation shown above the example.
      */

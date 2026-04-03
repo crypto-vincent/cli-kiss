@@ -311,6 +311,7 @@ function decodeValue<Value>(params: {
   );
 }
 
+// TODO - move advanced maybe for handling multiple options with shared logic (e.g. flag options with multiple aliases)
 function registerOption(
   readerOptions: ReaderOptions,
   definition: {
