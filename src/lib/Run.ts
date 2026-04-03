@@ -145,27 +145,36 @@ export async function runAndExit<Context>(
       await commandInterpreter.executeWithContext(context);
       return onExit(0);
     } catch (executionError) {
-      handleError(options?.onError, executionError, typoSupport);
+      handleError(cliName, options?.onError, executionError, typoSupport);
       return onExit(1);
     }
   } catch (parsingError) {
     if (options?.usageOnError ?? true) {
       console.error(computeUsageString(cliName, commandDecoder, typoSupport));
     }
-    handleError(options?.onError, parsingError, typoSupport);
+    handleError(cliName, options?.onError, parsingError, typoSupport);
     return onExit(1);
   }
 }
 
 function handleError(
+  _cliName: string,
   onError: ((error: unknown) => void) | undefined,
   error: unknown,
   typoSupport: TypoSupport,
 ) {
+  // TODO - should the cliName be part of the error message for logs ?
+  const finalError = error;
+  /*
+  const finalError = new TypoError(
+    new TypoText(new TypoString(cliName, typoStyleConstants)),
+    error,
+  );
+  */
   if (onError !== undefined) {
-    onError(error);
+    onError(finalError);
   } else {
-    console.error(typoSupport.computeStyledErrorMessage(error));
+    console.error(typoSupport.computeStyledErrorMessage(finalError));
   }
 }
 
