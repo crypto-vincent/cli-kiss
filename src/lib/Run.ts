@@ -115,6 +115,8 @@ export async function runAndExit<Context>(
       return 0;
     });
   }
+  // TODO - the lifecycle of this function should be improved
+  // TODO - how to pass the color information to the command logic ?
   /*
   // TODO - handle completions ?
   readerArgs.registerFlag({
