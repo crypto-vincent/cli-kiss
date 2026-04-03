@@ -2,7 +2,7 @@
 layout: home
 
 hero:
-  name: CLI-Kiss
+  name: CLI-kiss
   text: CLI for TypeScript.
 
   tagline:
@@ -10,7 +10,7 @@ hero:
     Simple and Stupid, it just does the job.
 
   image:
-    src: /hero.png
+    src: /logo.png
 
   actions:
     - theme: brand

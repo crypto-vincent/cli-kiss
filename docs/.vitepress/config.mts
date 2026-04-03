@@ -2,7 +2,7 @@ import { defineConfig } from "vitepress";
 
 export default defineConfig({
   description: "Full-featured TypeScript CLI builder. No bloat, no dependency.",
-  title: "cli-kiss 💋",
+  title: "cli-kiss",
   base: "/cli-kiss/",
   head: [
     ["link", { rel: "icon", href: "/cli-kiss/favicon.ico" }],
