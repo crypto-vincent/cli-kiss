@@ -1,5 +1,5 @@
 import { statSync } from "fs";
-import { suggestMessagePushInfered } from "./Suggest";
+import { suggestTextPushMessage } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -352,11 +352,11 @@ export function typeChoice<const Value extends string>(
       errorText.push(new TypoString(`Unknown value: `));
       errorText.push(new TypoString(`"${input}"`, typoStyleQuote));
       errorText.push(new TypoString(`.`));
-      suggestMessagePushInfered(
+      suggestTextPushMessage(
         errorText,
         input,
         values.map((value) => ({
-          expected: value,
+          reference: value,
           hint: new TypoString(`"${value}"`, typoStyleQuote),
         })),
       );

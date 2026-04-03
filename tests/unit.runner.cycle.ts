@@ -353,19 +353,13 @@ it("run", async function () {
   await testCase(
     ["req1", "sub", "req2", "-flag"],
     [],
-    [
-      subUsage,
-      'Error: Unknown option: "-flag". Did you mean: --flag, -ff, --single-value, ... ?',
-    ],
+    [subUsage, 'Error: Unknown option: "-flag". Did you mean: --flag ?'],
     1,
   );
   await testCase(
     ["req1", "sub", "req2", "--uri"],
     [],
-    [
-      subUsage,
-      'Error: Unknown option: "--uri". Did you mean: --url, --version, -r, ... ?',
-    ],
+    [subUsage, 'Error: Unknown option: "--uri". Did you mean: --url ?'],
     1,
   );
   await testCase(
@@ -373,16 +367,16 @@ it("run", async function () {
     [],
     [
       subUsage,
-      'Error: Unknown option: "--single-". Did you mean: --single-value, --help, --flag, ... ?',
+      'Error: Unknown option: "--single-". Did you mean: --single-value ?',
     ],
     1,
   );
   await testCase(
-    ["required-bis1", "sub", "req2"],
+    ["1req", "sub", "req2"],
     [],
     [
       subUsage,
-      'Error: <req1>: Unknown value: "required-bis1". Did you mean: "req1-bis", "req1" ?',
+      'Error: <req1>: Unknown value: "1req". Did you mean: "req1", "req1-bis" ?',
     ],
     1,
   );

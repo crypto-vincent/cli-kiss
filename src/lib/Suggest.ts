@@ -1,36 +1,54 @@
 import { TypoSegment, TypoString, TypoText } from "./Typo";
 
-export function suggestMessagePushInfered(
-  message: TypoText,
-  found: string,
-  candidates: Array<{ expected: string; hint: TypoSegment }>,
+export function suggestTextPushMessage(
+  text: TypoText,
+  query: string,
+  candidates: Array<{ reference: string; hint: TypoSegment }>,
 ) {
-  const suggestionsHints = suggestSortedHints(found, candidates, +Infinity);
-  if (suggestionsHints.length === 0) {
+  const reasonableHints = suggestReasonablePayloads(
+    query,
+    candidates.map(({ reference, hint }) => ({ reference, payload: hint })),
+  );
+  if (reasonableHints.length === 0) {
     return;
   }
-  message.push(new TypoString(" Did you mean: "));
-  message.pushJoined(suggestionsHints, new TypoString(", "), 3);
-  message.push(new TypoString(` ?`));
+  text.push(new TypoString(" Did you mean: "));
+  text.pushJoined(reasonableHints, new TypoString(", "), 3);
+  text.push(new TypoString(` ?`));
 }
 
-export function suggestSortedHints<Hint>(
-  found: string,
-  candidates: Array<{ expected: string; hint: Hint }>,
-  filterDistanceThreshold: number,
-): Array<Hint> {
-  const foundNormalized = found.toLowerCase().slice(0, 100);
-  const scored = candidates.map(({ expected, hint }) => {
-    const expectedNormalized = expected.toLowerCase().slice(0, 100);
-    const distance =
-      distanceDamerauLevenshtein(foundNormalized, expectedNormalized) /
-      Math.max(foundNormalized.length, expectedNormalized.length);
-    return { hint, distance };
+export function suggestReasonablePayloads<Payload>(
+  query: string,
+  candidates: Array<{ reference: string; payload: Payload }>,
+): Array<Payload> {
+  if (candidates.length === 0) {
+    return [];
+  }
+  const sortedAlternatives = computeAndSortByDivergences(query, candidates);
+  const divergenceThreshold = sortedAlternatives[0]!.divergence + 0.25;
+  const acceptablePayloads = new Array<Payload>();
+  for (const { divergence, payload } of sortedAlternatives) {
+    if (divergence > divergenceThreshold) {
+      break;
+    }
+    acceptablePayloads.push(payload);
+  }
+  return acceptablePayloads;
+}
+
+function computeAndSortByDivergences<Payload>(
+  query: string,
+  candidates: Array<{ reference: string; payload: Payload }>,
+): Array<{ divergence: number; payload: Payload }> {
+  const queryNormalized = query.toLowerCase().slice(0, 100);
+  const scored = candidates.map(({ reference, payload }) => {
+    const referenceNormalized = reference.toLowerCase().slice(0, 100);
+    const divergence =
+      distanceDamerauLevenshtein(queryNormalized, referenceNormalized) /
+      Math.max(queryNormalized.length, referenceNormalized.length);
+    return { divergence, reference, payload };
   });
-  return scored
-    .sort((a, b) => a.distance - b.distance)
-    .filter((v) => v.distance <= filterDistanceThreshold)
-    .map((v) => v.hint);
+  return scored.sort((a, b) => a.divergence - b.divergence);
 }
 
 function distanceDamerauLevenshtein(a: string, b: string): number {

@@ -1,6 +1,6 @@
 import { Operation } from "./Operation";
 import { ReaderArgs } from "./Reader";
-import { suggestMessagePushInfered } from "./Suggest";
+import { suggestTextPushMessage } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -362,11 +362,11 @@ function suggestSubcommandNames(
   input: string,
   subcommandNames: Array<string> = [],
 ) {
-  suggestMessagePushInfered(
+  suggestTextPushMessage(
     errorText,
     input,
     subcommandNames.map((subcommandName) => ({
-      expected: subcommandName,
+      reference: subcommandName,
       hint: new TypoString(subcommandName, typoStyleConstants),
     })),
   );

@@ -21,7 +21,7 @@ it("run", async function () {
   );
   await testCase(
     ["--repeat"],
-    '{{Error:}@darkRed}+ Unknown option: {{"--repeat"}@darkYellow}+. Did you mean: {{--repeatable}@darkCyan}+, {{--help}@darkCyan}+, {{--flag}@darkCyan}+, {{...}-}* ?',
+    '{{Error:}@darkRed}+ Unknown option: {{"--repeat"}@darkYellow}+. Did you mean: {{--repeatable}@darkCyan}+ ?',
   );
   await testCase(
     ["--flag", "--flag"],
