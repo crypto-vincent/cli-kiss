@@ -44,7 +44,7 @@ export type OperationDecoder<Context, Result> = {
   /**
    * Creates a ready-to-execute {@link OperationInterpreter}.
    *
-   * @throws {@link TypoError} if parsing or decoding failed.
+   * @throws if parsing or decoding failed.
    */
   decodeAndMakeInterpreter(): OperationInterpreter<Context, Result>;
 };

@@ -36,7 +36,7 @@ export type OptionDecoder<Value> = {
   /**
    * Returns the decoded option value.
    *
-   * @throws {@link TypoError} if decoding failed.
+   * @throws if decoding failed.
    */
   getAndDecodeValue(): Value;
 };
@@ -44,8 +44,12 @@ export type OptionDecoder<Value> = {
 /**
  * Creates a boolean flag option (`--verbose`, optionally `--flag=no`).
  *
- * Parsing: absent → default value; `--flag` / `--flag=yes` → `true`; `--flag=no` → `false`;
- * specified more than once → throws {@link TypoError}.
+ * Syntax: `--long`, `--long=no`, `-s`, `-s=no`.
+ * Parsing logic:
+ * - absent → default value
+ * - `--flag` / `--flag=yes` → `true`
+ * - `--flag=no` → `false`
+ * - specified more than once → throws.
  *
  * @param definition.long - Long-form name (without `--`).
  * @param definition.short - Short-form name (without `-`).
@@ -115,8 +119,11 @@ export function optionFlag(definition: {
 /**
  * Creates an option that accepts exactly one value (e.g. `--output dist/`).
  *
- * Parsing: absent → `defaultValue()`; once → decoded with `type`; more than once → {@link TypoError}.
- * Value syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
+ * Syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
+ * Parsing logic:
+ * - absent → `defaultIfNotSpecified()`
+ * - once → decoded with `type`
+ * - more than once → throws
  *
  * @typeParam Value - Type produced by the decoder.
  *
@@ -215,8 +222,10 @@ export function optionSingleValue<Value>(definition: {
 /**
  * Creates an option that collects every occurrence into an array (e.g. `--file a.ts --file b.ts`).
  *
- * Parsing: absent → `[]`; N occurrences → array of N decoded values in order.
- * Value syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
+ * Syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
+ * Parsing logic:
+ * - absent → `[]`
+ * - N occurrences → array of N decoded values in order.
  *
  * @typeParam Value - Type produced by the decoder for each occurrence.
  *
@@ -288,16 +297,16 @@ function decodeValue<Value>(params: {
   return TypoError.tryWithContext(
     () => params.type.decoder(params.input),
     () => {
-      const text = new TypoText();
-      text.push(new TypoString(`--${params.long}`, typoStyleConstants));
+      const errorText = new TypoText();
+      errorText.push(new TypoString(`--${params.long}`, typoStyleConstants));
       if (params.label) {
-        text.push(new TypoString(`: `));
-        text.push(new TypoString(params.label, typoStyleUserInput));
+        errorText.push(new TypoString(`: `));
+        errorText.push(new TypoString(params.label, typoStyleUserInput));
       } else {
-        text.push(new TypoString(`: `));
-        text.push(new TypoString(params.type.content, typoStyleLogic));
+        errorText.push(new TypoString(`: `));
+        errorText.push(new TypoString(params.type.content, typoStyleLogic));
       }
-      return text;
+      return errorText;
     },
   );
 }
@@ -307,6 +316,8 @@ function registerOption(
   definition: {
     long: string;
     short: undefined | string;
+    // label: string;
+    // description: string | undefined;
     aliasesLongs: undefined | Array<string>;
     aliasesShorts: undefined | Array<string>;
     parsing: ReaderOptionParsing;
@@ -338,10 +349,9 @@ function throwFailedToGetDefaultValueError(params: {
   error: unknown;
   context: string;
 }): never {
-  const text = new TypoText();
-  text.push(new TypoString(`--${params.long}`, typoStyleConstants));
-  text.push(
-    new TypoString(`: ${params.context}: Failed to generate default value`),
-  );
-  throw new TypoError(text, params.error);
+  const errorText = new TypoText();
+  errorText.push(new TypoString(`--${params.long}`, typoStyleConstants));
+  errorText.push(new TypoString(`: ${params.context}`));
+  errorText.push(new TypoString(`: Failed to get default value`));
+  throw new TypoError(errorText, params.error);
 }

@@ -4,7 +4,7 @@ export * from "./lib/Option";
 export * from "./lib/Positional";
 export * from "./lib/Reader";
 export * from "./lib/Run";
-export * from "./lib/Similarity";
+export * from "./lib/Suggest";
 export * from "./lib/Type";
 export * from "./lib/Typo";
 export * from "./lib/Usage";

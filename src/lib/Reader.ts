@@ -1,4 +1,4 @@
-import { similaritySort } from "./Similarity";
+import { suggestMessagePushHint } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -66,7 +66,7 @@ export type ReaderPositionals = {
    * Returns the next positional token, parsing intervening options as side-effects.
    *
    * @returns The next positional, or `undefined` when exhausted.
-   * @throws {@link TypoError} on an unrecognised option.
+   * @throws on an unrecognised option.
    */
   consumePositional(): string | undefined;
 };
@@ -184,7 +184,7 @@ export class ReaderArgs {
    * All tokens after `--` are treated as positionals.
    *
    * @returns The next positional, or `undefined` when exhausted.
-   * @throws {@link TypoError} on an unrecognised option.
+   * @throws on an unrecognised option.
    */
   consumePositional(): string | undefined {
     while (true) {
@@ -304,7 +304,7 @@ export class ReaderArgs {
       throw new TypoError(
         new TypoText(
           new TypoString(constant, typoStyleConstants),
-          new TypoString(`: Requires a value, but got end of input`),
+          new TypoString(`: Requires a value, but got end of input`), // TODO - hint at option value syntax ?
         ),
       );
     }
@@ -342,24 +342,23 @@ export class ReaderArgs {
     for (const optionShort of this.#optionContextByShort.keys()) {
       candidatesConstants.push(`-${optionShort}`);
     }
-    const text = new TypoText();
-    text.push(new TypoString(`Unknown option: `));
-    text.push(new TypoString(`"${constant}"`, typoStyleQuote));
-    if (candidatesConstants.length > 0) {
-      const suggestionsConstants = similaritySort(
+    const errorText = new TypoText();
+    errorText.push(new TypoString(`Unknown option: `));
+    errorText.push(new TypoString(`"${constant}"`, typoStyleQuote));
+    if (candidatesConstants.length === 0) {
+      errorText.push(new TypoString(`, no options are registered.`));
+    } else {
+      errorText.push(new TypoString(`.`));
+      suggestMessagePushHint(
+        errorText,
         constant,
         candidatesConstants.map((candidateConstant) => ({
-          key: candidateConstant,
-          value: new TypoString(candidateConstant, typoStyleConstants),
+          expected: candidateConstant,
+          advised: new TypoString(candidateConstant, typoStyleConstants),
         })),
-      ).slice(0, 3);
-      text.push(new TypoString(`: did you mean: `));
-      text.push(TypoText.join(suggestionsConstants, new TypoString(`, `)));
-      text.push(new TypoString(` ?`));
-    } else {
-      text.push(new TypoString(`, no options are registered`));
+      );
     }
-    throw new TypoError(text);
+    throw new TypoError(errorText);
   }
 }
 

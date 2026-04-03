@@ -47,8 +47,7 @@ Accepts only a fixed set of strings (case-insensitive by default):
 const typeEnv = typeChoice("environment", ["dev", "staging", "prod"]);
 typeEnv.decoder("prod"); // → "prod"
 typeEnv.decoder("PROD"); // → "prod"  (case-insensitive)
-typeEnv.decoder("unknown");
-// Error: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
+typeEnv.decoder("unknown"); // Error: Invalid value: "unknown"
 ```
 
 Pass `true` as third argument to make matching case-sensitive.
@@ -58,9 +57,9 @@ Pass `true` as third argument to make matching case-sensitive.
 Splits a string into a fixed-length typed tuple:
 
 ```ts
-const typePoint = typeTuple([typeNumber(), typeNumber()]);
+const typePoint = typeTuple([typeNumber("a"), typeNumber("b")]);
 typePoint.decoder("3.14,2.71"); // → [3.14, 2.71]
-typePoint.decoder("x,2"); // → Error: at 0: Number: Unable to parse: "x"
+typePoint.decoder("x,2"); // → Error: at 0: a: Unable to parse: "x"
 ```
 
 The default separator is `","`. Pass a second argument to change it:
@@ -75,9 +74,9 @@ typeTuple([type("name"), typeNumber()], ":");
 Splits a string into an array of typed values:
 
 ```ts
-const typeNumbers = typeList(typeNumber());
+const typeNumbers = typeList(typeNumber("v"));
 typeNumbers.decoder("1,2,3"); // → [1, 2, 3]
-typeNumbers.decoder("1,x,3"); // → Error: at 1: Number: Unable to parse: "x"
+typeNumbers.decoder("1,x,3"); // → Error: at 1: v: Unable to parse: "x"
 ```
 
 Custom separator:
@@ -103,8 +102,8 @@ const typePort = typeConverted("port", typeNumber(), (n) => {
   if (n < 1 || n > 65535) throw new Error("Out of range");
   return n;
 });
-// "--port 8080"   →  8080
-// "--port 99999"  →  throws
+typePort.decoder("8080"); // → 8080
+typePort.decoder("99999"); // → Error: Out of range
 ```
 
 ## `typeRenamed` — rename a type
@@ -129,6 +128,6 @@ const typeHexColor: Type<string> = {
     throw new Error(`Not a valid hex color: "${value}"`);
   },
 };
-// "#ff0000"  →  "#ff0000"
-// "red"  →  Error: HexColor: Not a valid value: "red"
+typeHexColor.decoder("#ff0000"); // → "#ff0000"
+typeHexColor.decoder("red"); // → Error: Not a valid hex color: "red"
 ```

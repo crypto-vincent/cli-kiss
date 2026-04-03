@@ -1,18 +1,18 @@
 import { it } from "@jest/globals";
-import { similaritySort } from "../src/lib/Similarity";
+import { suggestSorted } from "../src/lib/Suggest";
 
 it("run", async function () {
   expect(
     orderBySimilarity("--inst", ["--flag", "--blah", "--install"]),
-  ).toStrictEqual(["--install", "--flag", "--blah"]);
+  ).toStrictEqual(["--install"]);
 
   expect(
     orderBySimilarity("instlal", ["install", "dudu", "--blah"]),
-  ).toStrictEqual(["install", "--blah", "dudu"]);
+  ).toStrictEqual(["install"]);
 
   expect(
     orderBySimilarity("cat", ["cats", "catz", "cut", "kat", "hello", "world"]),
-  ).toStrictEqual(["cats", "catz", "cut", "kat", "hello", "world"]);
+  ).toStrictEqual(["cats", "catz", "cut", "kat"]);
 
   expect(orderBySimilarity("cat", ["cut", "kat"])).toStrictEqual([
     "cut",
@@ -27,8 +27,9 @@ it("run", async function () {
 });
 
 function orderBySimilarity(reference: string, candidates: Array<string>) {
-  return similaritySort(
+  return suggestSorted(
     reference,
-    candidates.map((key) => ({ key, value: key })),
+    candidates.map((key) => ({ expected: key, advised: key })),
+    0.6,
   );
 }

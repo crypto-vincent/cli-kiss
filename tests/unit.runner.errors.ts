@@ -17,11 +17,11 @@ it("run", async function () {
   );
   await testCase(
     ["--nope"],
-    '{{Error:}@darkRed}+ Unknown option: {{"--nope"}@darkYellow}+: did you mean: {{--help}@darkCyan}+, {{--flag}@darkCyan}+, {{--repeatable}@darkCyan}+ ?',
+    '{{Error:}@darkRed}+ Unknown option: {{"--nope"}@darkYellow}+. Did you mean: {{--help}@darkCyan}+, {{--flag}@darkCyan}+, {{--repeatable}@darkCyan}+, {{...}-}* ?',
   );
   await testCase(
     ["--repeat"],
-    '{{Error:}@darkRed}+ Unknown option: {{"--repeat"}@darkYellow}+: did you mean: {{--repeatable}@darkCyan}+, {{--help}@darkCyan}+, {{--flag}@darkCyan}+ ?',
+    '{{Error:}@darkRed}+ Unknown option: {{"--repeat"}@darkYellow}+. Did you mean: {{--repeatable}@darkCyan}+, {{--help}@darkCyan}+, {{--flag}@darkCyan}+, {{...}-}* ?',
   );
   await testCase(
     ["--flag", "--flag"],

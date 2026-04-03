@@ -1,6 +1,12 @@
 import { ReaderPositionals } from "./Reader";
 import { Type } from "./Type";
-import { TypoError, TypoString, typoStyleUserInput, TypoText } from "./Typo";
+import {
+  TypoError,
+  TypoString,
+  typoStyleRegularWeaker,
+  typoStyleUserInput,
+  TypoText,
+} from "./Typo";
 import { UsagePositional } from "./Usage";
 
 /**
@@ -32,19 +38,20 @@ export type PositionalDecoder<Value> = {
   /**
    * Returns the decoded positional value.
    *
-   * @throws {@link TypoError} if decoding failed.
+   * @throws if decoding failed.
    */
   decodeValue(): Value;
 };
 
 /**
- * Creates a required positional — missing token throws {@link TypoError}.
+ * Creates a required positional — missing token throws.
  *
  * @typeParam Value - Type produced by the decoder.
  *
  * @param definition.description - Help text.
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.type - Decoder for the raw token.
+ * @param definition.missing - Message shown when the token is missing.
  * @returns A {@link Positional}`<Value>`.
  *
  * @example
@@ -71,12 +78,15 @@ export function positionalRequired<Value>(definition: {
     consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        throw new TypoError(
-          new TypoText(
-            new TypoString(label, typoStyleUserInput),
-            new TypoString(`: Is required, but was not provided`),
-          ),
-        );
+        const errorText = new TypoText();
+        errorText.push(new TypoString(label, typoStyleUserInput));
+        errorText.push(new TypoString(`: Is required, but was not provided.`));
+        if (description) {
+          errorText.push(
+            new TypoString(` (${description})`, typoStyleRegularWeaker),
+          );
+        }
+        throw new TypoError(errorText);
       }
       return {
         decodeValue() {

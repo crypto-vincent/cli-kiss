@@ -33,9 +33,9 @@ const usageTty = usageToStyledLines({
 }).join("\n");
 
 const unknownOptionNone =
-  'Error: Unknown option: "--color": did you mean: --help, --version ?';
+  'Error: Unknown option: "--color". Did you mean: --help, --version ?';
 const unknownOptionMock =
-  '{{Error:}@darkRed}+ Unknown option: {{"--color"}@darkYellow}+: did you mean: {{--help}@darkCyan}+, {{--version}@darkCyan}+ ?';
+  '{{Error:}@darkRed}+ Unknown option: {{"--color"}@darkYellow}+. Did you mean: {{--help}@darkCyan}+, {{--version}@darkCyan}+ ?';
 
 it("run", async function () {
   await withEnv("FORCE_COLOR", "false", async () => {
@@ -83,7 +83,7 @@ it("run", async function () {
         [],
         [
           usageMock,
-          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Unknown value: {{"42"}@darkYellow}+: did you mean: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+ ?',
+          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Unknown value: {{"42"}@darkYellow}+. Did you mean: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+, {{...}-}* ?',
         ],
         1,
       );

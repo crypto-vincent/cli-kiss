@@ -1,5 +1,5 @@
 import { statSync } from "fs";
-import { similaritySort } from "./Similarity";
+import { suggestMessagePushHint } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -28,7 +28,7 @@ export type Type<Value> = {
    *
    * @param input - Raw string from the command line.
    * @returns The decoded value.
-   * @throws {@link TypoError} on invalid input.
+   * @throws on invalid input.
    */
   decoder(input: string): Value;
 };
@@ -94,7 +94,7 @@ export function typeDatetime(name?: string): Type<Date> {
 }
 
 /**
- * Parses a string to `number` via `Number()`; `NaN` throws {@link TypoError}.
+ * Parses a string to `number` via `Number()`; `NaN` throws.
  *
  * @example
  * ```ts
@@ -122,7 +122,7 @@ export function typeNumber(name?: string): Type<number> {
 
 /**
  * Parses an integer string to `bigint` via `BigInt()`.
- * Floats and non-numeric strings throw {@link TypoError}.
+ * Floats and non-numeric strings throws.
  *
  * @example
  * ```ts
@@ -146,7 +146,7 @@ export function typeInteger(name?: string): Type<bigint> {
 
 /**
  * Parses an absolute URL string to a `URL` object.
- * Relative or malformed URLs throw {@link TypoError}.
+ * Relative or malformed URLs throws.
  *
  * @example
  * ```ts
@@ -315,7 +315,6 @@ export function typePath(
 
 /**
  * Creates a {@link Type}`<string>` that only accepts a fixed set of values.
- * Out-of-set inputs throw {@link TypoError} listing up to 5 valid options.
  *
  * @param name - Name shown in help and errors.
  * @param values - Ordered list of accepted values.
@@ -325,52 +324,51 @@ export function typePath(
  * ```ts
  * const typeEnv = typeChoice("environment", ["dev", "staging", "prod"]);
  * typeEnv.decoder("prod")    // → "prod"
- * typeEnv.decoder("unknown") // throws TypoError: Invalid value: "unknown" (expected one of: "dev" | "staging" | "prod")
+ * typeEnv.decoder("unknown") // throws
  * ```
  */
 export function typeChoice<const Value extends string>(
   name: string,
   values: Array<Value>,
-  caseSensitive: boolean = false,
+  caseSensitive: boolean = true,
 ): Type<Value> {
   if (values.length === 0) {
     throw new Error("At least one value is required");
   }
   const normalize = caseSensitive
-    ? (s: string) => s
-    : (s: string) => s.toLowerCase();
-  const valueByNormalizedKey = new Map(
+    ? (input: string) => input
+    : (input: string) => input.toLowerCase();
+  const valueByNormalizedValue = new Map(
     values.map((value) => [normalize(value), value]),
   );
   return {
     content: name,
     decoder(input: string) {
-      const normalizedKey = normalize(input);
-      const value = valueByNormalizedKey.get(normalizedKey);
-      if (value !== undefined) {
-        return value;
+      const normalizedInput = normalize(input);
+      const normalizedValue = valueByNormalizedValue.get(normalizedInput);
+      if (normalizedValue !== undefined) {
+        return normalizedValue;
       }
-      const text = new TypoText();
-      text.push(new TypoString(`Unknown value: `));
-      text.push(new TypoString(`"${input}"`, typoStyleQuote));
-      const suggestions = similaritySort(
-        normalizedKey,
-        [...valueByNormalizedKey.entries()].map(([normalizedKey, value]) => ({
-          key: normalizedKey,
-          value: new TypoString(`"${value}"`, typoStyleQuote),
+      const errorText = new TypoText();
+      errorText.push(new TypoString(`Unknown value: `));
+      errorText.push(new TypoString(`"${input}"`, typoStyleQuote));
+      errorText.push(new TypoString(`.`));
+      suggestMessagePushHint(
+        errorText,
+        normalizedInput,
+        values.map((value) => ({
+          expected: value,
+          advised: new TypoString(`"${value}"`, typoStyleQuote),
         })),
-      ).slice(0, 3);
-      text.push(new TypoString(`: did you mean: `));
-      text.push(TypoText.join(suggestions, new TypoString(`, `)));
-      text.push(new TypoString(` ?`));
-      throw new TypoError(text);
+      );
+      throw new TypoError(errorText);
     },
   };
 }
 
 /**
  * Splits a delimited string into a typed tuple.
- * Each part is decoded by the corresponding element type; wrong count or decode failure throws {@link TypoError}.
+ * Each part is decoded by the corresponding element type; wrong count or decode failure throws.
  *
  * @typeParam Elements - Tuple of decoded value types (inferred from `elementTypes`).
  *
@@ -382,8 +380,9 @@ export function typeChoice<const Value extends string>(
  * ```ts
  * const typePoint = typeTuple([typeNumber("x"), typeNumber("y")]);
  * typePoint.decoder("3.14,2.71") // → [3.14, 2.71]
- * typePoint.decoder("1,2,3")     // → [1, 2]
- * typePoint.decoder("x,2")       // throws TypoError: at 0: Number: Unable to parse: "x"
+ * typePoint.decoder("1")         // throws
+ * typePoint.decoder("1,2,3")     // throws
+ * typePoint.decoder("x,2")       // throws
  * ```
  */
 export function typeTuple<const Elements extends Array<any>>(
@@ -422,7 +421,7 @@ export function typeTuple<const Elements extends Array<any>>(
 
 /**
  * Splits a delimited string into a typed array.
- * Each part is decoded by `elementType`; failed decodes throw {@link TypoError}.
+ * Each part is decoded by `elementType`; failed decodes throws.
  * Note: splitting an empty string yields one empty element — prefer {@link optionRepeatable} for a zero-default.
  *
  * @typeParam Value - Element type produced by `elementType.decoder`.
@@ -433,10 +432,9 @@ export function typeTuple<const Elements extends Array<any>>(
  *
  * @example
  * ```ts
- * const typeNumbers = typeList(typeNumber);
+ * const typeNumbers = typeList(typeNumber("v"));
  * typeNumbers.decoder("1,2,3")  // → [1, 2, 3]
- * typeNumbers.decoder("1,x,3")  // throws TypoError: at 1: Number: Unable to parse: "x"
- *
+ * typeNumbers.decoder("1,x,3")  // throws
  * const typePaths = typeList(typePath(), ":");
  * typePaths.decoder("/usr/bin:/usr/local/bin") // → ["/usr/bin", "/usr/local/bin"]
  * ```

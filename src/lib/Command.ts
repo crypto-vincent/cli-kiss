@@ -1,6 +1,6 @@
 import { Operation } from "./Operation";
 import { ReaderArgs } from "./Reader";
-import { similaritySort } from "./Similarity";
+import { suggestMessagePushHint } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -44,7 +44,7 @@ export type CommandDecoder<Context, Result> = {
   /**
    * Creates a ready-to-execute {@link CommandInterpreter}.
    *
-   * @throws {@link TypoError} if parsing or decoding failed.
+   * @throws if parsing or decoding failed.
    */
   decodeAndMakeInterpreter(): CommandInterpreter<Context, Result>;
 };
@@ -200,6 +200,16 @@ export function commandWithSubcommands<Context, Payload, Result>(
   if (subcommandNames.length === 0) {
     throw new Error("At least one subcommand is required");
   }
+  function suggestSubcommandNames(errorText: TypoText, input: string) {
+    suggestMessagePushHint(
+      errorText,
+      input,
+      subcommandNames.map((subcommandName) => ({
+        expected: subcommandName,
+        advised: new TypoString(subcommandName, typoStyleConstants),
+      })),
+    );
+  }
   return {
     getInformation() {
       return information;
@@ -209,30 +219,21 @@ export function commandWithSubcommands<Context, Payload, Result>(
         const operationDecoder = operation.consumeAndMakeDecoder(readerArgs);
         const subcommandName = readerArgs.consumePositional();
         if (subcommandName === undefined) {
-          throw new TypoError(
-            new TypoText(
-              new TypoString(`<subcommand>`, typoStyleUserInput),
-              new TypoString(`: Is required, but was not provided`),
-            ),
-          );
+          const errorText = new TypoText();
+          errorText.push(new TypoString(`<subcommand>`, typoStyleUserInput));
+          errorText.push(new TypoString(`: Missing argument.`));
+          suggestSubcommandNames(errorText, "");
+          throw new TypoError(errorText);
         }
         const subcommandInput = subcommands[subcommandName];
         if (subcommandInput === undefined) {
-          const text = new TypoText();
-          text.push(new TypoString(`<subcommand>`, typoStyleUserInput));
-          text.push(new TypoString(`: Unknown name: `));
-          text.push(new TypoString(`"${subcommandName}"`, typoStyleQuote));
-          const suggestions = similaritySort(
-            subcommandName,
-            subcommandNames.map((subcommandName) => ({
-              key: subcommandName,
-              value: new TypoString(subcommandName, typoStyleConstants),
-            })),
-          ).slice(0, 3);
-          text.push(new TypoString(`: did you mean: `));
-          text.push(TypoText.join(suggestions, new TypoString(`, `)));
-          text.push(new TypoString(` ?`));
-          throw new TypoError(text);
+          const errorText = new TypoText();
+          errorText.push(new TypoString(`<subcommand>`, typoStyleUserInput));
+          errorText.push(new TypoString(`: Unknown name: `));
+          errorText.push(new TypoString(`"${subcommandName}"`, typoStyleQuote));
+          errorText.push(new TypoString(`.`));
+          suggestSubcommandNames(errorText, subcommandName);
+          throw new TypoError(errorText);
         }
         const subcommandDecoder =
           subcommandInput.consumeAndMakeDecoder(readerArgs);

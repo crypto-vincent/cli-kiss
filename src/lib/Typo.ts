@@ -148,12 +148,16 @@ export class TypoString {
   getRawString(): string {
     return this.#value;
   }
+  /**
+   * Predefined ellipsis segment with subtle styling.
+   */
+  static elipsis = new TypoString("...", typoStyleRegularWeaker);
 }
 
 /**
  * A segment of styled text, a string, or an array of segments.
  */
-export type TypoSegment = TypoText | TypoString | string | Array<TypoSegment>;
+export type TypoSegment = TypoText | TypoString | Array<TypoSegment>;
 
 /**
  * Mutable sequence of {@link TypoString} segments.
@@ -163,7 +167,7 @@ export class TypoText {
   /**
    * @param segments - Initial text segments
    */
-  constructor(...segments: TypoSegment[]) {
+  constructor(...segments: Array<TypoSegment>) {
     this.#typoStrings = [];
     for (const segment of segments) {
       this.push(segment);
@@ -171,20 +175,39 @@ export class TypoText {
   }
   /**
    * Appends new text segment(s).
-   *
-   * @param segment - Text segment(s) to append.
    */
-  push(segment: TypoSegment) {
-    if (typeof segment === "string") {
-      this.#typoStrings.push(new TypoString(segment));
-    } else if (segment instanceof TypoText) {
-      this.#typoStrings.push(...segment.#typoStrings);
-    } else if (Array.isArray(segment)) {
-      for (const typoString of segment) {
-        this.push(typoString);
+  push(...segments: Array<TypoSegment>): void {
+    for (const segment of segments) {
+      if (typeof segment === "string") {
+        this.#typoStrings.push(new TypoString(segment));
+      } else if (segment instanceof TypoText) {
+        this.#typoStrings.push(...segment.#typoStrings);
+      } else if (Array.isArray(segment)) {
+        for (const typoString of segment) {
+          this.push(typoString);
+        }
+      } else {
+        this.#typoStrings.push(segment);
       }
-    } else {
-      this.#typoStrings.push(segment);
+    }
+  }
+  /**
+   * Appends separated segments, optionally truncating with an ellipsis.
+   */
+  pushJoined(
+    segments: Array<TypoSegment>,
+    separator: TypoSegment,
+    ellipsisLimit: number,
+  ): void {
+    for (let index = 0; index < segments.length; index++) {
+      if (index > 0) {
+        this.push(separator);
+      }
+      if (ellipsisLimit !== undefined && index >= ellipsisLimit) {
+        this.push(TypoString.elipsis);
+        break;
+      }
+      this.push(segments[index]!);
     }
   }
   /**
@@ -213,20 +236,6 @@ export class TypoText {
       length += typoString.getRawString().length;
     }
     return length;
-  }
-  /**
-   * Joins multiple segments with a separator.
-   * @returns A new {@link TypoText} containing the joined segments.
-   */
-  static join(segments: Array<TypoSegment>, separator: TypoSegment): TypoText {
-    const result = new TypoText();
-    for (let index = 0; index < segments.length; index++) {
-      if (index > 0) {
-        result.push(separator);
-      }
-      result.push(segments[index]!);
-    }
-    return result;
   }
 }
 
