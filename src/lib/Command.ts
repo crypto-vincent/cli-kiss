@@ -1,6 +1,6 @@
 import { Operation } from "./Operation";
 import { ReaderArgs } from "./Reader";
-import { suggestMessagePushHint } from "./Suggest";
+import { suggestMessagePushInfered } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -201,16 +201,6 @@ export function commandWithSubcommands<Context, Payload, Result>(
   if (subcommandNames.length === 0) {
     throw new Error("At least one subcommand is required");
   }
-  function suggestSubcommandNames(errorText: TypoText, input: string) {
-    suggestMessagePushHint(
-      errorText,
-      input,
-      subcommandNames.map((subcommandName) => ({
-        expected: subcommandName,
-        advised: new TypoString(subcommandName, typoStyleConstants),
-      })),
-    );
-  }
   return {
     getInformation() {
       return information;
@@ -223,7 +213,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
           const errorText = new TypoText();
           errorText.push(new TypoString(`<subcommand>`, typoStyleUserInput));
           errorText.push(new TypoString(`: Missing argument.`));
-          suggestSubcommandNames(errorText, "");
+          suggestSubcommandNames(errorText, "", subcommandNames);
           throw new TypoError(errorText);
         }
         const subcommandInput = subcommands[subcommandName];
@@ -233,7 +223,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
           errorText.push(new TypoString(`: Unknown name: `));
           errorText.push(new TypoString(`"${subcommandName}"`, typoStyleQuote));
           errorText.push(new TypoString(`.`));
-          suggestSubcommandNames(errorText, subcommandName);
+          suggestSubcommandNames(errorText, subcommandName, subcommandNames);
           throw new TypoError(errorText);
         }
         const subcommandDecoder =
@@ -365,4 +355,19 @@ function generateUsageLeaf(
     subcommands: [],
     options,
   };
+}
+
+function suggestSubcommandNames(
+  errorText: TypoText,
+  input: string,
+  subcommandNames: Array<string> = [],
+) {
+  suggestMessagePushInfered(
+    errorText,
+    input,
+    subcommandNames.map((subcommandName) => ({
+      expected: subcommandName,
+      hint: new TypoString(subcommandName, typoStyleConstants),
+    })),
+  );
 }

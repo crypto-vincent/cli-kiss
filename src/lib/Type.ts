@@ -1,5 +1,5 @@
 import { statSync } from "fs";
-import { suggestMessagePushHint } from "./Suggest";
+import { suggestMessagePushInfered } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -338,27 +338,26 @@ export function typeChoice<const Value extends string>(
   const normalize = caseSensitive
     ? (input: string) => input
     : (input: string) => input.toLowerCase();
-  const valueByNormalizedValue = new Map(
+  const valueByNormalized = new Map(
     values.map((value) => [normalize(value), value]),
   );
   return {
     content: name,
     decoder(input: string) {
-      const normalizedInput = normalize(input);
-      const normalizedValue = valueByNormalizedValue.get(normalizedInput);
-      if (normalizedValue !== undefined) {
-        return normalizedValue;
+      const value = valueByNormalized.get(normalize(input));
+      if (value !== undefined) {
+        return value;
       }
       const errorText = new TypoText();
       errorText.push(new TypoString(`Unknown value: `));
       errorText.push(new TypoString(`"${input}"`, typoStyleQuote));
       errorText.push(new TypoString(`.`));
-      suggestMessagePushHint(
+      suggestMessagePushInfered(
         errorText,
-        normalizedInput,
+        input,
         values.map((value) => ({
           expected: value,
-          advised: new TypoString(`"${value}"`, typoStyleQuote),
+          hint: new TypoString(`"${value}"`, typoStyleQuote),
         })),
       );
       throw new TypoError(errorText);

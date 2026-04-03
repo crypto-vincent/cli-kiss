@@ -1,36 +1,36 @@
 import { TypoSegment, TypoString, TypoText } from "./Typo";
 
-export function suggestMessagePushHint(
+export function suggestMessagePushInfered(
   message: TypoText,
   found: string,
-  candidates: Array<{ expected: string; advised: TypoSegment }>,
+  candidates: Array<{ expected: string; hint: TypoSegment }>,
 ) {
-  const suggestions = suggestSorted(found, candidates, +Infinity);
-  if (suggestions.length === 0) {
+  const suggestionsHints = suggestSortedHints(found, candidates, +Infinity);
+  if (suggestionsHints.length === 0) {
     return;
   }
   message.push(new TypoString(" Did you mean: "));
-  message.pushJoined(suggestions, new TypoString(", "), 3);
+  message.pushJoined(suggestionsHints, new TypoString(", "), 3);
   message.push(new TypoString(` ?`));
 }
 
-export function suggestSorted<Value>(
+export function suggestSortedHints<Hint>(
   found: string,
-  candidates: Array<{ expected: string; advised: Value }>,
+  candidates: Array<{ expected: string; hint: Hint }>,
   filterDistanceThreshold: number,
-): Array<Value> {
+): Array<Hint> {
   const foundNormalized = found.toLowerCase().slice(0, 100);
-  const scored = candidates.map(({ expected, advised }) => {
+  const scored = candidates.map(({ expected, hint }) => {
     const expectedNormalized = expected.toLowerCase().slice(0, 100);
     const distance =
       distanceDamerauLevenshtein(foundNormalized, expectedNormalized) /
       Math.max(foundNormalized.length, expectedNormalized.length);
-    return { advised, distance };
+    return { hint, distance };
   });
   return scored
     .sort((a, b) => a.distance - b.distance)
     .filter((v) => v.distance <= filterDistanceThreshold)
-    .map((v) => v.advised);
+    .map((v) => v.hint);
 }
 
 function distanceDamerauLevenshtein(a: string, b: string): number {

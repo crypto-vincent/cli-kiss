@@ -1,35 +1,23 @@
 import { it } from "@jest/globals";
-import { suggestSorted } from "../src/lib/Suggest";
+import { suggestSortedHints } from "../src/lib/Suggest";
 
 it("run", async function () {
-  expect(
-    orderBySimilarity("--inst", ["--flag", "--blah", "--install"]),
-  ).toStrictEqual(["--install"]);
-
-  expect(
-    orderBySimilarity("instlal", ["install", "dudu", "--blah"]),
-  ).toStrictEqual(["install"]);
-
-  expect(
-    orderBySimilarity("cat", ["cats", "catz", "cut", "kat", "hello", "world"]),
-  ).toStrictEqual(["cats", "catz", "cut", "kat"]);
-
-  expect(orderBySimilarity("cat", ["cut", "kat"])).toStrictEqual([
-    "cut",
-    "kat",
-  ]);
-
-  expect(orderBySimilarity("acb", ["abc", "ac", "ab"])).toStrictEqual([
-    "abc",
-    "ac",
-    "ab",
-  ]);
+  expectMatches(["--flag", "--blah", "--install"], "--inst", ["--install"]);
+  expectMatches(["install", "dudu", "--blah"], "instlal", ["install"]);
+  expectMatches(["hello", "kat", "cats", "cut"], "cat", ["cats", "kat", "cut"]);
+  expectMatches(["cut", "kat"], "cat", ["cut", "kat"]);
+  expectMatches(["abc", "ac", "ab"], "acb", ["abc", "ac", "ab"]);
 });
 
-function orderBySimilarity(reference: string, candidates: Array<string>) {
-  return suggestSorted(
-    reference,
-    candidates.map((key) => ({ expected: key, advised: key })),
+function expectMatches(
+  candidates: Array<string>,
+  input: string,
+  expecteds: Array<string>,
+) {
+  const matches = suggestSortedHints(
+    input,
+    candidates.map((key) => ({ expected: key, hint: key })),
     0.6,
   );
+  expect(matches).toStrictEqual(expecteds);
 }

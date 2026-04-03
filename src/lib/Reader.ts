@@ -1,4 +1,4 @@
-import { suggestMessagePushHint } from "./Suggest";
+import { suggestMessagePushInfered } from "./Suggest";
 import {
   TypoError,
   TypoString,
@@ -349,12 +349,12 @@ export class ReaderArgs {
       errorText.push(new TypoString(`, no options are registered.`));
     } else {
       errorText.push(new TypoString(`.`));
-      suggestMessagePushHint(
+      suggestMessagePushInfered(
         errorText,
         constant,
         candidatesConstants.map((candidateConstant) => ({
           expected: candidateConstant,
-          advised: new TypoString(candidateConstant, typoStyleConstants),
+          hint: new TypoString(candidateConstant, typoStyleConstants),
         })),
       );
     }
