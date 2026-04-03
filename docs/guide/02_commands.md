@@ -2,9 +2,35 @@
 
 Three factory functions cover every use-case.
 
+## `operation` — bundle options, positionals, and a handler
+
+`operation` is the core building block for command logic. It binds together
+the options and positionals a command accepts, plus the async handler that
+runs when parsing succeeds.
+
+```ts
+const myOperation = operation(
+  {
+    options: { /* named Option descriptors */ },
+    positionals: [ /* ordered Positional descriptors */ ],
+  },
+  async function (context, { options, positionals }) {
+    // your logic here
+  },
+);
+```
+
+The handler receives:
+
+- `context` — forwarded unchanged from `runAndExit`
+- `options` — an object keyed by the names declared in `options`
+- `positionals` — a tuple of decoded values, in declaration order
+
+`operation` is always passed to one of the command factories below.
+
 ## `command` — leaf command
 
-No subcommands — directly runs an operation.
+No subcommands — directly executes an operation.
 
 ```ts
 const greet = command(
@@ -23,13 +49,12 @@ const greet = command(
 
 ## `commandWithSubcommands` — dispatch to a subcommand
 
-User must pick one of several sub-actions.
+The user must pick one of several named sub-actions. The operation runs
+first; its return value becomes the subcommand's context.
 
 ```ts
 const rootCmd = commandWithSubcommands(
   { description: "My deployment CLI" },
-  // This operation runs before the subcommand is selected.
-  // Its return value becomes the subcommand's context.
   operation({ options: {}, positionals: [] }, async function (_ctx) {
     return { db: "postgres://localhost/mydb" };
   }),
@@ -52,8 +77,6 @@ const rootCmd = commandWithSubcommands(
 await runAndExit("deploy-cli", process.argv.slice(2), undefined, rootCmd);
 ```
 
-Check it:
-
 ```sh
 deploy-cli --help
 ```
@@ -68,18 +91,19 @@ Subcommands:
   rollback  Rollback to the previous release
 ```
 
-### Subcommand names
-
-Keys are the tokens users must type.
+Subcommand keys are the tokens users type at the prompt.
 
 ## `commandChained` — sequential stages
 
-Splits a command into reusable steps with no extra user-visible token.
+Chains an operation and a command without consuming an extra token. The
+operation runs first, and its return value becomes the next command's context.
+Useful for splitting shared setup (authentication, config loading) from command
+logic while keeping a flat usage line.
 
 ```ts
 const authenticatedDeploy = commandChained(
   { description: "Authenticate then deploy" },
-  // Stage 1: parse a --token option and forward the token as context
+  // Stage 1: parse --token and expose it as context
   operation(
     {
       options: {
@@ -108,7 +132,7 @@ const authenticatedDeploy = commandChained(
 );
 ```
 
-All stages share a single flat usage — users see one combined command.
+All stages share a single flat usage — users see one combined `--help` output.
 
 ## `CommandInformation`
 
@@ -161,8 +185,8 @@ command(
 );
 ```
 
-The `Examples:` section in `--help` output renders each entry as a comment
-followed by the reconstructed command line:
+The `Examples:` section in `--help` renders each entry as a comment followed
+by the reconstructed command line:
 
 ```text
 Examples:

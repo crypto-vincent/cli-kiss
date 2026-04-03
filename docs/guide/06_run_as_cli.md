@@ -2,7 +2,8 @@
 
 ## `runAndExit`
 
-`runAndExit` parses arguments, runs the matched command, and exits.
+`runAndExit` parses arguments, executes the matched command, and exits the
+process.
 
 ```ts
 await runAndExit(cliName, cliArgs, context, command, options?);
@@ -18,14 +19,14 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 
 ### Options
 
-| Option         | Type                                | Default        | Description                                                                                 |
-| -------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
-| `buildVersion` | `string?`                           | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
-| `usageOnHelp`  | `boolean?`                          | `true`         | Enables `--help` flag                                                                       |
-| `usageOnError` | `boolean?`                          | `true`         | Prints usage to stderr when parsing fails                                                   |
-| `colorSetup`   | `flag` / `env` / `always` / `never` | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
-| `onError`      | `(error: unknown) => void`          | —              | Custom handler for parse and execution errors                                               |
-| `onExit`       | `(code: number) => never`           | `process.exit` | Override for testing                                                                        |
+| Option         | Type                                | Default        | Description                                                                    |
+| -------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------ |
+| `buildVersion` | `string?`                           | —              | Enables `--version`; prints `<cliName> <buildVersion>`                         |
+| `usageOnHelp`  | `boolean?`                          | `true`         | Enables `--help`                                                               |
+| `usageOnError` | `boolean?`                          | `true`         | Prints usage to stderr when parsing fails                                      |
+| `colorSetup`   | `flag` / `env` / `always` / `never` | `"flag"`       | `"flag"` adds a `--color` option; `"env"` reads `FORCE_COLOR`/`NO_COLOR` vars |
+| `onError`      | `(error: unknown) => void`          | —              | Custom handler for parse and execution errors                                  |
+| `onExit`       | `(code: number) => never`           | `process.exit` | Override for testing                                                           |
 
 ### Exit codes
 
@@ -84,8 +85,6 @@ await runAndExit("my-cli", process.argv.slice(2), undefined, rootCmd, {
 });
 ```
 
-Check it
-
 ```sh
 my-cli --help
 ```
@@ -102,8 +101,6 @@ Options:
   --db <url>  Database URL
 ```
 
-Try it
-
 ```sh
 my-cli deploy --dry-run
 ```
@@ -114,21 +111,21 @@ my-cli deploy --dry-run
 
 ## Color control
 
-Colors are auto-detected by default (`colorSetup: "flag"` adds a `--color`
-option). Override:
+Color is auto-detected by default (`colorSetup: "flag"` adds `--color`).
+Override globally:
 
 ```ts
-// Read from env vars (FORCE_COLOR, NO_COLOR), same as `--color=auto`
+// Read FORCE_COLOR / NO_COLOR env vars (same as --color=auto)
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "env" });
-// Force colors on
+// Always enable colors
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "always" });
-// Force colors off (useful in CI)
+// Always disable colors (useful in CI)
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "never" });
 ```
 
 ## Testing your CLI
 
-Override `onExit` to prevent process exit during tests:
+Override `onExit` to prevent `process.exit` from firing during tests:
 
 ```ts
 const exitCodes: number[] = [];

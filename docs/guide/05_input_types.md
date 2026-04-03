@@ -1,65 +1,72 @@
 # Input Types
 
-A `Type<Value>` converts a raw CLI string into a typed value:
+A `Type<Value>` converts a raw CLI string token into a typed value. It is a
+pair of a human-readable `content` label and a `decoder` function that throws
+on invalid input.
 
-- Contains a `content` label about the type of data being decoded
-- Paired with a `decoder` function that throws if the value is invalid.
-
-A `Type<Value>` can then be used as a value for an `Option` or `Positional`
+`Type<Value>` is used as the `type` field of any `Option` or `Positional`.
 
 ## Built-in types
 
 All type factories accept an optional `name` parameter that overrides the label
-shown in help/errors.
+shown in help and error messages.
 
-| Type factory   | Content type | Accepts                                                             |
-| -------------- | ------------ | ------------------------------------------------------------------- |
-| `type`         | `string`     | Any string                                                          |
-| `typeBoolean`  | `boolean`    | `true/yes/on/y` → true, `false/no/off/n` → false (case-insensitive) |
-| `typeNumber`   | `number`     | Integers, floats, scientific notation                               |
-| `typeInteger`  | `bigint`     | Integer strings only                                                |
-| `typeDatetime` | `Date`       | Any format accepted by `Date.parse` (ISO 8601 recommended)          |
-| `typeUrl`      | `URL`        | Absolute URLs                                                       |
-| `typePath`     | `string`     | Non-empty path strings; optional sync existence check               |
+| Type factory   | Value type | Accepts                                                             |
+| -------------- | ---------- | ------------------------------------------------------------------- |
+| `type`         | `string`   | Any string                                                          |
+| `typeBoolean`  | `boolean`  | `true/yes/on/y` → true, `false/no/off/n` → false (case-insensitive)|
+| `typeNumber`   | `number`   | Integers, floats, scientific notation                               |
+| `typeInteger`  | `bigint`   | Integer strings only                                                |
+| `typeDatetime` | `Date`     | Any format accepted by `Date.parse` (ISO 8601 recommended)          |
+| `typeUrl`      | `URL`      | Absolute URLs only                                                  |
+| `typePath`     | `string`   | Non-empty path strings; optional sync existence check               |
 
 ```ts
-type("greeting").decoder("hello"); // → "hello"
-typeBoolean("flag").decoder("yes"); // → true
-typeNumber("pi").decoder("3.14"); // → 3.14
-typeInteger("id").decoder("9007199254740993"); // → 9007199254740993n
+type("greeting").decoder("hello");               // → "hello"
+typeBoolean("flag").decoder("yes");              // → true
+typeNumber("pi").decoder("3.14");                // → 3.14
+typeInteger("id").decoder("9007199254740993");   // → 9007199254740993n
 typeDatetime("birthday").decoder("2024-01-15"); // → Date object
 typeUrl("redirect").decoder("https://example.com/path"); // → URL object
-typePath().decoder("/usr/bin"); // → "/usr/bin"
+typePath().decoder("/usr/bin");                  // → "/usr/bin"
 ```
 
-`typePath` also accepts a second argument for existence checks:
+`typePath` also accepts an optional second argument to check existence at
+parse time:
 
 ```ts
-typePath("config", { checkSyncExistAs: "file" }); // throws if not a file
-typePath("dir", { checkSyncExistAs: "directory" }); // throws if not a directory
+typePath("config", { checkSyncExistAs: "file" });      // throws if not a file
+typePath("dir",    { checkSyncExistAs: "directory" }); // throws if not a directory
 ```
 
 ## `typeChoice` — string enum
 
-Accepts only a fixed set of strings (case-insensitive by default):
+Accepts only a fixed set of strings. Matching is **case-sensitive by default**.
 
 ```ts
 const typeEnv = typeChoice("environment", ["dev", "staging", "prod"]);
-typeEnv.decoder("prod"); // → "prod"
-typeEnv.decoder("PROD"); // → "prod"  (case-insensitive)
-typeEnv.decoder("unknown"); // Error: Invalid value: "unknown"
+typeEnv.decoder("prod");    // → "prod"
+typeEnv.decoder("PROD");    // → Error: Unknown value: "PROD"
+typeEnv.decoder("unknown"); // → Error: Unknown value: "unknown"
 ```
 
-Pass `true` as third argument to make matching case-sensitive.
+Pass `false` as the third argument to enable case-insensitive matching:
+
+```ts
+const typeEnvCI = typeChoice("environment", ["dev", "staging", "prod"], false);
+typeEnvCI.decoder("PROD"); // → "prod"
+```
 
 ## `typeTuple` — fixed-length delimited value
 
-Splits a string into a fixed-length typed tuple:
+Splits a string into a fixed-length typed tuple. Wrong element count or a
+failed element decode throws.
 
 ```ts
-const typePoint = typeTuple([typeNumber("a"), typeNumber("b")]);
+const typePoint = typeTuple([typeNumber("x"), typeNumber("y")]);
 typePoint.decoder("3.14,2.71"); // → [3.14, 2.71]
-typePoint.decoder("x,2"); // → Error: at 0: a: Unable to parse: "x"
+typePoint.decoder("x,2");       // → Error: at 0: x: Unable to parse: "x"
+typePoint.decoder("1,2,3");     // → Error: wrong element count
 ```
 
 The default separator is `","`. Pass a second argument to change it:
@@ -71,7 +78,7 @@ typeTuple([type("name"), typeNumber()], ":");
 
 ## `typeList` — variable-length delimited value
 
-Splits a string into an array of typed values:
+Splits a string into an array of typed values.
 
 ```ts
 const typeNumbers = typeList(typeNumber("v"));
@@ -95,20 +102,21 @@ over `typeList` when users should pass multiple values as separate flags
 
 ## `typeConverted` — transform decoded value
 
-Chains a base type with a transformation function:
+Chains a base type with a transformation function. Useful for range checks or
+custom conversions.
 
 ```ts
 const typePort = typeConverted("port", typeNumber(), (n) => {
   if (n < 1 || n > 65535) throw new Error("Out of range");
   return n;
 });
-typePort.decoder("8080"); // → 8080
+typePort.decoder("8080");  // → 8080
 typePort.decoder("99999"); // → Error: Out of range
 ```
 
 ## `typeRenamed` — rename a type
 
-Wraps a type with a different label for clearer errors:
+Wraps an existing type with a different label for clearer errors and help text:
 
 ```ts
 const typeUserId = typeRenamed(typeInteger("u64"), "user-id");
@@ -129,5 +137,5 @@ const typeHexColor: Type<string> = {
   },
 };
 typeHexColor.decoder("#ff0000"); // → "#ff0000"
-typeHexColor.decoder("red"); // → Error: Not a valid hex color: "red"
+typeHexColor.decoder("red");     // → Error: Not a valid hex color: "red"
 ```

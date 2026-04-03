@@ -6,8 +6,8 @@ hero:
   text: CLI for TypeScript.
 
   tagline:
-    No bloat, no dependencies.<br/>Standard behavior users expect.<br/>Keep It
-    Simple and Stupid, it just does the job.
+    Zero runtime dependencies.<br/>Typed commands, options, and
+    positionals.<br/>Built-in --help, --version, and error output.
 
   image:
     src: /logo.png
@@ -23,14 +23,27 @@ hero:
 features:
   - title: Zero dependencies
     icon: 📦
-    details:
-      Ships with no runtime dependencies.<br/>Pure TypeScript, 5kb bundled.
+    details: >
+      No runtime dependencies. Pure TypeScript, ~5 kb minified. No supply-chain
+      risk.
   - title: Fully typed
-    icon: 🧠
-    details:
-      TypeScript first.<br/>Options and positionals inputs strongly typed.
+    icon: 🔷
+    details: >
+      Options and positionals infer their TypeScript types automatically.<br/>No
+      manual type annotations needed.
+  - title: Built-in output
+    icon: 🖨️
+    details: >
+      "--help", "--version" and "--color" out of the box.<br/>Color-aware error
+      messages.
+  - title: Error suggestions
+    icon: 💡
+    details: >
+      Helpful suggestions for typos in commands, options, and
+      positionals.<br/>It's line inline help, but for errors.
   - title: Composable
     icon: 🧩
-    details:
-      Easily create nested subcommands.<br/>Build complex CLIs by nesting logic.
+    details: >
+      Leaf commands, named subcommands, and chained stages.<br/>Any CLI
+      structure from the same small set of building blocks.
 ---

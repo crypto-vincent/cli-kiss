@@ -5,7 +5,7 @@ Named `--` arguments (or `-` for short forms). Declared in the `options` map of
 
 ## `optionFlag` — boolean toggle
 
-Present or absent. Also accepts `--flag=true` / `--flag=no`.
+Present or absent. Also accepts `--flag=yes` / `--flag=no`.
 
 ```ts
 const verbose = optionFlag({
@@ -25,7 +25,7 @@ const verbose = optionFlag({
 | `short`       | `string?`             | Short flag name (without `-`)        |
 | `description` | `string?`             | Help text                            |
 | `hint`        | `string?`             | Short note in parentheses            |
-| `default`     | `boolean? `           | Value when absent (default: `false`) |
+| `default`     | `boolean?`            | Value when absent (default: `false`) |
 | `aliases`     | `{ longs?, shorts? }` | Additional names for the flag        |
 
 ::: tip A flag specified more than once triggers a parse error. Use
@@ -52,16 +52,16 @@ const output = optionSingleValue({
 // (absent)         →  "dist/"
 ```
 
-| Parameter               | Type                  | Description                                                                  |
-| ----------------------- | --------------------- | ---------------------------------------------------------------------------- |
-| `long`                  | `string`              | Long option name                                                             |
-| `short`                 | `string?`             | Short option name                                                            |
-| `type`                  | `Type<Value>`         | Decoder for the value                                                        |
-| `description`           | `string?`             | Help text                                                                    |
-| `hint`                  | `string?`             | Short note in parentheses                                                    |
-| `defaultIfNotSpecified` | `() => Value`         | Value when option is absent — **throw** to make it required                  |
-| `valueIfNothingInlined` | `() => Value?`        | Value when option is present but has no inline value (e.g. `--output` alone) |
-| `aliases`               | `{ longs?, shorts? }` | Additional names                                                             |
+| Parameter               | Type                  | Description                                                                   |
+| ----------------------- | --------------------- | ----------------------------------------------------------------------------- |
+| `long`                  | `string`              | Long option name                                                              |
+| `short`                 | `string?`             | Short option name                                                             |
+| `type`                  | `Type<Value>`         | Decoder for the value                                                         |
+| `description`           | `string?`             | Help text                                                                     |
+| `hint`                  | `string?`             | Short note in parentheses                                                     |
+| `defaultIfNotSpecified` | `() => Value`         | Value when option is absent — throw inside to make the option required        |
+| `valueIfNothingInlined` | `() => Value?`        | Value when option is present without a value (e.g. `--output` with no arg)   |
+| `aliases`               | `{ longs?, shorts? }` | Additional names                                                              |
 
 ## `optionRepeatable` — collect multiple values
 

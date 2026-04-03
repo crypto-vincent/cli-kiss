@@ -1,14 +1,14 @@
 # cli-kiss
 
-Type-safe CLI builder for TypeScript. No dependencies, no supply-chain attacks.
+Type-safe CLI builder for TypeScript. Zero runtime dependencies.
 
-Small API, standard compliance, polished help output, zero runtime dependencies.
+Small API, standard compliance, polished help output.
 
 ## Why
 
 - Compose commands, subcommands, options, and positionals with strong types
-- Get built-in `--help`, `--version`, and color-aware error messages
-- Ship a real CLI parser without pulling in a dependency tree
+- Built-in `--help`, `--version`, and color-aware error messages
+- No dependency tree — no supply-chain risk
 
 ## Install
 

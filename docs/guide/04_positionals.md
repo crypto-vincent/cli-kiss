@@ -5,7 +5,7 @@ array of [`operation`](/guide/02_commands).
 
 ## `positionalRequired` — must be present
 
-Fails if missing.
+Throws if the token is missing.
 
 ```ts
 const name = positionalRequired({
@@ -14,7 +14,7 @@ const name = positionalRequired({
 });
 // Usage:
 //   my-cli Alice   →  "Alice"
-//   my-cli  →  Error: <person>: Is required, but was not provided
+//   my-cli         →  Error: <person>: Is required, but was not provided
 ```
 
 | Parameter     | Type          | Description                      |
@@ -25,26 +25,26 @@ const name = positionalRequired({
 
 ## `positionalOptional` — may be absent
 
-Falls back to a default when absent.
+Falls back to a default when no token is present.
 
 ```ts
 const greeting = positionalOptional({
   type: type("greeting"),
   description: "Custom greeting",
-  hint: "default to 'Hello'",
+  hint: "defaults to 'Hello'",
   default: () => "Hello",
 });
 // Usage:
-//   my-cli          →  "Hello"
-//.  my-cli Howdy    →  "Howdy"
+//   my-cli         →  "Hello"
+//   my-cli Howdy   →  "Howdy"
 ```
 
-| Parameter     | Type          | Description                                       |
-| ------------- | ------------- | ------------------------------------------------- |
-| `type`        | `Type<Value>` | Decoder for the raw string token                  |
-| `description` | `string?`     | Help text                                         |
-| `hint`        | `string?`     | Short note in parentheses                         |
-| `default`     | `() => Value` | Value when absent — **throw** to make it required |
+| Parameter     | Type          | Description                                          |
+| ------------- | ------------- | ---------------------------------------------------- |
+| `type`        | `Type<Value>` | Decoder for the raw string token                     |
+| `description` | `string?`     | Help text                                            |
+| `hint`        | `string?`     | Short note in parentheses                            |
+| `default`     | `() => Value` | Value when absent — throw inside to make it required |
 
 ## `positionalVariadics` — zero or more
 
@@ -57,7 +57,7 @@ const files = positionalVariadics({
 });
 // Usage:
 //   my-cli a.ts b.ts c.ts   →  ["a.ts", "b.ts", "c.ts"]
-//   my-cli  →  []
+//   my-cli                  →  []
 ```
 
 ### End delimiter
@@ -83,7 +83,8 @@ const args = positionalVariadics({
 
 ## Ordering rules
 
-Consumed **in declaration order** — required first, variadics last.
+Positionals are consumed **in declaration order** — required first, variadics
+last.
 
 ```ts
 operation(
@@ -101,6 +102,6 @@ operation(
   },
 );
 // Usage:
-//   my-cli in out  →  src="in", src="out", tag="latest", extras=[]
-//   my-cli in out v2 a b c  →  src="in", src="out", tag="v2", extras=["a","b","c"]
+//   my-cli in out  →  src="in", dst="out", tag="latest", extras=[]
+//   my-cli in out v2 a b c  →  src="in", dst="out", tag="v2", extras=["a","b","c"]
 ```
