@@ -99,3 +99,37 @@ optionFlag({
 });
 // --dry-run, --dryrun, and -n all work
 ```
+
+## Short option syntax
+
+Short options support several equivalent syntaxes for value-bearing options:
+
+```sh
+my-cli -o dist/      # separated: space between flag and value
+my-cli -odist/       # attached: value immediately after the flag letter
+my-cli -o=dist/      # inline: = between flag and value
+```
+
+### Stacking short flags
+
+Multiple boolean short flags can be combined into a single token:
+
+```sh
+my-cli -abc          # equivalent to: my-cli -a -b -c
+my-cli -abco dist/   # equivalent to: my-cli -a -b -c -o dist/
+```
+
+The last letter in a stack may be a value-bearing option and consume the next argument.
+
+## End-of-options delimiter (`--`)
+
+A bare `--` token stops option parsing. Everything after it is treated as a
+positional argument, even if it starts with `-` or `--`:
+
+```sh
+my-cli -- --not-an-option    # "--not-an-option" is a positional value
+my-cli -- -v                 # "-v" is a positional value
+```
+
+This follows the POSIX convention for passing raw arguments to sub-processes.
+

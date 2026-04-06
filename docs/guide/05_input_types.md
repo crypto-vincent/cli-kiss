@@ -35,22 +35,28 @@ typePath().decoder("/usr/bin"); // → "/usr/bin"
 `typePath` also accepts a second argument for existence checks:
 
 ```ts
-typePath("config", { checkSyncExistAs: "file" }); // throws if not a file
-typePath("dir", { checkSyncExistAs: "directory" }); // throws if not a directory
+typePath("config", { checkSyncExistAs: "file" });      // throws if path does not exist or is not a file
+typePath("dir", { checkSyncExistAs: "directory" });     // throws if path does not exist or is not a directory
+typePath("input", { checkSyncExistAs: "anything" });    // throws if path does not exist (any type accepted)
 ```
 
 ## `typeChoice` — string enum
 
-Accepts only a fixed set of strings (case-insensitive by default):
+Accepts only a fixed set of strings. Matching is **case-sensitive by default**:
 
 ```ts
 const typeEnv = typeChoice("environment", ["dev", "staging", "prod"]);
 typeEnv.decoder("prod"); // → "prod"
-typeEnv.decoder("PROD"); // → "prod"  (case-insensitive)
-typeEnv.decoder("unknown"); // Error: Invalid value: "unknown"
+typeEnv.decoder("PROD"); // → Error: Unknown value: "PROD". Did you mean: "prod" ?
+typeEnv.decoder("unknown"); // → Error: Unknown value: "unknown"
 ```
 
-Pass `true` as third argument to make matching case-sensitive.
+Pass `false` as third argument to make matching case-insensitive:
+
+```ts
+const typeEnv = typeChoice("environment", ["dev", "staging", "prod"], false);
+typeEnv.decoder("PROD"); // → "prod"
+```
 
 ## `typeTuple` — fixed-length delimited value
 
