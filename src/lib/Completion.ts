@@ -36,23 +36,37 @@ export type CompletionNode = {
  * The caller (typically a shell completion script) is responsible for filtering the results
  * by the prefix of the current partial word.
  *
+ * Returns an empty array when the cursor position is immediately after an option that expects
+ * a value (e.g. `completedArgs = ["--output"]`), since the current word is that option's value,
+ * not a new token.
+ *
  * @param node - Root {@link CompletionNode} from {@link Command.generateCompletionNode}.
  * @param completedArgs - The args already typed on the command line, NOT including the
  *   current partial word being typed.
- * @returns All valid next tokens (subcommand names, `--long`, `-s` options).
+ * @returns All valid next tokens (subcommand names, `--long`, `-s` options), or `[]` when
+ *   the cursor position is filling an option value.
  *
  * @example
  * ```ts
  * const node = rootCommand.generateCompletionNode();
  * const completions = getCompletions(node, ["sub"]);
  * // → ["--help", "--flag", "-v", ...]
+ *
+ * // Cursor is filling --output's value: no completions offered
+ * getCompletions(node, ["--output"]); // → []
  * ```
  */
 export function getCompletions(
   node: CompletionNode,
   completedArgs: ReadonlyArray<string>,
 ): Array<string> {
-  const currentNode = walkCompletionNode(node, completedArgs);
+  const { node: currentNode, awaitingOptionValue } = walkCompletionNode(
+    node,
+    completedArgs,
+  );
+  if (awaitingOptionValue) {
+    return [];
+  }
   const completions: Array<string> = [];
   for (const name of Object.keys(currentNode.subcommands)) {
     completions.push(name);
@@ -151,7 +165,7 @@ function generateFishCompletionScript(cliName: string): string {
 function walkCompletionNode(
   node: CompletionNode,
   args: ReadonlyArray<string>,
-): CompletionNode {
+): { node: CompletionNode; awaitingOptionValue: boolean } {
   let currentNode = node;
   let i = 0;
   while (i < args.length) {
@@ -166,7 +180,11 @@ function walkCompletionNode(
         const longName = arg.slice(2);
         const option = currentNode.options.find((o) => o.long === longName);
         if (option?.hasValue === true) {
-          i += 2;
+          if (i + 1 < args.length) {
+            i += 2;
+          } else {
+            return { node: currentNode, awaitingOptionValue: true };
+          }
         } else {
           i++;
         }
@@ -175,7 +193,11 @@ function walkCompletionNode(
       const shortName = arg.slice(1);
       const option = currentNode.options.find((o) => o.short === shortName);
       if (option?.hasValue === true) {
-        i += 2;
+        if (i + 1 < args.length) {
+          i += 2;
+        } else {
+          return { node: currentNode, awaitingOptionValue: true };
+        }
       } else {
         i++;
       }
@@ -186,5 +208,5 @@ function walkCompletionNode(
       i++;
     }
   }
-  return currentNode;
+  return { node: currentNode, awaitingOptionValue: false };
 }
