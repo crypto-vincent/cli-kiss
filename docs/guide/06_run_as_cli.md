@@ -158,7 +158,7 @@ This adds two hidden flags:
 
 | Flag                          | Description                                                              |
 | ----------------------------- | ------------------------------------------------------------------------ |
-| `--completion [bash\|zsh\|fish]` | Prints a shell completion script; source it in your shell init file   |
+| `--completion [bash|zsh|fish]`  | Prints a shell completion script; source it in your shell init file       |
 | `--get-completions -- <args>` | Returns one completion per line for the given typed args (used by scripts) |
 
 ### Install the completion script

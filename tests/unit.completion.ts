@@ -236,6 +236,22 @@ it("runAndExit completion", async function () {
   // --get-completions with partial/unknown input does not produce a parse error
   await testGetCompletionsRun(["--invalid-partial"], [], []);
 
+  // --get-completions for a commandChained root: options from both stages are present
+  const chainedRoot = commandChained(
+    { description: "Chained root" },
+    operation(
+      { options: { dbg: optionFlag({ long: "dbg" }) }, positionals: [] },
+      async (ctx) => ctx,
+    ),
+    buildCmd,
+  );
+  await testGetCompletionsRunWith(
+    chainedRoot,
+    [],
+    ["--dbg", "--verbose", "--output"],
+    [],
+  );
+
   // completionSetup not enabled → --completion is an unknown option → exit 1
   await testCompletionDisabled();
 });
@@ -270,6 +286,20 @@ async function testGetCompletionsRun(
   expectedToContain: Array<string>,
   expectedNotToContain: Array<string>,
 ) {
+  await testGetCompletionsRunWith(
+    rootCommand,
+    completedArgs,
+    expectedToContain,
+    expectedNotToContain,
+  );
+}
+
+async function testGetCompletionsRunWith(
+  cmd: Parameters<typeof runAndExit>[3],
+  completedArgs: Array<string>,
+  expectedToContain: Array<string>,
+  expectedNotToContain: Array<string>,
+) {
   const onLogStdOut = makeMocked<string, void>(
     Array(100).fill(null as unknown as void),
   );
@@ -281,7 +311,7 @@ async function testGetCompletionsRun(
     "my-cli",
     ["--get-completions", "--", ...completedArgs],
     null,
-    rootCommand,
+    cmd,
     {
       completionSetup: "flag",
       buildVersion: "1.0.0",
