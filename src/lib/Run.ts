@@ -1,4 +1,10 @@
 import { Command, CommandDecoder } from "./Command";
+import {
+  CompletionNode,
+  CompletionOption,
+  generateCompletionScript,
+  getCompletions,
+} from "./Completion";
 import { optionFlag, optionSingleValue } from "./Option";
 import { ReaderArgs } from "./Reader";
 import { typeChoice } from "./Type";
@@ -28,6 +34,9 @@ export type RunColorMode = "env" | "always" | "never" | "mock";
  * @param options.usageOnHelp - Enables `--help` flag (default `true`).
  * @param options.usageOnError - Prints usage to stderr on parse error (default `true`).
  * @param options.buildVersion - Enables `--version`; prints `<cliName> <buildVersion>`.
+ * @param options.completionSetup - Enables shell auto-completion support. When set to `"flag"`,
+ *   adds `--completion [bash|zsh|fish]` (prints a shell completion script) and
+ *   `--get-completions` (returns completions for the current command line, used by shell scripts).
  * @param options.onError - Custom handler for errors.
  * @param options.onExit - Overrides `process.exit`; useful for testing.
  *
@@ -62,10 +71,57 @@ export async function runAndExit<Context>(
     usageOnHelp?: boolean | undefined;
     usageOnError?: boolean | undefined;
     buildVersion?: string | undefined;
+    completionSetup?: "flag" | undefined;
     onError?: ((error: unknown) => void) | undefined;
     onExit?: ((code: number) => never) | undefined;
   },
 ): Promise<never> {
+  const onExit = options?.onExit ?? process.exit;
+
+  // Handle --completion and --get-completions early, before any argument parsing,
+  // so that partial or invalid args on the command line don't cause parse errors.
+  if (options?.completionSetup === "flag") {
+    const completionIdx = cliArgs.indexOf("--completion");
+    if (completionIdx !== -1) {
+      const rawShell = cliArgs[completionIdx + 1];
+      const shell =
+        rawShell === "bash" || rawShell === "zsh" || rawShell === "fish"
+          ? rawShell
+          : "bash";
+      console.log(generateCompletionScript(cliName, shell));
+      return onExit(0);
+    }
+    const gcIdx = cliArgs.indexOf("--get-completions");
+    if (gcIdx !== -1) {
+      const doubleIdx = cliArgs.indexOf("--", gcIdx + 1);
+      const completionArgs: ReadonlyArray<string> =
+        doubleIdx === -1 ? [] : cliArgs.slice(doubleIdx + 1);
+      const rootNode = command.generateCompletionNode();
+      const extraOptions: Array<CompletionOption> = [
+        { long: "completion", hasValue: true },
+        { long: "get-completions", hasValue: false },
+      ];
+      if (options?.usageOnHelp ?? true) {
+        extraOptions.push({ long: "help", hasValue: false });
+      }
+      if (options?.buildVersion !== undefined) {
+        extraOptions.push({ long: "version", hasValue: false });
+      }
+      const colorSetupForCompletion = options?.colorSetup ?? "flag";
+      if (colorSetupForCompletion === "flag") {
+        extraOptions.push({ long: "color", hasValue: true });
+      }
+      const augmentedNode: CompletionNode = {
+        ...rootNode,
+        options: [...rootNode.options, ...extraOptions],
+      };
+      for (const completion of getCompletions(augmentedNode, completionArgs)) {
+        console.log(completion);
+      }
+      return onExit(0);
+    }
+  }
+
   const readerArgs = new ReaderArgs(cliArgs);
   const preprocessors = new Array<
     (commandDecoder: CommandDecoder<Context, void>) => undefined | number
@@ -117,14 +173,6 @@ export async function runAndExit<Context>(
   }
   // TODO - the lifecycle of this function should be improved
   // TODO - how to pass the color information to the command logic ?
-  /*
-  // TODO - handle completions ?
-  readerArgs.registerFlag({
-    key: "completion",
-    shorts: [],
-    longs: ["completion"],
-  });
-  */
   const commandDecoder = command.consumeAndMakeDecoder(readerArgs);
   while (true) {
     try {
@@ -134,7 +182,6 @@ export async function runAndExit<Context>(
       }
     } catch (_) {}
   }
-  const onExit = options?.onExit ?? process.exit;
   try {
     for (const preprocessor of preprocessors) {
       const preprocessorResult = preprocessor(commandDecoder);
