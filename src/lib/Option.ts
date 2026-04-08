@@ -213,14 +213,14 @@ export function optionSingleValue<Value>(definition: {
           if (result === undefined) {
             if (definition.fallbackValueIfAbsent === undefined) {
               const errorText = makeErrorText({ long, label, type });
-              errorText.push(new TypoString(`: Is required, but was not set`));
+              errorText.push(new TypoString(`: Is required, but was not set.`));
               throw new TypoError(errorText);
             }
             try {
               return definition.fallbackValueIfAbsent();
             } catch (error) {
               const errorText = makeErrorText({ long, label, type });
-              errorText.push(new TypoString(`: Failed to get fallback value`));
+              errorText.push(new TypoString(`: Failed to get fallback value.`));
               throw new TypoError(errorText, error);
             }
           }
@@ -233,7 +233,7 @@ export function optionSingleValue<Value>(definition: {
               return definition.impliedValueIfNotInlined();
             } catch (error) {
               const errorText = makeErrorText({ long, label, type });
-              errorText.push(new TypoString(`: Failed to get implied value`));
+              errorText.push(new TypoString(`: Failed to get implied value.`));
               throw new TypoError(errorText, error);
             }
           }
@@ -325,15 +325,16 @@ function decodeValue<Value>(params: {
   type: Type<Value>;
   input: string;
 }): Value {
+  const { long, label, type, input } = params;
   return TypoError.tryWithContext(
-    () => params.type.decoder(params.input),
-    () => makeErrorText(params),
+    () => type.decoder(input),
+    () => makeErrorText({ long, label, type }),
   );
 }
 
 function makeErrorText(params: {
   long: string;
-  label?: string | undefined;
+  label: string | undefined;
   type: Type<any>;
 }): TypoText {
   const errorText = new TypoText();
@@ -413,6 +414,6 @@ function throwSetMultipleTimesError(identifiers: Array<string>): never {
   );
   const errorText = new TypoText();
   errorText.pushJoined(identifiersTexts, new TypoString(", "), 3);
-  errorText.push(new TypoString(`: Must not be set multiple times`));
+  errorText.push(new TypoString(`: Must not be set multiple times.`));
   throw new TypoError(errorText);
 }

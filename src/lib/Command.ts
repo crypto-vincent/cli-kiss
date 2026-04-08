@@ -141,6 +141,7 @@ export function command<Context, Result>(
             new TypoText(
               new TypoString(`Unexpected argument: `),
               new TypoString(`"${endPositional}"`, typoStyleQuote),
+              new TypoString(`.`),
             ),
           );
         }

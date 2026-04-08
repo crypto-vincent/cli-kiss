@@ -104,10 +104,10 @@ export class ReaderArgs {
   registerOptionLong(longSpec: ReaderOptionLongSpec): ReaderOptionGetter {
     const identifier = `--${longSpec.key}`;
     if (!isValidOptionKey(longSpec.key)) {
-      throw new Error(`Option identifier is invalid: ${identifier}`);
+      throw new Error(`Option identifier is invalid: ${identifier}.`);
     }
     if (this.#optionLongContextByIdentifier.has(identifier)) {
-      throw new Error(`Option already registered: ${identifier}`);
+      throw new Error(`Option already registered: ${identifier}.`);
     }
     const values = new Array<ReaderOptionValue>();
     this.#optionLongContextByIdentifier.set(identifier, {
@@ -123,23 +123,23 @@ export class ReaderArgs {
   registerOptionShort(shortSpec: ReaderOptionShortSpec): ReaderOptionGetter {
     const identifier = `-${shortSpec.key}`;
     if (!isValidOptionKey(shortSpec.key)) {
-      throw new Error(`Option identifier is invalid: ${identifier}`);
+      throw new Error(`Option identifier is invalid: ${identifier}.`);
     }
     if (this.#optionShortContextByIdentifier.has(identifier)) {
-      throw new Error(`Option already registered: ${identifier}`);
+      throw new Error(`Option already registered: ${identifier}.`);
     }
     for (let i = 0; i < identifier.length; i++) {
       const slicedIdentifier = identifier.slice(0, 1 + i);
       if (this.#optionShortContextByIdentifier.has(slicedIdentifier)) {
         throw new Error(
-          `Option ${identifier} overlap with shorter option: ${slicedIdentifier}`,
+          `Option ${identifier} overlap with shorter option: ${slicedIdentifier}.`,
         );
       }
     }
     for (const otherIdentifier of this.#optionShortContextByIdentifier.keys()) {
       if (otherIdentifier.startsWith(identifier)) {
         throw new Error(
-          `Option ${identifier} overlap with longer option: ${otherIdentifier}`,
+          `Option ${identifier} overlap with longer option: ${otherIdentifier}.`,
         );
       }
     }
@@ -270,6 +270,7 @@ export class ReaderArgs {
             new TypoString(identifier, typoStyleConstants),
             new TypoString(`: Requires a value before `),
             new TypoString(`"--"`, typoStyleQuote),
+            new TypoString(`, but did not get one.`),
           ),
         );
       }
@@ -278,7 +279,7 @@ export class ReaderArgs {
         throw new TypoError(
           new TypoText(
             new TypoString(identifier, typoStyleConstants),
-            new TypoString(`: Requires a value, but got end of input`), // TODO - hint at option value syntax ?
+            new TypoString(`: Requires a value, but got end of input.`), // TODO - hint at option value syntax ?
           ),
         );
       }
@@ -289,6 +290,7 @@ export class ReaderArgs {
             new TypoString(identifier, typoStyleConstants),
             new TypoString(`: Requires a value, but got: `),
             new TypoString(`"${token}"`, typoStyleQuote),
+            new TypoString(`.`),
           ),
         );
       }

@@ -400,6 +400,7 @@ export function typeTuple<const Elements extends Array<any>>(
             new TypoString(`Found ${splits.length} splits: `),
             new TypoString(`Expected ${elementTypes.length} splits from: `),
             new TypoString(`"${input}"`, typoStyleQuote),
+            new TypoString(`.`),
           ),
         );
       }
@@ -465,6 +466,7 @@ function throwInvalidValue(kind: string, input: string): never {
     new TypoText(
       new TypoString(`Not ${kind}: `),
       new TypoString(`"${input}"`, typoStyleQuote),
+      new TypoString(`.`),
     ),
   );
 }

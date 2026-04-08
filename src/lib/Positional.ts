@@ -82,6 +82,7 @@ export function positionalRequired<Value>(definition: {
         errorText.push(new TypoString(label, typoStyleUserInput));
         errorText.push(new TypoString(`: Is required, but was not provided.`));
         if (description) {
+          // TODO - should there be a dedicated hint here
           errorText.push(
             new TypoString(` (${description})`, typoStyleRegularWeaker),
           );
@@ -227,7 +228,7 @@ function throwsWhenFailedToGetDefault(label: string): never {
   throw new TypoError(
     new TypoText(
       new TypoString(label, typoStyleUserInput),
-      new TypoString(`: Failed to get default value`),
+      new TypoString(`: Failed to get default value.`),
     ),
   );
 }
