@@ -268,9 +268,9 @@ export class ReaderArgs {
         throw new TypoError(
           new TypoText(
             new TypoString(identifier, typoStyleConstants),
-            new TypoString(`: Requires a value before `),
+            new TypoString(`: Requires a value but got: `),
             new TypoString(`"--"`, typoStyleQuote),
-            new TypoString(`, but did not get one.`),
+            new TypoString(`.`),
           ),
         );
       }

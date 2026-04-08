@@ -83,7 +83,7 @@ it("run", async function () {
         [],
         [
           usageMock,
-          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{<color-mode>}@darkBlue}+: Unknown value: {{"42"}@darkYellow}+. Did you mean: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+, {{...}-}* ?',
+          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{color-mode}@darkMagenta}+: Unknown value: {{"42"}@darkYellow}+. Did you mean: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+, {{...}-}* ?',
         ],
         1,
       );

@@ -78,8 +78,7 @@ export function positionalRequired<Value>(definition: {
     consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        const errorText = new TypoText();
-        errorText.push(new TypoString(label, typoStyleUserInput));
+        const errorText = makeErrorText(label);
         errorText.push(new TypoString(`: Is required, but was not provided.`));
         if (description) {
           // TODO - should there be a dedicated hint here
@@ -224,11 +223,14 @@ function decodeValue<Value>(
   );
 }
 
+function makeErrorText(label: string): TypoText {
+  const errorText = new TypoText();
+  errorText.push(new TypoString(label, typoStyleUserInput));
+  return errorText;
+}
+
 function throwsWhenFailedToGetDefault(label: string): never {
-  throw new TypoError(
-    new TypoText(
-      new TypoString(label, typoStyleUserInput),
-      new TypoString(`: Failed to get default value.`),
-    ),
-  );
+  const errorText = makeErrorText(label);
+  errorText.push(new TypoString(`: Failed to get default value.`));
+  throw new TypoError(errorText);
 }

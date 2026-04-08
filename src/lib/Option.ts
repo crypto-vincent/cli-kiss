@@ -81,7 +81,7 @@ export type OptionDecoder<Value> = {
  */
 export function optionFlag(definition: {
   long: string;
-  short?: string;
+  short?: string; // TODO - add an enforcement mechanism for casing on options ?
   description?: string;
   hint?: string;
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
@@ -171,10 +171,15 @@ export function optionSingleValue<Value>(definition: {
   impliedValueIfNotInlined?: () => Value;
 }): Option<Value> {
   const { long, short, description, hint, aliases, type } = definition;
-  const label = `<${type.content}>`;
+  const label = definition.impliedValueIfNotInlined
+    ? undefined
+    : `<${type.content}>`;
+  const annotation = definition.impliedValueIfNotInlined
+    ? `[=${type.content}]`
+    : undefined; // TODO - handle implied value and default better in usage and errors
   return {
     generateUsage() {
-      return { short, long, label, description, hint };
+      return { short, long, label, annotation, description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
       const resultsGetter = setupOptionAliased(readerOptions, {

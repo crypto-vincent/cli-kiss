@@ -22,7 +22,7 @@ export type Type<Value> = {
   /**
    * Human-readable name shown in help and errors (e.g. `"name"`, `"context"`).
    */
-  content: string;
+  content: string; // TODO - add an enforcement mechanism for casing ?
   /**
    * Decodes a raw CLI string into `Value`.
    *

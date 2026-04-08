@@ -137,13 +137,11 @@ export function command<Context, Result>(
         const operationDecoder = operation.consumeAndMakeDecoder(readerArgs);
         const endPositional = readerArgs.consumePositional();
         if (endPositional !== undefined) {
-          throw new TypoError(
-            new TypoText(
-              new TypoString(`Unexpected argument: `),
-              new TypoString(`"${endPositional}"`, typoStyleQuote),
-              new TypoString(`.`),
-            ),
-          );
+          const errorText = new TypoText();
+          errorText.push(new TypoString(`Unexpected argument: `));
+          errorText.push(new TypoString(`"${endPositional}"`, typoStyleQuote));
+          errorText.push(new TypoString(`.`));
+          throw new TypoError(errorText);
         }
         return {
           generateUsage: () => generateUsageLeaf(information, operation),

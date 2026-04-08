@@ -13,7 +13,7 @@ import {
 it("run", async function () {
   await testCase(
     ["hello"],
-    '{{Error:}@darkRed}+ Unexpected argument: {{"hello"}@darkYellow}+',
+    '{{Error:}@darkRed}+ Unexpected argument: {{"hello"}@darkYellow}+.', // TODO - should we recommend help here ?
   );
   await testCase(
     ["--nope"],
@@ -25,31 +25,31 @@ it("run", async function () {
   );
   await testCase(
     ["--single-value=a", "--single-value=b"],
-    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Must not be set multiple times",
+    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Must not be set multiple times.",
   );
   await testCase(
     ["--single-value"],
-    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Requires a value, but got end of input",
+    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Requires a value, but got end of input.",
   );
   await testCase(
     [],
-    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: Is required, but was not set",
+    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: Is required, but was not set.",
   );
   await testCase(
     ["--single-value=invalid"],
-    '{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: Not an URL: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: Not an URL: {{"invalid"}@darkYellow}+.',
   );
   await testCase(
     ["--repeatable=invalid"],
-    '{{Error:}@darkRed}+ {{--repeatable}@darkCyan}+: {{<index>}@darkBlue}+: Not a number: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--repeatable}@darkCyan}+: {{<index>}@darkBlue}+: Not a number: {{"invalid"}@darkYellow}+.',
   );
   await testCase(
     ["--flag", "-f"],
-    "{{Error:}@darkRed}+ {{--flag}@darkCyan}+, {{-f}@darkCyan}+: Must not be set multiple times",
+    "{{Error:}@darkRed}+ {{--flag}@darkCyan}+, {{-f}@darkCyan}+: Must not be set multiple times.",
   );
   await testCase(
     ["--flag=invalid"],
-    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{value}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+',
+    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{value}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+.',
   );
 });
 

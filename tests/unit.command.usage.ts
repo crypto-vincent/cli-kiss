@@ -37,9 +37,8 @@ const rootCommand = commandChained<any, any, any>(
       options: {
         choiceOption: optionSingleValue({
           long: "choice-option",
-          type: typeChoice("choice", ["unset", "empty", "choice1", "choice2"]),
+          type: typeChoice("choice", ["unset", "choice1", "choice2"]),
           description: "choice-option description",
-          impliedValueIfNotInlined: () => "empty",
           fallbackValueIfAbsent: () => "unset",
         }),
         booleanFlag: optionFlag({
@@ -178,6 +177,12 @@ const rootCommand = commandChained<any, any, any>(
                 hint: "Dudu option hint",
                 description: "Dudu option description",
               }),
+              impliable: optionSingleValue({
+                long: "impliable",
+                type: type("text"),
+                impliedValueIfNotInlined: () => "implied",
+                fallbackValueIfAbsent: () => "absent",
+              }),
             },
             positionals: [
               positionalRequired({
@@ -308,6 +313,7 @@ it("run", async function () {
     "  {{-s}@darkCyan}+, {{--string-option}@darkCyan}+ {{<cool-stuff>}@darkBlue}+                      string-option description",
     "      {{--complex-option}@darkCyan}+ {{<number,string[,string]...>}@darkBlue}+{{ [*]}-}*  complex-option description",
     "      {{--dudu}@darkCyan}+ {{<dudu-value>}@darkBlue}+                               Dudu option description {{(Dudu option hint)}-}*",
+    "      {{--impliable}@darkCyan}+{{[=text]}-}*",
     "",
     "{{Examples:}@darkGreen}+",
     " {{# Example usage of subcommand 2}-}*",

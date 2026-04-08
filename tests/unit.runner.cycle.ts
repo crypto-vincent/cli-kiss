@@ -87,13 +87,13 @@ it("run", async function () {
   await testCase(
     ["--help=invalid"],
     [],
-    [rootUsage, `Error: --help: value: Not a boolean: "invalid"`],
+    [rootUsage, `Error: --help: value: Not a boolean: "invalid".`],
     1,
   );
   await testCase(
     ["--version=invalid"],
     [],
-    [rootUsage, `Error: --version: value: Not a boolean: "invalid"`],
+    [rootUsage, `Error: --version: value: Not a boolean: "invalid".`],
     1,
   );
 
@@ -182,13 +182,13 @@ it("run", async function () {
   await testCase(
     ["--flag", "--flag", "req1", "sub", "req2"],
     [],
-    [subUsage, "Error: --flag: Must not be set multiple times"],
+    [subUsage, "Error: --flag: Must not be set multiple times."],
     1,
   );
   await testCase(
     ["--flag=42", "req1", "sub", "req2"],
     [],
-    [subUsage, 'Error: --flag: value: Not a boolean: "42"'],
+    [subUsage, 'Error: --flag: value: Not a boolean: "42".'],
     1,
   );
   await testCase(
@@ -232,19 +232,19 @@ it("run", async function () {
   await testCase(
     ["req1", "sub", "req2", "--url"],
     [],
-    [subUsage, "Error: --url: Requires a value, but got end of input"],
+    [subUsage, "Error: --url: Requires a value, but got end of input."],
     1,
   );
   await testCase(
     ["req1", "sub", "req2", "--url", "--", "url"],
     [],
-    [subUsage, 'Error: --url: Requires a value before "--"'],
+    [subUsage, 'Error: --url: Requires a value but got: "--".'],
     1,
   );
   await testCase(
     ["req1", "sub", "req2", "--url", "--url"],
     [],
-    [subUsage, 'Error: --url: Requires a value, but got: "--url"'],
+    [subUsage, 'Error: --url: Requires a value, but got: "--url".'],
     1,
   );
 
@@ -325,7 +325,7 @@ it("run", async function () {
   await testCase(
     ["req1", "sub", "req2", "--url", "not-a-url"],
     [],
-    [subUsage, 'Error: --url: <url>: Not an URL: "not-a-url"'],
+    [subUsage, 'Error: --url: <url>: Not an URL: "not-a-url".'],
     1,
   );
 
@@ -339,7 +339,7 @@ it("run", async function () {
   await testCase(
     ["req1", "sub", "req2", "--single-value=42", "--single-value", "43"],
     [],
-    [subUsage, "Error: --single-value: Must not be set multiple times"],
+    [subUsage, "Error: --single-value: Must not be set multiple times."],
     1,
   );
 
