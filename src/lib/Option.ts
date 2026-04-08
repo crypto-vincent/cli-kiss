@@ -113,9 +113,11 @@ export function optionFlag(definition: {
               ? false
               : definition.default;
           }
-          const value = results[0]!.value;
-          const inlined = value.inlined ?? "yes";
-          return decodeValue({ long, label: undefined, type, input: inlined });
+          const input = results[0]!.value.inlined;
+          if (input === null) {
+            return true;
+          }
+          return decodeValue({ long, label: undefined, type, input });
         },
       };
     },

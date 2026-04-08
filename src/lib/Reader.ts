@@ -47,6 +47,8 @@ export type ReaderOptionValue = {
   separated: ReadonlyArray<string>;
 };
 
+/**
+ */
 export type ReaderOptionGetter = () => ReaderOptionResult;
 
 /**
@@ -102,7 +104,7 @@ export class ReaderArgs {
   registerOptionLong(longSpec: ReaderOptionLongSpec): ReaderOptionGetter {
     const identifier = `--${longSpec.key}`;
     if (!isValidOptionKey(longSpec.key)) {
-      throw new Error(`Invalid option identifier: ${identifier}`);
+      throw new Error(`Option identifier is invalid: ${identifier}`);
     }
     if (this.#optionLongContextByIdentifier.has(identifier)) {
       throw new Error(`Option already registered: ${identifier}`);
@@ -121,7 +123,7 @@ export class ReaderArgs {
   registerOptionShort(shortSpec: ReaderOptionShortSpec): ReaderOptionGetter {
     const identifier = `-${shortSpec.key}`;
     if (!isValidOptionKey(shortSpec.key)) {
-      throw new Error(`Invalid option token: ${identifier}`);
+      throw new Error(`Option identifier is invalid: ${identifier}`);
     }
     if (this.#optionShortContextByIdentifier.has(identifier)) {
       throw new Error(`Option already registered: ${identifier}`);

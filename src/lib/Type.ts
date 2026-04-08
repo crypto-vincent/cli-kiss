@@ -20,7 +20,7 @@ import {
  */
 export type Type<Value> = {
   /**
-   * Human-readable name shown in help and errors (e.g. `"name"`, `"number"`).
+   * Human-readable name shown in help and errors (e.g. `"name"`, `"context"`).
    */
   content: string;
   /**

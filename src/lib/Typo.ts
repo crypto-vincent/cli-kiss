@@ -125,14 +125,14 @@ export const typoStyleRegularWeaker: TypoStyle = {
  */
 export class TypoString {
   #value: string;
-  #typoStyle: TypoStyle | undefined;
+  #style: TypoStyle | undefined;
   /**
    * @param value - Raw text content.
-   * @param typoStyle - Style to apply when rendering. Defaults to `undefined` (no style).
+   * @param style - Style to apply when rendering.
    */
-  constructor(value: string, typoStyle?: TypoStyle) {
+  constructor(value: string, style?: TypoStyle) {
     this.#value = value;
-    this.#typoStyle = typoStyle;
+    this.#style = style;
   }
   /**
    * Returns the text styled by `typoSupport`.
@@ -140,12 +140,13 @@ export class TypoString {
    * @param typoSupport - Rendering mode.
    */
   computeStyledString(typoSupport: TypoSupport): string {
-    return typoSupport.computeStyledString(this.#value, this.#typoStyle);
+    return typoSupport.computeStyledString(this.#value, this.#style);
   }
   /**
    * Returns the raw text.
    */
   getRawString(): string {
+    // TODO - should there be a global config or smthg instead of passing support everywhere?
     return this.#value;
   }
   /**
@@ -163,12 +164,12 @@ export type TypoSegment = TypoText | TypoString | Array<TypoSegment>;
  * Mutable sequence of {@link TypoString} segments.
  */
 export class TypoText {
-  #typoStrings: Array<TypoString>;
+  #strings: Array<TypoString>;
   /**
    * @param segments - Initial text segments
    */
   constructor(...segments: Array<TypoSegment>) {
-    this.#typoStrings = [];
+    this.#strings = [];
     for (const segment of segments) {
       this.push(segment);
     }
@@ -179,15 +180,15 @@ export class TypoText {
   push(...segments: Array<TypoSegment>): void {
     for (const segment of segments) {
       if (typeof segment === "string") {
-        this.#typoStrings.push(new TypoString(segment));
+        this.#strings.push(new TypoString(segment));
+      } else if (segment instanceof TypoString) {
+        this.#strings.push(segment);
       } else if (segment instanceof TypoText) {
-        this.#typoStrings.push(...segment.#typoStrings);
+        this.#strings.push(...segment.#strings);
       } else if (Array.isArray(segment)) {
-        for (const typoString of segment) {
-          this.push(typoString);
+        for (const part of segment) {
+          this.push(part);
         }
-      } else {
-        this.#typoStrings.push(segment);
       }
     }
   }
@@ -217,7 +218,7 @@ export class TypoText {
    * @returns Concatenated styled string.
    */
   computeStyledString(typoSupport: TypoSupport): string {
-    return this.#typoStrings
+    return this.#strings
       .map((t) => t.computeStyledString(typoSupport))
       .join("");
   }
@@ -225,14 +226,14 @@ export class TypoText {
    * Returns the concatenated raw text.
    */
   computeRawString(): string {
-    return this.#typoStrings.map((t) => t.getRawString()).join("");
+    return this.#strings.map((t) => t.getRawString()).join("");
   }
   /**
    * Returns the total raw character count.
    */
   computeRawLength(): number {
     let length = 0;
-    for (const typoString of this.#typoStrings) {
+    for (const typoString of this.#strings) {
       length += typoString.getRawString().length;
     }
     return length;
