@@ -18,14 +18,14 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 
 ### Options
 
-| Option         | Type                                | Default        | Description                                                                                 |
-| -------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
-| `buildVersion` | `string?`                           | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
-| `usageOnHelp`  | `boolean?`                          | `true`         | Enables `--help` flag                                                                       |
-| `usageOnError` | `boolean?`                          | `true`         | Prints usage to stderr when parsing fails                                                   |
-| `colorSetup`   | `flag` / `env` / `always` / `never` | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
-| `onError`      | `(error: unknown) => void`          | —              | Custom handler for parse and execution errors                                               |
-| `onExit`       | `(code: number) => never`           | `process.exit` | Override for testing                                                                        |
+| Option         | Type                                       | Default        | Description                                                                                 |
+| -------------- | ------------------------------------------ | -------------- | ------------------------------------------------------------------------------------------- |
+| `buildVersion` | `string?`                                  | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
+| `usageOnHelp`  | `boolean?`                                 | `true`         | Enables `--help` flag                                                                       |
+| `usageOnError` | `boolean?`                                 | `true`         | Prints usage to stderr when parsing fails                                                   |
+| `colorSetup`   | `"flag"` / `"env"` / `"always"` / `"never"` / `"mock"` | `"flag"` | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
+| `onError`      | `(error: unknown) => void`                 | —              | Custom handler for parse and execution errors                                               |
+| `onExit`       | `(code: number) => never`                  | `process.exit` | Override for testing                                                                        |
 
 ### Exit codes
 
@@ -124,7 +124,23 @@ await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "env" });
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "always" });
 // Force colors off (useful in CI)
 await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "never" });
+// Deterministic mock styling for snapshot tests
+await runAndExit("my-cli", args, ctx, cmd, { colorSetup: "mock" });
 ```
+
+### Color environment variables
+
+When `colorSetup` is `"env"` or `"flag"` (with `--color=auto`), the following
+environment variables are respected in priority order:
+
+| Variable      | Effect                                                               |
+| ------------- | -------------------------------------------------------------------- |
+| `NO_COLOR`    | Any non-empty value disables colors (follows the [no-color.org](https://no-color.org) spec) |
+| `FORCE_COLOR` | `"0"` or falsy disables colors; any other value forces colors on     |
+| `MOCK_COLOR`  | Any non-empty value enables mock (snapshot-friendly) styling         |
+| `TERM=dumb`   | Disables colors on dumb terminals                                    |
+
+If none of the above are set, colors are enabled only when `stdout` is a TTY.
 
 ## Testing your CLI
 
