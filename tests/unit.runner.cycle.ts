@@ -1,4 +1,4 @@
-import { it } from "@jest/globals";
+import { expect, it } from "@jest/globals";
 import {
   command,
   commandWithSubcommands,
@@ -431,7 +431,7 @@ async function testCase(
               (value) => Number(value),
             ),
             description: "Option single value description",
-            defaultIfNotSpecified: () => 42,
+            fallbackValueIfAbsent: () => 42,
           }),
         },
         positionals: [

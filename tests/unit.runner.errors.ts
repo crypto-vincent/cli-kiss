@@ -1,4 +1,4 @@
-import { it } from "@jest/globals";
+import { expect, it } from "@jest/globals";
 import {
   command,
   operation,
@@ -24,14 +24,6 @@ it("run", async function () {
     '{{Error:}@darkRed}+ Unknown option: {{"--repeat"}@darkYellow}+. Did you mean: {{--repeatable}@darkCyan}+ ?',
   );
   await testCase(
-    ["--flag", "--flag"],
-    "{{Error:}@darkRed}+ {{--flag}@darkCyan}+: Must not be set multiple times",
-  );
-  await testCase(
-    ["--flag=invalid"],
-    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{value}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+',
-  );
-  await testCase(
     ["--single-value=a", "--single-value=b"],
     "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Must not be set multiple times",
   );
@@ -40,12 +32,24 @@ it("run", async function () {
     "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: Requires a value, but got end of input",
   );
   await testCase(
+    [],
+    "{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: Is required, but was not set",
+  );
+  await testCase(
     ["--single-value=invalid"],
     '{{Error:}@darkRed}+ {{--single-value}@darkCyan}+: {{<location>}@darkBlue}+: Not an URL: {{"invalid"}@darkYellow}+',
   );
   await testCase(
     ["--repeatable=invalid"],
     '{{Error:}@darkRed}+ {{--repeatable}@darkCyan}+: {{<index>}@darkBlue}+: Not a number: {{"invalid"}@darkYellow}+',
+  );
+  await testCase(
+    ["--flag", "-f"],
+    "{{Error:}@darkRed}+ {{--flag}@darkCyan}+, {{-f}@darkCyan}+: Must not be set multiple times",
+  );
+  await testCase(
+    ["--flag=invalid"],
+    '{{Error:}@darkRed}+ {{--flag}@darkCyan}+: {{value}@darkMagenta}+: Not a boolean: {{"invalid"}@darkYellow}+',
   );
 });
 
@@ -58,15 +62,14 @@ async function testCase(args: Array<string>, error: string) {
     operation(
       {
         options: {
-          optionFlag: optionFlag({ long: "flag" }),
-          optionSingleValue: optionSingleValue({
-            long: "single-value",
-            type: typeUrl("location"),
-            defaultIfNotSpecified: () => undefined,
-          }),
+          optionFlag: optionFlag({ long: "flag", short: "f" }),
           optionRepeatable: optionRepeatable({
             long: "repeatable",
             type: typeNumber("index"),
+          }),
+          optionSingleValue: optionSingleValue({
+            long: "single-value",
+            type: typeUrl("location"),
           }),
         },
         positionals: [],

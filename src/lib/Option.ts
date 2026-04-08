@@ -1,4 +1,10 @@
-import { ReaderOptionParsing, ReaderArgs as ReaderOptions } from "./Reader";
+import {
+  ReaderOptionGetter,
+  ReaderOptionNextGuard,
+  ReaderOptionRestGuard,
+  ReaderOptions,
+  ReaderOptionValue,
+} from "./Reader";
 import { Type, typeBoolean } from "./Type";
 import {
   TypoError,
@@ -81,35 +87,35 @@ export function optionFlag(definition: {
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   default?: boolean;
 }): Option<boolean> {
-  const typeBool = typeBoolean("value");
+  const type = typeBoolean("value");
   const { long, short, description, hint, aliases } = definition;
   return {
     generateUsage() {
       return { short, long, annotation: "[=no]", description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
-      const key = registerOption(readerOptions, {
-        long,
-        short,
-        aliasesLongs: aliases?.longs,
-        aliasesShorts: aliases?.shorts,
-        parsing: { consumeShortGroup: false, consumeNextArg: () => false },
+      const resultsGetter = setupOptionAliased(readerOptions, {
+        longKey: long,
+        shortKey: short,
+        aliasLongKeys: aliases?.longs,
+        aliasShortKeys: aliases?.shorts,
+        restGuard: () => false,
+        nextGuard: () => false,
       });
       return {
         getAndDecodeValue() {
-          const optionResults = readerOptions.getOptionValues(key);
-          if (optionResults.length > 1) {
-            throwSetMultipleTimesError(long);
+          const results = resultsGetter();
+          if (results.length > 1) {
+            throwSetMultipleTimesError(results.map((r) => r.identifier));
           }
-          if (optionResults.length === 0) {
+          if (results.length === 0) {
             return definition.default === undefined
               ? false
               : definition.default;
           }
-          const positiveResult = optionResults[0]!;
-          const value =
-            positiveResult.inlined === null ? "true" : positiveResult.inlined;
-          return decodeValue({ long, type: typeBool, input: value });
+          const value = results[0]!.value;
+          const inlined = value.inlined ?? "yes";
+          return decodeValue({ long, label: undefined, type, input: inlined });
         },
       };
     },
@@ -121,7 +127,7 @@ export function optionFlag(definition: {
  *
  * Syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
  * Parsing logic:
- * - absent → `defaultIfNotSpecified()`
+ * - absent → `fallbackValueIfNotSet()`
  * - once → decoded with `type`
  * - more than once → throws
  *
@@ -133,8 +139,8 @@ export function optionFlag(definition: {
  * @param definition.hint - Short note shown in parentheses.
  * @param definition.aliases - Additional names.
  * @param definition.type - Decoder for the raw string value.
- * @param definition.defaultIfNotSpecified - Default value when the option is not specified at all.
- * @param definition.valueIfNothingInlined - Default value when the option is specified without an inline value (e.g. `--option` or `-o`).
+ * @param definition.fallbackValueIfAbsent - Default value when the option is not specified at all.
+ * @param definition.impliedValueIfNotInlined - Default value when the option is specified without an inline value (e.g. `--option` or `-o`).
  * @returns An {@link Option}`<Value>`.
  *
  * @example
@@ -144,7 +150,7 @@ export function optionFlag(definition: {
  *   short: "o",
  *   type: typePath(),
  *   description: "Output directory",
- *   defaultIfNotSpecified: () => "dist",
+ *   fallbackValueIfNotSet: () => "dist",
  * });
  * // Usage:
  * //   my-cli  →  "dist"
@@ -159,8 +165,8 @@ export function optionSingleValue<Value>(definition: {
   hint?: string;
   aliases?: { longs?: Array<string>; shorts?: Array<string> };
   type: Type<Value>;
-  defaultIfNotSpecified: () => Value; // TODO - should this be optional ?
-  valueIfNothingInlined?: () => Value;
+  fallbackValueIfAbsent?: () => Value;
+  impliedValueIfNotInlined?: () => Value;
 }): Option<Value> {
   const { long, short, description, hint, aliases, type } = definition;
   const label = `<${type.content}>`;
@@ -169,49 +175,67 @@ export function optionSingleValue<Value>(definition: {
       return { short, long, label, description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
-      const key = registerOption(readerOptions, {
-        long,
-        short,
-        aliasesLongs: aliases?.longs,
-        aliasesShorts: aliases?.shorts,
-        parsing: {
-          consumeShortGroup: true,
-          consumeNextArg(inlined, separated) {
-            if (definition.valueIfNothingInlined !== undefined) {
-              return false;
-            }
-            return inlined === null && separated.length === 0;
-          },
+      const resultsGetter = setupOptionAliased(readerOptions, {
+        longKey: long,
+        shortKey: short,
+        aliasLongKeys: aliases?.longs,
+        aliasShortKeys: aliases?.shorts,
+        restGuard: () => {
+          if (definition.impliedValueIfNotInlined !== undefined) {
+            return false;
+          }
+          return true;
+        },
+        nextGuard: (value) => {
+          if (definition.impliedValueIfNotInlined !== undefined) {
+            return false;
+          }
+          if (value.inlined !== null) {
+            return false;
+          }
+          if (value.separated.length !== 0) {
+            return false;
+          }
+          return true;
         },
       });
       return {
         getAndDecodeValue() {
-          const optionResults = readerOptions.getOptionValues(key);
-          if (optionResults.length > 1) {
-            throwSetMultipleTimesError(long);
+          const results = resultsGetter();
+          if (results.length > 1) {
+            throwSetMultipleTimesError(
+              results.map((result) => result.identifier),
+            );
           }
-          const optionResult = optionResults[0];
-          if (optionResult === undefined) {
+          const result = results[0];
+          if (result === undefined) {
+            if (definition.fallbackValueIfAbsent === undefined) {
+              const errorText = makeErrorText({ long, label, type });
+              errorText.push(new TypoString(`: Is required, but was not set`));
+              throw new TypoError(errorText);
+            }
             try {
-              return definition.defaultIfNotSpecified();
+              return definition.fallbackValueIfAbsent();
             } catch (error) {
-              const context = "Not specified";
-              throwFailedToGetDefaultValueError({ long, error, context });
+              const errorText = makeErrorText({ long, label, type });
+              errorText.push(new TypoString(`: Failed to get fallback value`));
+              throw new TypoError(errorText, error);
             }
           }
-          if (optionResult.inlined) {
-            const inlined = optionResult.inlined;
+          const inlined = result.value.inlined;
+          if (inlined) {
             return decodeValue({ long, label, type, input: inlined });
           }
-          if (definition.valueIfNothingInlined !== undefined) {
+          if (definition.impliedValueIfNotInlined !== undefined) {
             try {
-              return definition.valueIfNothingInlined();
+              return definition.impliedValueIfNotInlined();
             } catch (error) {
-              const context = "Nothing inlined";
-              throwFailedToGetDefaultValueError({ long, error, context });
+              const errorText = makeErrorText({ long, label, type });
+              errorText.push(new TypoString(`: Failed to get implied value`));
+              throw new TypoError(errorText, error);
             }
           }
-          const separated = optionResult.separated[0]!;
+          const separated = result.value.separated[0]!;
           return decodeValue({ long, label, type, input: separated });
         },
       };
@@ -264,22 +288,27 @@ export function optionRepeatable<Value>(definition: {
       return { short, long, label, annotation: " [*]", description, hint };
     },
     registerAndMakeDecoder(readerOptions: ReaderOptions) {
-      const key = registerOption(readerOptions, {
-        long,
-        short,
-        aliasesLongs: aliases?.longs,
-        aliasesShorts: aliases?.shorts,
-        parsing: {
-          consumeShortGroup: true,
-          consumeNextArg: (inlined, separated) =>
-            inlined === null && separated.length === 0,
+      const resultsGetter = setupOptionAliased(readerOptions, {
+        longKey: long,
+        shortKey: short,
+        aliasLongKeys: aliases?.longs,
+        aliasShortKeys: aliases?.shorts,
+        restGuard: () => true,
+        nextGuard: (value) => {
+          if (value.inlined !== null) {
+            return false;
+          }
+          if (value.separated.length !== 0) {
+            return false;
+          }
+          return true;
         },
       });
       return {
         getAndDecodeValue() {
-          const optionResults = readerOptions.getOptionValues(key);
-          return optionResults.map((optionResult) => {
-            const input = optionResult.inlined ?? optionResult.separated[0]!;
+          return resultsGetter().map((result) => {
+            const value = result.value;
+            const input = value.inlined ?? value.separated[0]!;
             return decodeValue({ long, label, type, input });
           });
         },
@@ -290,69 +319,98 @@ export function optionRepeatable<Value>(definition: {
 
 function decodeValue<Value>(params: {
   long: string;
-  label?: string | undefined;
+  label: string | undefined;
   type: Type<Value>;
   input: string;
 }): Value {
   return TypoError.tryWithContext(
     () => params.type.decoder(params.input),
-    () => {
-      const errorText = new TypoText();
-      errorText.push(new TypoString(`--${params.long}`, typoStyleConstants));
-      if (params.label) {
-        errorText.push(new TypoString(`: `));
-        errorText.push(new TypoString(params.label, typoStyleUserInput));
-      } else {
-        errorText.push(new TypoString(`: `));
-        errorText.push(new TypoString(params.type.content, typoStyleLogic));
-      }
-      return errorText;
-    },
+    () => makeErrorText(params),
   );
 }
 
-// TODO - move advanced maybe for handling multiple options with shared logic (e.g. flag options with multiple aliases)
-function registerOption(
-  readerOptions: ReaderOptions,
-  definition: {
-    long: string;
-    short: undefined | string;
-    // label: string;
-    // description: string | undefined;
-    aliasesLongs: undefined | Array<string>;
-    aliasesShorts: undefined | Array<string>;
-    parsing: ReaderOptionParsing;
-  },
-) {
-  const { long, short, aliasesLongs, aliasesShorts, parsing } = definition;
-  const longs = long ? [long] : [];
-  if (aliasesLongs) {
-    longs.push(...aliasesLongs);
-  }
-  const shorts = short ? [short] : [];
-  if (aliasesShorts) {
-    shorts.push(...aliasesShorts);
-  }
-  return readerOptions.registerOption({ longs, shorts, parsing });
-}
-
-function throwSetMultipleTimesError(long: string): never {
-  throw new TypoError(
-    new TypoText(
-      new TypoString(`--${long}`, typoStyleConstants),
-      new TypoString(`: Must not be set multiple times`),
-    ),
-  );
-}
-
-function throwFailedToGetDefaultValueError(params: {
+function makeErrorText(params: {
   long: string;
-  error: unknown;
-  context: string;
-}): never {
+  label?: string | undefined;
+  type: Type<any>;
+}): TypoText {
   const errorText = new TypoText();
   errorText.push(new TypoString(`--${params.long}`, typoStyleConstants));
-  errorText.push(new TypoString(`: ${params.context}`));
-  errorText.push(new TypoString(`: Failed to get default value`));
-  throw new TypoError(errorText, params.error);
+  if (params.label) {
+    errorText.push(new TypoString(`: `));
+    errorText.push(new TypoString(params.label, typoStyleUserInput));
+  } else {
+    errorText.push(new TypoString(`: `));
+    errorText.push(new TypoString(params.type.content, typoStyleLogic));
+  }
+  return errorText;
+}
+
+function setupOptionAliased(
+  readerOptions: ReaderOptions,
+  params: {
+    longKey: string;
+    shortKey: string | undefined;
+    aliasLongKeys: Array<string> | undefined;
+    aliasShortKeys: Array<string> | undefined;
+    restGuard: ReaderOptionRestGuard;
+    nextGuard: ReaderOptionNextGuard;
+  },
+): () => Array<{ identifier: string; value: ReaderOptionValue }> {
+  const { longKey, shortKey, aliasLongKeys, aliasShortKeys } = params;
+  const longKeys = [longKey];
+  if (aliasLongKeys) {
+    longKeys.push(...aliasLongKeys);
+  }
+  const shortKeys = shortKey ? [shortKey] : [];
+  if (aliasShortKeys) {
+    shortKeys.push(...aliasShortKeys);
+  }
+  return setupOptionMany(readerOptions, {
+    longKeys,
+    shortKeys,
+    restGuard: params.restGuard,
+    nextGuard: params.nextGuard,
+  });
+}
+
+function setupOptionMany(
+  readerOptions: ReaderOptions,
+  params: {
+    longKeys: Array<string>;
+    shortKeys: Array<string>;
+    restGuard: ReaderOptionRestGuard;
+    nextGuard: ReaderOptionNextGuard;
+  },
+): () => Array<{ identifier: string; value: ReaderOptionValue }> {
+  const { longKeys, shortKeys, restGuard, nextGuard } = params;
+  const getters = new Array<ReaderOptionGetter>();
+  for (const key of longKeys) {
+    getters.push(readerOptions.registerOptionLong({ key, nextGuard }));
+  }
+  for (const key of shortKeys) {
+    getters.push(
+      readerOptions.registerOptionShort({ key, restGuard, nextGuard }),
+    );
+  }
+  return () => {
+    const results = new Array();
+    for (const getter of getters) {
+      const { identifier, values } = getter();
+      for (const value of values) {
+        results.push({ identifier, value });
+      }
+    }
+    return results;
+  };
+}
+
+function throwSetMultipleTimesError(identifiers: Array<string>): never {
+  const identifiersTexts = Array.from(new Set(identifiers)).map(
+    (identifier) => new TypoString(identifier, typoStyleConstants),
+  );
+  const errorText = new TypoText();
+  errorText.pushJoined(identifiersTexts, new TypoString(", "), 3);
+  errorText.push(new TypoString(`: Must not be set multiple times`));
+  throw new TypoError(errorText);
 }

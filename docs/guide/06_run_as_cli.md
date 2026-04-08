@@ -67,7 +67,7 @@ const rootCmd = commandWithSubcommands(
           long: "db",
           type: typeUrl(),
           description: "Database URL",
-          defaultIfNotSpecified: () => new URL("postgres://localhost/mydb"),
+          fallbackValueIfAbsent: () => new URL("postgres://localhost/mydb"),
         }),
       },
       positionals: [],

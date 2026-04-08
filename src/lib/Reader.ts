@@ -8,54 +8,53 @@ import {
 } from "./Typo";
 
 /**
- * Opaque key returned by {@link ReaderArgs.registerOption}.
  */
-export type ReaderOptionKey = (string | { __brand: "ReaderOptionKey" }) & {
-  __brand: "ReaderOptionKey";
+export type ReaderOptionLongSpec = {
+  key: string;
+  nextGuard: ReaderOptionNextGuard;
 };
 
 /**
- * Parsing behaviour for a registered option, passed to {@link ReaderArgs.registerOption}.
  */
-export type ReaderOptionParsing = {
-  consumeShortGroup: boolean; // TODO - this doesnt matter when no short option
-  consumeNextArg: (
-    inlined: string | null,
-    separated: Array<string>,
-    nextArg: string | undefined,
-  ) => boolean;
+export type ReaderOptionShortSpec = {
+  key: string;
+  restGuard: ReaderOptionRestGuard;
+  nextGuard: ReaderOptionNextGuard;
 };
 
 /**
- * Result of parsing an option, including its inlined value and any following separated values.
+ */
+export type ReaderOptionRestGuard = (rest: string) => boolean;
+
+/**
+ */
+export type ReaderOptionNextGuard = (
+  value: ReaderOptionValue,
+  next: string | undefined,
+) => boolean;
+
+/**
+ */
+export type ReaderOptionResult = {
+  identifier: string;
+  values: ReadonlyArray<ReaderOptionValue>;
+};
+
+/**
  */
 export type ReaderOptionValue = {
   inlined: string | null;
-  separated: Array<string>;
+  separated: ReadonlyArray<string>;
 };
+
+export type ReaderOptionGetter = () => ReaderOptionResult;
 
 /**
  * Option registration/query interface. Subset of {@link ReaderArgs}.
  */
 export type ReaderOptions = {
-  /**
-   * Registers an option; all `longs` and `shorts` share the same key.
-   *
-   * @param definition.longs - Long-form names (without `--`).
-   * @param definition.shorts - Short-form names (without `-`).
-   * @param definition.parsing - Parsing behaviour.
-   * @returns A {@link ReaderOptionKey} for later retrieval.
-   * @throws `Error` if a name is already registered or short names overlap.
-   */
-  registerOption(definition: {
-    longs: Array<string>;
-    shorts: Array<string>;
-    parsing: ReaderOptionParsing;
-  }): ReaderOptionKey;
-  /**
-   * Returns all values collected for `key`.
-   */
-  getOptionValues(key: ReaderOptionKey): Array<ReaderOptionValue>;
+  registerOptionLong(longSpec: ReaderOptionLongSpec): ReaderOptionGetter;
+  registerOptionShort(shortSpec: ReaderOptionShortSpec): ReaderOptionGetter;
 };
 
 /**
@@ -81,102 +80,74 @@ export type ReaderPositionals = {
  * Created internally by {@link runAndExit}; exposed for advanced / custom runners.
  */
 export class ReaderArgs {
-  #args: ReadonlyArray<string>;
+  #tokens: ReadonlyArray<string>;
   #parsedIndex: number;
   #parsedDouble: boolean;
-  #optionContextByLong: Map<string, ReaderOptionContext>;
-  #optionContextByShort: Map<string, ReaderOptionContext>;
-  #optionContextByKey: Map<ReaderOptionKey, ReaderOptionContext>;
+  #optionLongContextByIdentifier: Map<string, Context<ReaderOptionLongSpec>>;
+  #optionShortContextByIdentifier: Map<string, Context<ReaderOptionShortSpec>>;
 
   /**
-   * @param args - Raw CLI tokens (e.g. `process.argv.slice(2)`). Not mutated.
+   * @param tokens - Raw CLI tokens (e.g. `process.argv.slice(2)`).
    */
-  constructor(args: ReadonlyArray<string>) {
-    this.#args = args;
+  constructor(tokens: ReadonlyArray<string>) {
+    this.#tokens = tokens;
     this.#parsedIndex = 0;
     this.#parsedDouble = false;
-    this.#optionContextByLong = new Map();
-    this.#optionContextByShort = new Map();
-    this.#optionContextByKey = new Map();
+    this.#optionLongContextByIdentifier = new Map();
+    this.#optionShortContextByIdentifier = new Map();
   }
 
   /**
-   * Registers an option; all `longs` and `shorts` share the same key.
-   * Short names must not be prefixes of one another.
-   *
-   * @param definition.longs - Long-form names (without `--`).
-   * @param definition.shorts - Short-form names (without `-`).
-   * @param definition.parsing - Parsing behaviour.
-   * @returns A {@link ReaderOptionKey} for {@link ReaderArgs.getOptionValues}.
-   * @throws `Error` if any name is already registered or short names overlap.
    */
-  registerOption(definition: {
-    longs: Array<string>;
-    shorts: Array<string>;
-    parsing: ReaderOptionParsing;
-  }) {
-    const key = [
-      ...definition.longs.map((long) => `--${long}`),
-      ...definition.shorts.map((short) => `-${short}`),
-    ].join(", ") as ReaderOptionKey;
-    for (const long of definition.longs) {
-      if (!this.#isValidOptionName(long)) {
-        throw new Error(`Invalid option name: --${long}`);
-      }
-      if (this.#optionContextByLong.has(long)) {
-        throw new Error(`Option already registered: --${long}`);
-      }
+  registerOptionLong(longSpec: ReaderOptionLongSpec): ReaderOptionGetter {
+    const identifier = `--${longSpec.key}`;
+    if (!isValidOptionKey(longSpec.key)) {
+      throw new Error(`Invalid option identifier: ${identifier}`);
     }
-    for (const short of definition.shorts) {
-      if (!this.#isValidOptionName(short)) {
-        throw new Error(`Invalid option name: -${short}`);
-      }
-      if (this.#optionContextByShort.has(short)) {
-        throw new Error(`Option already registered: -${short}`);
-      }
-      for (let i = 0; i < short.length; i++) {
-        const shortSlice = short.slice(0, i);
-        if (this.#optionContextByShort.has(shortSlice)) {
-          throw new Error(
-            `Option -${short} overlap with shorter option: -${shortSlice}`,
-          );
-        }
-      }
-      for (const shortOther of this.#optionContextByShort.keys()) {
-        if (shortOther.startsWith(short)) {
-          throw new Error(
-            `Option -${short} overlap with longer option: -${shortOther}`,
-          );
-        }
-      }
+    if (this.#optionLongContextByIdentifier.has(identifier)) {
+      throw new Error(`Option already registered: ${identifier}`);
     }
-    const optionContext = {
-      parsing: definition.parsing,
-      results: new Array<ReaderOptionValue>(),
-    };
-    for (const long of definition.longs) {
-      this.#optionContextByLong.set(long, optionContext);
-    }
-    for (const short of definition.shorts) {
-      this.#optionContextByShort.set(short, optionContext);
-    }
-    this.#optionContextByKey.set(key, optionContext);
-    return key;
+    const values = new Array<ReaderOptionValue>();
+    this.#optionLongContextByIdentifier.set(identifier, {
+      identifier,
+      spec: longSpec,
+      values,
+    });
+    return () => ({ identifier, values });
   }
 
   /**
-   * Returns all values collected for `key`.
-   *
-   * @param key - Key from {@link ReaderArgs.registerOption}.
-   * @returns One entry per occurrence.
-   * @throws `Error` if `key` was not registered.
    */
-  getOptionValues(key: ReaderOptionKey): Array<ReaderOptionValue> {
-    const optionContext = this.#optionContextByKey.get(key);
-    if (optionContext === undefined) {
-      throw new Error(`Unregistered option: ${key}`);
+  registerOptionShort(shortSpec: ReaderOptionShortSpec): ReaderOptionGetter {
+    const identifier = `-${shortSpec.key}`;
+    if (!isValidOptionKey(shortSpec.key)) {
+      throw new Error(`Invalid option token: ${identifier}`);
     }
-    return optionContext.results;
+    if (this.#optionShortContextByIdentifier.has(identifier)) {
+      throw new Error(`Option already registered: ${identifier}`);
+    }
+    for (let i = 0; i < identifier.length; i++) {
+      const slicedIdentifier = identifier.slice(0, 1 + i);
+      if (this.#optionShortContextByIdentifier.has(slicedIdentifier)) {
+        throw new Error(
+          `Option ${identifier} overlap with shorter option: ${slicedIdentifier}`,
+        );
+      }
+    }
+    for (const otherIdentifier of this.#optionShortContextByIdentifier.keys()) {
+      if (otherIdentifier.startsWith(identifier)) {
+        throw new Error(
+          `Option ${identifier} overlap with longer option: ${otherIdentifier}`,
+        );
+      }
+    }
+    const values = new Array<ReaderOptionValue>();
+    this.#optionShortContextByIdentifier.set(identifier, {
+      identifier,
+      spec: shortSpec,
+      values,
+    });
+    return () => ({ identifier, values });
   }
 
   /**
@@ -188,173 +159,162 @@ export class ReaderArgs {
    */
   consumePositional(): string | undefined {
     while (true) {
-      const arg = this.#consumeArg();
-      if (arg === undefined) {
+      const token = this.#consumeToken();
+      if (token === undefined) {
         return undefined;
       }
-      if (!this.#tryConsumeAsOption(arg)) {
-        return arg;
+      if (!this.#tryConsumeAsOption(token)) {
+        return token;
       }
     }
   }
 
-  #consumeArg(): string | undefined {
-    const arg = this.#args[this.#parsedIndex];
-    if (arg === undefined) {
+  #consumeToken(): string | undefined {
+    const token = this.#tokens[this.#parsedIndex];
+    if (token === undefined) {
       return undefined;
     }
     this.#parsedIndex++;
     if (!this.#parsedDouble) {
-      if (arg === "--") {
+      if (token === "--") {
         this.#parsedDouble = true;
-        return this.#consumeArg();
+        return this.#consumeToken();
       }
     }
-    return arg;
+    return token;
   }
 
-  #tryConsumeAsOption(arg: string): boolean {
+  #tryConsumeAsOption(token: string): boolean {
     if (this.#parsedDouble) {
       return false;
     }
-    if (arg.startsWith("--")) {
-      const valueIndexStart = arg.indexOf("=");
+    if (token.startsWith("--")) {
+      const valueIndexStart = token.indexOf("=");
       if (valueIndexStart === -1) {
-        this.#consumeOptionLong(arg.slice(2), null);
+        this.#consumeOptionLong(token, null);
       } else {
         this.#consumeOptionLong(
-          arg.slice(2, valueIndexStart),
-          arg.slice(valueIndexStart + 1),
+          token.slice(0, valueIndexStart),
+          token.slice(valueIndexStart + 1),
         );
       }
       return true;
     }
-    if (arg.startsWith("-")) {
+    if (token.startsWith("-")) {
       let shortIndexStart = 1;
       let shortIndexEnd = 2;
-      while (shortIndexEnd <= arg.length) {
-        const short = arg.slice(shortIndexStart, shortIndexEnd);
-        const optionContext = this.#optionContextByShort.get(short);
-        if (optionContext !== undefined) {
-          const rest = arg.slice(shortIndexEnd);
-          if (this.#tryConsumeOptionShort(optionContext, short, rest)) {
+      while (shortIndexEnd <= token.length) {
+        const identifier = `-${token.slice(shortIndexStart, shortIndexEnd)}`;
+        const shortContext =
+          this.#optionShortContextByIdentifier.get(identifier);
+        if (shortContext !== undefined) {
+          const tokenRest = token.slice(shortIndexEnd);
+          if (this.#tryConsumeOptionShort(shortContext, tokenRest)) {
             return true;
           }
           shortIndexStart = shortIndexEnd;
         }
         shortIndexEnd++;
       }
-      this.#throwUnknownOptionError(`-${arg.slice(shortIndexStart)}`);
+      this.#throwUnknownOptionError(`-${token.slice(shortIndexStart)}`);
     }
     return false;
   }
 
-  #consumeOptionLong(long: string, inlined: string | null): void {
-    const constant = `--${long}`;
-    const optionContext = this.#optionContextByLong.get(long);
-    if (optionContext !== undefined) {
-      return this.#consumeOptionValues(optionContext, constant, inlined);
+  #consumeOptionLong(identifier: string, valueInlined: string | null): void {
+    const longContext = this.#optionLongContextByIdentifier.get(identifier);
+    if (longContext !== undefined) {
+      return this.#consumeOptionValues(longContext, valueInlined);
     }
-    this.#throwUnknownOptionError(constant);
+    this.#throwUnknownOptionError(identifier);
   }
 
   #tryConsumeOptionShort(
-    optionContext: ReaderOptionContext,
-    short: string,
-    rest: string,
+    shortContext: Context<ReaderOptionShortSpec>,
+    tokenRest: string,
   ): boolean {
-    const constant = `-${short}`;
-    if (rest.startsWith("=")) {
-      this.#consumeOptionValues(optionContext, constant, rest.slice(1));
+    if (tokenRest.startsWith("=")) {
+      this.#consumeOptionValues(shortContext, tokenRest.slice(1));
       return true;
     }
-    if (rest.length === 0) {
-      this.#consumeOptionValues(optionContext, constant, null);
+    if (tokenRest.length === 0) {
+      this.#consumeOptionValues(shortContext, null);
       return true;
     }
-    if (optionContext.parsing.consumeShortGroup) {
-      this.#consumeOptionValues(optionContext, constant, rest);
+    if (shortContext.spec.restGuard(tokenRest)) {
+      this.#consumeOptionValues(shortContext, tokenRest);
       return true;
     }
-    this.#consumeOptionValues(optionContext, constant, null);
+    this.#consumeOptionValues(shortContext, null);
     return false;
   }
 
   #consumeOptionValues(
-    optionContext: ReaderOptionContext,
-    constant: string,
-    inlined: string | null,
+    context: Context<{ nextGuard: ReaderOptionNextGuard }>,
+    valueInlined: string | null,
   ) {
-    const separated = new Array<string>();
-    while (
-      optionContext.parsing.consumeNextArg(
-        inlined,
-        separated,
-        this.#args[this.#parsedIndex],
-      )
-    ) {
-      separated.push(this.#consumeOptionValue(constant));
+    const value = { inlined: valueInlined, separated: new Array<string>() };
+    const { identifier, values, spec } = context;
+    values.push(value);
+    while (true) {
+      const nextToken = this.#tokens[this.#parsedIndex];
+      if (!spec.nextGuard(value, nextToken)) {
+        return;
+      }
+      const token = this.#consumeToken();
+      if (this.#parsedDouble) {
+        throw new TypoError(
+          new TypoText(
+            new TypoString(identifier, typoStyleConstants),
+            new TypoString(`: Requires a value before `),
+            new TypoString(`"--"`, typoStyleQuote),
+          ),
+        );
+      }
+      // TODO - should we allow consuming the EOF token ?
+      if (token === undefined) {
+        throw new TypoError(
+          new TypoText(
+            new TypoString(identifier, typoStyleConstants),
+            new TypoString(`: Requires a value, but got end of input`), // TODO - hint at option value syntax ?
+          ),
+        );
+      }
+      // TODO - is that weird, could a valid value start with dash ?
+      if (token.startsWith("-")) {
+        throw new TypoError(
+          new TypoText(
+            new TypoString(identifier, typoStyleConstants),
+            new TypoString(`: Requires a value, but got: `),
+            new TypoString(`"${token}"`, typoStyleQuote),
+          ),
+        );
+      }
+      value.separated.push(token);
     }
-    optionContext.results.push({ inlined, separated });
   }
 
-  #consumeOptionValue(constant: string): string {
-    const arg = this.#consumeArg();
-    if (arg === undefined) {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(constant, typoStyleConstants),
-          new TypoString(`: Requires a value, but got end of input`), // TODO - hint at option value syntax ?
-        ),
-      );
+  #throwUnknownOptionError(inputIdentifier: string): never {
+    const candidatesIdentifiers = [];
+    for (const identifier of this.#optionLongContextByIdentifier.keys()) {
+      candidatesIdentifiers.push(identifier);
     }
-    if (this.#parsedDouble) {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(constant, typoStyleConstants),
-          new TypoString(`: Requires a value before `),
-          new TypoString(`"--"`, typoStyleQuote),
-        ),
-      );
-    }
-    // TODO - is that weird, could a valid value start with dash ?
-    if (arg.startsWith("-")) {
-      throw new TypoError(
-        new TypoText(
-          new TypoString(constant, typoStyleConstants),
-          new TypoString(`: Requires a value, but got: `),
-          new TypoString(`"${arg}"`, typoStyleQuote),
-        ),
-      );
-    }
-    return arg;
-  }
-
-  #isValidOptionName(name: string): boolean {
-    return name.length > 0 && !name.includes("=") && !name.includes("\0");
-  }
-
-  #throwUnknownOptionError(constant: string): never {
-    const candidatesConstants = [];
-    for (const optionLong of this.#optionContextByLong.keys()) {
-      candidatesConstants.push(`--${optionLong}`);
-    }
-    for (const optionShort of this.#optionContextByShort.keys()) {
-      candidatesConstants.push(`-${optionShort}`);
+    for (const identifier of this.#optionShortContextByIdentifier.keys()) {
+      candidatesIdentifiers.push(identifier);
     }
     const errorText = new TypoText();
     errorText.push(new TypoString(`Unknown option: `));
-    errorText.push(new TypoString(`"${constant}"`, typoStyleQuote));
-    if (candidatesConstants.length === 0) {
+    errorText.push(new TypoString(`"${inputIdentifier}"`, typoStyleQuote));
+    if (candidatesIdentifiers.length === 0) {
       errorText.push(new TypoString(`, no options are registered.`));
     } else {
       errorText.push(new TypoString(`.`));
       suggestTextPushMessage(
         errorText,
-        constant,
-        candidatesConstants.map((candidateConstant) => ({
-          reference: candidateConstant,
-          hint: new TypoString(candidateConstant, typoStyleConstants),
+        inputIdentifier,
+        candidatesIdentifiers.map((candidateIdentifier) => ({
+          reference: candidateIdentifier,
+          hint: new TypoString(candidateIdentifier, typoStyleConstants),
         })),
       );
     }
@@ -362,7 +322,12 @@ export class ReaderArgs {
   }
 }
 
-type ReaderOptionContext = {
-  parsing: ReaderOptionParsing;
-  results: Array<ReaderOptionValue>;
+function isValidOptionKey(name: string): boolean {
+  return name.length > 0 && !name.includes("=") && !name.includes("\0");
+}
+
+type Context<Spec> = {
+  identifier: string;
+  spec: Spec;
+  values: Array<ReaderOptionValue>;
 };
