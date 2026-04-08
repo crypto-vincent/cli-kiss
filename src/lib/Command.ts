@@ -1,3 +1,4 @@
+import { CompletionNode, CompletionOption } from "./Completion";
 import { Operation } from "./Operation";
 import { ReaderArgs } from "./Reader";
 import { suggestTextPushMessage } from "./Suggest";
@@ -9,7 +10,7 @@ import {
   typoStyleUserInput,
   TypoText,
 } from "./Typo";
-import { UsageCommand } from "./Usage";
+import { UsageCommand, UsageOption } from "./Usage";
 
 /**
  * A CLI command. Created with {@link command}, {@link commandWithSubcommands}, or {@link commandChained}.
@@ -28,6 +29,11 @@ export type Command<Context, Result> = {
   consumeAndMakeDecoder(
     readerArgs: ReaderArgs,
   ): CommandDecoder<Context, Result>;
+  /**
+   * Returns the static completion tree for this command, used by shell completion scripts.
+   * See {@link getCompletions} and {@link generateCompletionScript}.
+   */
+  generateCompletionNode(): CompletionNode;
 };
 
 /**
@@ -132,6 +138,9 @@ export function command<Context, Result>(
     getInformation() {
       return information;
     },
+    generateCompletionNode() {
+      return makeLeafCompletionNode(operation);
+    },
     consumeAndMakeDecoder(readerArgs: ReaderArgs) {
       try {
         const operationDecoder = operation.consumeAndMakeDecoder(readerArgs);
@@ -203,6 +212,16 @@ export function commandWithSubcommands<Context, Payload, Result>(
   return {
     getInformation() {
       return information;
+    },
+    generateCompletionNode() {
+      const subcommandNodes: { [name: string]: CompletionNode } = {};
+      for (const [name, subcommand] of Object.entries(subcommands)) {
+        subcommandNodes[name] = subcommand.generateCompletionNode();
+      }
+      return {
+        options: makeCompletionOptions(operation.generateUsage().options),
+        subcommands: subcommandNodes,
+      };
     },
     consumeAndMakeDecoder(readerArgs: ReaderArgs) {
       try {
@@ -295,6 +314,16 @@ export function commandChained<Context, Payload, Result>(
     getInformation() {
       return information;
     },
+    generateCompletionNode() {
+      const subNode = subcommand.generateCompletionNode();
+      return {
+        options: [
+          ...makeCompletionOptions(operation.generateUsage().options),
+          ...subNode.options,
+        ],
+        subcommands: subNode.subcommands,
+      };
+    },
     consumeAndMakeDecoder(readerArgs: ReaderArgs) {
       try {
         const operationDecoder = operation.consumeAndMakeDecoder(readerArgs);
@@ -369,4 +398,23 @@ function suggestSubcommandNames(
       hint: new TypoString(subcommandName, typoStyleConstants),
     })),
   );
+}
+
+function makeLeafCompletionNode(
+  operation: Operation<any, any>,
+): CompletionNode {
+  return {
+    options: makeCompletionOptions(operation.generateUsage().options),
+    subcommands: {},
+  };
+}
+
+function makeCompletionOptions(
+  usageOptions: Array<UsageOption>,
+): Array<CompletionOption> {
+  return usageOptions.map((o) => ({
+    long: o.long,
+    short: o.short,
+    hasValue: o.label !== undefined,
+  }));
 }

@@ -1,4 +1,5 @@
 export * from "./lib/Command";
+export * from "./lib/Completion";
 export * from "./lib/Operation";
 export * from "./lib/Option";
 export * from "./lib/Positional";

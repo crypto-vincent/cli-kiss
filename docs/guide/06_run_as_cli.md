@@ -20,12 +20,13 @@ await runAndExit(cliName, cliArgs, context, command, options?);
 
 | Option         | Type                                | Default        | Description                                                                                 |
 | -------------- | ----------------------------------- | -------------- | ------------------------------------------------------------------------------------------- |
-| `buildVersion` | `string?`                           | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
-| `usageOnHelp`  | `boolean?`                          | `true`         | Enables `--help` flag                                                                       |
-| `usageOnError` | `boolean?`                          | `true`         | Prints usage to stderr when parsing fails                                                   |
-| `colorSetup`   | `flag` / `env` / `always` / `never` | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
-| `onError`      | `(error: unknown) => void`          | —              | Custom handler for parse and execution errors                                               |
-| `onExit`       | `(code: number) => never`           | `process.exit` | Override for testing                                                                        |
+| `buildVersion`     | `string?`                           | —              | Enables `--version` flag; prints `<cliName> <buildVersion>`                                 |
+| `usageOnHelp`      | `boolean?`                          | `true`         | Enables `--help` flag                                                                       |
+| `usageOnError`     | `boolean?`                          | `true`         | Prints usage to stderr when parsing fails                                                   |
+| `colorSetup`       | `flag` / `env` / `always` / `never` | `"flag"`       | Color mode: `"flag"` adds a `--color` option; `"env"` reads env vars; others force the mode |
+| `completionSetup`  | `"flag"?`                           | —              | Enables shell auto-completion; adds `--completion` and `--get-completions` flags             |
+| `onError`          | `(error: unknown) => void`          | —              | Custom handler for parse and execution errors                                               |
+| `onExit`           | `(code: number) => never`           | `process.exit` | Override for testing                                                                        |
 
 ### Exit codes
 
@@ -141,3 +142,68 @@ await runAndExit("my-cli", ["--help"], undefined, myCommand, {
 });
 console.assert(exitCodes[0] === 0, "expected exit 0 for --help");
 ```
+
+## Shell auto-completion
+
+Enable tab-completion for bash, zsh, and fish with `completionSetup: "flag"`:
+
+```ts
+await runAndExit("my-cli", process.argv.slice(2), undefined, rootCmd, {
+  buildVersion: "2.0.0",
+  completionSetup: "flag", // adds --completion and --get-completions
+});
+```
+
+This adds two hidden flags:
+
+| Flag                          | Description                                                              |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| `--completion [bash|zsh|fish]`  | Prints a shell completion script; source it in your shell init file       |
+| `--get-completions -- <args>` | Returns one completion per line for the given typed args (used by scripts) |
+
+### Install the completion script
+
+```sh
+# Bash — add to ~/.bashrc or ~/.bash_profile
+source <(my-cli --completion bash)
+
+# Zsh — add to ~/.zshrc
+source <(my-cli --completion zsh)
+
+# Fish — add to ~/.config/fish/config.fish
+my-cli --completion fish | source
+```
+
+### How it works
+
+Each generated script calls `my-cli --get-completions -- <typed-args>` on every
+`<TAB>`. The shell passes all already-completed words (before the cursor) as
+`<typed-args>`; the CLI walks its command tree and prints matching options and
+subcommand names. The shell then filters the list by the current partial word.
+
+When the cursor position is right after an option that expects a value (e.g.
+`my-cli --format `) no completions are offered, since the expected input at that
+position is the option's value, not a new flag or subcommand.
+
+### Low-level API
+
+You can also use the completion helpers directly:
+
+```ts
+import {
+  getCompletions,
+  generateCompletionScript,
+  CompletionNode,
+} from "cli-kiss";
+
+// Build the static completion tree from your root command
+const node: CompletionNode = rootCmd.generateCompletionNode();
+
+// Get completions for an already-typed prefix (completedArgs excludes the partial word)
+const completions: string[] = getCompletions(node, ["deploy"]);
+// → ["--env", "--help", ...]
+
+// Generate a shell completion script string
+const script: string = generateCompletionScript("my-cli", "bash");
+```
+
