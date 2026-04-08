@@ -32,6 +32,14 @@ export default defineConfig({
           { text: "Running your CLI", link: "/guide/06_run_as_cli" },
         ],
       },
+      {
+        text: "Examples",
+        items: [
+          { text: "File Converter", link: "/examples/01_convert" },
+          { text: "Release CLI", link: "/examples/02_release" },
+          { text: "Authenticated Request", link: "/examples/03_authenticated_request" },
+        ],
+      },
     ],
     socialLinks: [
       { icon: "github", link: "https://github.com/crypto-vincent/cli-kiss" },
