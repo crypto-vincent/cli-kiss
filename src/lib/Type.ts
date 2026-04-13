@@ -62,8 +62,8 @@ export function typeBoolean(name?: string): Type<boolean> {
     },
   };
 }
-export const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
-export const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);
+const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
+const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);
 
 /**
  * Parses a date/time string via `Date.parse`.

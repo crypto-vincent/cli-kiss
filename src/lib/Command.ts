@@ -346,9 +346,7 @@ function generateUsageLeaf(
 ): UsageCommand {
   const { positionals, options } = operation.generateUsage();
   return {
-    segments: positionals.map((positional) => ({
-      positional: positional.label,
-    })),
+    segments: positionals.map((p) => ({ positional: p.label })),
     information,
     positionals,
     subcommands: [],

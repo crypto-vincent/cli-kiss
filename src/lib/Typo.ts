@@ -1,5 +1,3 @@
-import { typeBooleanValuesFalse } from "./Type";
-
 /**
  * Color names for terminal styling, used by {@link TypoStyle}.
  * `dark*` = standard ANSI (30–37); `bright*` = high-intensity (90–97).
@@ -387,15 +385,6 @@ export class TypoSupport {
    * Auto-detects styling mode from the process environment on best-effort basis.
    */
   static inferFromEnv(): TypoSupport {
-    /*
-    console.warn({
-      no: readEnvVar("NO_COLOR"),
-      force: readEnvVar("FORCE_COLOR"),
-      mock: readEnvVar("MOCK_COLOR"),
-      term: readEnvVar("TERM"),
-      tty: process.stdout.isTTY,
-    });
-    */
     if (!process || !process.env || !process.stdout) {
       return TypoSupport.none();
     }
@@ -406,13 +395,17 @@ export class TypoSupport {
     if (envForceColor === "0") {
       return TypoSupport.none();
     }
-    if (envForceColor !== undefined) {
-      if (!typeBooleanValuesFalse.has(envForceColor.toLowerCase())) {
-        return TypoSupport.tty();
-      }
+    if (envForceColor === "1") {
+      return TypoSupport.tty();
     }
-    if (readEnvVar("MOCK_COLOR")) {
-      return TypoSupport.mock();
+    if (envForceColor === "2") {
+      return TypoSupport.tty();
+    }
+    if (envForceColor === "3") {
+      return TypoSupport.tty(); // TODO - should there be fancy colors possible?
+    }
+    if (envForceColor) {
+      return TypoSupport.tty();
     }
     if (!process.stdout.isTTY) {
       return TypoSupport.none();

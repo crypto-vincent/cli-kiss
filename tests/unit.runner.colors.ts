@@ -38,7 +38,7 @@ const unknownOptionMock =
   '{{Error:}@darkRed}+ Unknown option: {{"--color"}@darkYellow}+. Did you mean: {{--help}@darkCyan}+, {{--version}@darkCyan}+ ?';
 
 it("run", async function () {
-  await withEnv("FORCE_COLOR", "false", async () => {
+  await withEnv("FORCE_COLOR", "", async () => {
     if (process.stdout.isTTY) {
       await testAllHelpsSuccesses(usageTty);
     } else {
@@ -55,9 +55,6 @@ it("run", async function () {
       await withEnv("NO_COLOR", "", async () => {
         await testAllHelpsSuccesses(usageTty);
       });
-      await withEnv("MOCK_COLOR", "", async () => {
-        await testAllHelpsSuccesses(usageTty);
-      });
       await withEnv("TERM", "dumb", async () => {
         await testAllHelpsSuccesses(usageTty);
       });
@@ -72,32 +69,12 @@ it("run", async function () {
     await withEnv("FORCE_COLOR", "0", async () => {
       await testAllHelpsSuccesses(usageNone);
     });
-    await withEnv("MOCK_COLOR", "true", async () => {
-      await testAllHelpsSuccesses(usageMock);
-    });
-
-    await withEnv("MOCK_COLOR", "1", async () => {
-      await testCase(
-        "flag",
-        ["--color=42"],
-        [],
-        [
-          usageMock,
-          '{{Error:}@darkRed}+ {{--color}@darkCyan}+: {{color-mode}@darkMagenta}+: Unknown value: {{"42"}@darkYellow}+. Did you mean: {{"auto"}@darkYellow}+, {{"always"}@darkYellow}+, {{"never"}@darkYellow}+, {{...}-}* ?',
-        ],
-        1,
-      );
-    });
-
-    await withEnv("MOCK_COLOR", "1", async () => {
-      await testAllFlagsFailures("env", usageMock, unknownOptionMock);
-    });
-    await withEnv("FORCE_COLOR", "0", async () => {
-      await testAllFlagsFailures("env", usageNone, unknownOptionNone);
-    });
 
     await testAllFlagsFailures("mock", usageMock, unknownOptionMock);
     await testAllFlagsFailures("never", usageNone, unknownOptionNone);
+    await withEnv("FORCE_COLOR", "0", async () => {
+      await testAllFlagsFailures("env", usageNone, unknownOptionNone);
+    });
   });
 });
 
@@ -106,24 +83,22 @@ async function testAllFlagsFailures(
   usageErr: string,
   message: string,
 ) {
+  await testCase(colorSetup, ["--color"], [], [usageErr, message], 1);
   await testCase(colorSetup, ["--color=auto"], [], [usageErr, message], 1);
   await testCase(colorSetup, ["--color=always"], [], [usageErr, message], 1);
   await testCase(colorSetup, ["--color=never"], [], [usageErr, message], 1);
-  await testCase(colorSetup, ["--color=mock"], [], [usageErr, message], 1);
-  await testCase(colorSetup, ["--color"], [], [usageErr, message], 1);
 }
 
 async function testAllHelpsSuccesses(usageFromEnv: string) {
   await testCase("flag", ["--color=auto", "--help"], [usageFromEnv], [], 0);
   await testCase("flag", ["--color=always", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--color=never", "--help"], [usageNone], [], 0);
-  await testCase("flag", ["--color=mock", "--help"], [usageMock], [], 0);
   await testCase("flag", ["--color", "--help"], [usageTty], [], 0);
   await testCase("flag", ["--help"], [usageFromEnv], [], 0);
-  await testCase("env", ["--help"], [usageFromEnv], [], 0);
   await testCase("always", ["--help"], [usageTty], [], 0);
   await testCase("never", ["--help"], [usageNone], [], 0);
   await testCase("mock", ["--help"], [usageMock], [], 0);
+  await testCase("env", ["--help"], [usageFromEnv], [], 0);
 }
 
 async function testCase(

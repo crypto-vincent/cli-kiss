@@ -81,7 +81,7 @@ export type OptionDecoder<Value> = {
  */
 export function optionFlag(definition: {
   long: string;
-  short?: string; // TODO - add an enforcement mechanism for casing on options ?
+  short?: string;
   description?: string;
   hint?: string;
   aliases?: { longs?: Array<string>; shorts?: Array<string> };

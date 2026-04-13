@@ -81,7 +81,7 @@ export function positionalRequired<Value>(definition: {
         const errorText = makeErrorText(label);
         errorText.push(new TypoString(`: Is required, but was not provided.`));
         if (description) {
-          // TODO - should there be a dedicated hint here
+          // TODO - should there be a dedicated hint here ?
           errorText.push(
             new TypoString(` (${description})`, typoStyleRegularWeaker),
           );
