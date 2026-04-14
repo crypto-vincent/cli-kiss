@@ -20,9 +20,9 @@ import {
  */
 export type Type<Value> = {
   /**
-   * Human-readable name shown in help and errors (e.g. `"name"`, `"number"`).
+   * Human-readable name shown in help and errors (e.g. `"name"`, `"context"`).
    */
-  content: string;
+  content: string; // TODO - add an enforcement mechanism for casing ?
   /**
    * Decodes a raw CLI string into `Value`.
    *
@@ -62,8 +62,8 @@ export function typeBoolean(name?: string): Type<boolean> {
     },
   };
 }
-export const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
-export const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);
+const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
+const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);
 
 /**
  * Parses a date/time string via `Date.parse`.
@@ -400,6 +400,7 @@ export function typeTuple<const Elements extends Array<any>>(
             new TypoString(`Found ${splits.length} splits: `),
             new TypoString(`Expected ${elementTypes.length} splits from: `),
             new TypoString(`"${input}"`, typoStyleQuote),
+            new TypoString(`.`),
           ),
         );
       }
@@ -465,6 +466,7 @@ function throwInvalidValue(kind: string, input: string): never {
     new TypoText(
       new TypoString(`Not ${kind}: `),
       new TypoString(`"${input}"`, typoStyleQuote),
+      new TypoString(`.`),
     ),
   );
 }

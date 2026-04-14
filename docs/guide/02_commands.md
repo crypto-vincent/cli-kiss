@@ -87,7 +87,7 @@ const authenticatedDeploy = commandChained(
           long: "token",
           type: type("secret"),
           description: "API token",
-          defaultIfNotSpecified: function () {
+          fallbackValueIfAbsent: function () {
             const t = process.env.API_TOKEN;
             if (!t) throw new Error("API_TOKEN env var is required");
             return t;

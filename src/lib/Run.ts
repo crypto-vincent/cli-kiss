@@ -131,9 +131,9 @@ export async function runAndExit<Context>(
   if (colorSetup === "flag") {
     const colorOption = optionSingleValue<"auto" | RunColorMode>({
       long: "color",
-      type: typeChoice("color-mode", ["auto", "always", "never", "mock"]),
-      defaultIfNotSpecified: () => "auto",
-      valueIfNothingInlined: () => "always",
+      type: typeChoice("color-mode", ["auto", "always", "never"]),
+      fallbackValueIfAbsent: () => "auto",
+      impliedValueIfNotInlined: () => "always",
     }).registerAndMakeDecoder(readerArgs);
     preprocessors.push(() => {
       try {

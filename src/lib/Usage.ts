@@ -93,7 +93,7 @@ export type UsageOption = {
   /**
    * Extra annotation appended to the option label in help.
    */
-  annotation?: string | undefined;
+  annotation?: string | undefined; // TODO - maybe prefix/postfix would be more useful
   /**
    * Help text.
    */
@@ -252,10 +252,10 @@ export function usageToStyledLines(params: {
     lines.push("");
     lines.push(textBlockTitle("Examples:").computeStyledString(typoSupport));
     for (const example of usage.information.examples) {
-      const exampleExplanationText = new TypoText();
-      exampleExplanationText.push(textDelimiter(" "));
-      exampleExplanationText.push(textSubtleInfo(`# ${example.explanation}`));
-      lines.push(exampleExplanationText.computeStyledString(typoSupport));
+      const explanationText = new TypoText();
+      explanationText.push(textDelimiter(" "));
+      explanationText.push(textSubtleInfo(`# ${example.explanation}`));
+      lines.push(explanationText.computeStyledString(typoSupport));
       const commandLineText = new TypoText();
       commandLineText.push(textDelimiter(" "));
       commandLineText.push(textConstants(cliName));

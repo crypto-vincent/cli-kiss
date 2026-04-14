@@ -44,7 +44,7 @@ const output = optionSingleValue({
   short: "o",
   type: typePath(),
   description: "Output directory",
-  defaultIfNotSpecified: () => "dist/",
+  fallbackValueIfAbsent: () => "dist/",
 });
 // --output dist/   →  "dist/"
 // --output=dist/   →  "dist/"
@@ -52,16 +52,16 @@ const output = optionSingleValue({
 // (absent)         →  "dist/"
 ```
 
-| Parameter               | Type                  | Description                                                                  |
-| ----------------------- | --------------------- | ---------------------------------------------------------------------------- |
-| `long`                  | `string`              | Long option name                                                             |
-| `short`                 | `string?`             | Short option name                                                            |
-| `type`                  | `Type<Value>`         | Decoder for the value                                                        |
-| `description`           | `string?`             | Help text                                                                    |
-| `hint`                  | `string?`             | Short note in parentheses                                                    |
-| `defaultIfNotSpecified` | `() => Value`         | Value when option is absent — **throw** to make it required                  |
-| `valueIfNothingInlined` | `() => Value?`        | Value when option is present but has no inline value (e.g. `--output` alone) |
-| `aliases`               | `{ longs?, shorts? }` | Additional names                                                             |
+| Parameter                  | Type                  | Description                                                                  |
+| -------------------------- | --------------------- | ---------------------------------------------------------------------------- |
+| `long`                     | `string`              | Long option name                                                             |
+| `short`                    | `string?`             | Short option name                                                            |
+| `type`                     | `Type<Value>`         | Decoder for the value                                                        |
+| `description`              | `string?`             | Help text                                                                    |
+| `hint`                     | `string?`             | Short note in parentheses                                                    |
+| `fallbackValueIfAbsent`    | `() => Value`         | Value when option is absent — **throw** to make it required                  |
+| `impliedValueIfNotInlined` | `() => Value?`        | Value when option is present but has no inline value (e.g. `--output` alone) |
+| `aliases`                  | `{ longs?, shorts? }` | Additional names                                                             |
 
 ## `optionRepeatable` — collect multiple values
 

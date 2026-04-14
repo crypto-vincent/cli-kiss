@@ -17,7 +17,7 @@ export function suggestTextPushMessage(
   text.push(new TypoString(` ?`));
 }
 
-export function suggestReasonablePayloads<Payload>(
+function suggestReasonablePayloads<Payload>(
   query: string,
   candidates: Array<{ reference: string; payload: Payload }>,
 ): Array<Payload> {

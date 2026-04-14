@@ -1,5 +1,6 @@
 import { expect, it } from "@jest/globals";
-import { suggestReasonablePayloads } from "../src/lib/Suggest";
+import { TypoString, TypoText } from "../src";
+import { suggestTextPushMessage } from "../src/lib/Suggest";
 
 it("run", async function () {
   expectReasonables(["--flag", "--blah", "--install"], "--inst", ["--install"]);
@@ -30,10 +31,13 @@ function expectReasonables(
   query: string,
   reasonables: Array<string>,
 ) {
-  expect(
-    suggestReasonablePayloads(
-      query,
-      references.map((key) => ({ reference: key, payload: key })),
-    ),
-  ).toStrictEqual(reasonables);
+  const text = new TypoText();
+  suggestTextPushMessage(
+    text,
+    query,
+    references.map((key) => ({ reference: key, hint: new TypoString(key) })),
+  );
+  expect(text.computeRawString()).toStrictEqual(
+    " Did you mean: " + reasonables.join(", ") + " ?",
+  );
 }
