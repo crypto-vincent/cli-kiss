@@ -41,8 +41,11 @@ export type CompletionNode = {
  * not a new token.
  *
  * @param node - Root {@link CompletionNode} from {@link Command.generateCompletionNode}.
- * @param completedArgs - The args already typed on the command line, NOT including the
- *   current partial word being typed.
+ * @param args - The CLI args.
+ * @param cursorIndex - Optional cursor index (0-based) into `args`.
+ *   - If omitted, defaults to `args.length` (cursor at end).
+ *   - Only args before this index are used to resolve completion context.
+ *   - This enables completion when the cursor is in the middle of the command line.
  * @returns All valid next tokens (subcommand names, `--long`, `-s` options), or `[]` when
  *   the cursor position is filling an option value.
  *
@@ -58,8 +61,17 @@ export type CompletionNode = {
  */
 export function getCompletions(
   node: CompletionNode,
-  completedArgs: ReadonlyArray<string>,
+  args: ReadonlyArray<string>,
+  cursorIndex?: number,
 ): Array<string> {
+  const boundedCursorIndex = Math.max(
+    0,
+    Math.min(
+      args.length,
+      cursorIndex === undefined ? args.length : Math.floor(cursorIndex),
+    ),
+  );
+  const completedArgs = args.slice(0, boundedCursorIndex);
   const { node: currentNode, awaitingOptionValue } = walkCompletionNode(
     node,
     completedArgs,
@@ -125,7 +137,7 @@ function generateBashCompletionScript(cliName: string): string {
     `# Add to your shell: source <(${cliName} --completion bash)`,
     `${fnName}() {`,
     `  local IFS=$'\\n'`,
-    `  COMPREPLY=($(compgen -W "$(${cliName} --get-completions -- "\${COMP_WORDS[@]:1:$((COMP_CWORD-1))}" 2>/dev/null)" -- "\${COMP_WORDS[$COMP_CWORD]}"))`,
+    `  COMPREPLY=($(compgen -W "$(${cliName} --get-completions --cursor-index "$((COMP_CWORD-1))" -- "\${COMP_WORDS[@]:1}" 2>/dev/null)" -- "\${COMP_WORDS[$COMP_CWORD]}"))`,
     `}`,
     `complete -F ${fnName} ${cliName}`,
     ``,
@@ -140,7 +152,7 @@ function generateZshCompletionScript(cliName: string): string {
     `# Add to your shell: source <(${cliName} --completion zsh)`,
     `${fnName}() {`,
     `  local -a completions`,
-    `  completions=(\${(f)"\$(${cliName} --get-completions -- "\${words[2,$((CURRENT-1))]}" 2>/dev/null)"})`,
+    `  completions=(\${(f)"\$(${cliName} --get-completions --cursor-index "$((CURRENT-2))" -- "\${words[2,-1]}" 2>/dev/null)"})`,
     `  compadd -- "\${completions[@]}"`,
     `}`,
     ``,

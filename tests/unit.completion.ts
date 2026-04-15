@@ -30,7 +30,7 @@ const buildCmd = command(
           long: "output",
           short: "o",
           type: type("path"),
-          defaultIfNotSpecified: () => "dist",
+          fallbackValueIfAbsent: () => "dist",
         }),
       },
       positionals: [
@@ -51,7 +51,7 @@ const rootCommand = commandWithSubcommands(
           long: "format",
           short: "f",
           type: typeChoice("fmt", ["json", "yaml"]),
-          defaultIfNotSpecified: () => "json",
+          fallbackValueIfAbsent: () => "json",
         }),
         tags: optionRepeatable({ long: "tag", short: "t", type: type("tag") }),
       },
@@ -69,7 +69,7 @@ const rootCommand = commandWithSubcommands(
             env: optionSingleValue({
               long: "env",
               type: type("env"),
-              defaultIfNotSpecified: () => "prod",
+              fallbackValueIfAbsent: () => "prod",
             }),
           },
           positionals: [
@@ -139,6 +139,14 @@ it("getCompletions", function () {
   // inline value (--format=json) does NOT set awaitingOptionValue
   expect(getCompletions(rootNode, ["--format=json"])).not.toEqual([]);
 
+  // explicit cursor index: support cursor positioned in the middle of full args
+  expect(getCompletions(rootNode, ["build", "--output", "dist"], 1)).toEqual(
+    expect.arrayContaining(["--verbose", "--output"]),
+  );
+  expect(getCompletions(rootNode, ["build", "--output", "dist"], 2)).toEqual(
+    [],
+  );
+
   // unknown subcommand stays at root node
   expect(getCompletions(rootNode, ["unknown"])).toContain("--debug");
   expect(getCompletions(rootNode, ["unknown"])).toContain("build");
@@ -174,6 +182,7 @@ it("generateCompletionScript", function () {
   expect(bash).toContain("_my_cli_completion()");
   expect(bash).toContain("complete -F _my_cli_completion my-cli");
   expect(bash).toContain("--get-completions");
+  expect(bash).toContain("--cursor-index");
   expect(bash).toContain("COMPREPLY");
 
   const zsh = generateCompletionScript("my-cli", "zsh");
@@ -181,6 +190,7 @@ it("generateCompletionScript", function () {
   expect(zsh).toContain("_my_cli()");
   expect(zsh).toContain("compadd");
   expect(zsh).toContain("--get-completions");
+  expect(zsh).toContain("--cursor-index");
 
   const fish = generateCompletionScript("my-cli", "fish");
   expect(fish).toContain("complete -c my-cli");
@@ -228,10 +238,24 @@ it("runAndExit completion", async function () {
     ["deploy", "--debug"],
   );
 
+  // --get-completions with --cursor-index supports cursor in the middle of full args
+  await testGetCompletionsRunWithCursor(
+    ["build", "--output", "dist"],
+    1,
+    ["--verbose", "--output"],
+    ["deploy", "--debug"],
+  );
+
   // --get-completions with cursor on an option value → no completions offered
   await testGetCompletionsRun(["--format"], [], ["--debug", "build"]);
   await testGetCompletionsRun(["-f"], [], ["--debug", "build"]);
   await testGetCompletionsRun(["build", "--output"], [], ["--verbose"]);
+  await testGetCompletionsRunWithCursor(
+    ["build", "--output", "dist"],
+    2,
+    [],
+    ["--verbose"],
+  );
 
   // --get-completions with partial/unknown input does not produce a parse error
   await testGetCompletionsRun(["--invalid-partial"], [], []);
@@ -249,7 +273,7 @@ it("runAndExit completion", async function () {
     chainedRoot,
     [],
     ["--dbg", "--verbose", "--output"],
-    [],
+    { expectedNotToContain: [] },
   );
 
   // completionSetup not enabled → --completion is an unknown option → exit 1
@@ -290,16 +314,35 @@ async function testGetCompletionsRun(
     rootCommand,
     completedArgs,
     expectedToContain,
-    expectedNotToContain,
+    { expectedNotToContain },
   );
+}
+
+async function testGetCompletionsRunWithCursor(
+  allArgs: Array<string>,
+  cursorIndex: number,
+  expectedToContain: Array<string>,
+  expectedNotToContain: Array<string>,
+) {
+  await testGetCompletionsRunWith(rootCommand, allArgs, expectedToContain, {
+    expectedNotToContain,
+    cursorIndex,
+  });
 }
 
 async function testGetCompletionsRunWith(
   cmd: Parameters<typeof runAndExit>[3],
-  completedArgs: Array<string>,
+  completionArgs: Array<string>,
   expectedToContain: Array<string>,
-  expectedNotToContain: Array<string>,
+  options: {
+    expectedNotToContain: Array<string>;
+    cursorIndex?: number;
+  },
 ) {
+  const completionMetaArgs =
+    options.cursorIndex === undefined
+      ? []
+      : ["--cursor-index", String(options.cursorIndex)];
   const onLogStdOut = makeMocked<string, void>(
     Array(100).fill(null as unknown as void),
   );
@@ -309,7 +352,7 @@ async function testGetCompletionsRunWith(
   console.error = onLogStdErr.call;
   await runAndExit(
     "my-cli",
-    ["--get-completions", "--", ...completedArgs],
+    ["--get-completions", ...completionMetaArgs, "--", ...completionArgs],
     null,
     cmd,
     {
@@ -323,7 +366,7 @@ async function testGetCompletionsRunWith(
       expect.arrayContaining(expectedToContain),
     );
   }
-  for (const item of expectedNotToContain) {
+  for (const item of options.expectedNotToContain) {
     expect(onLogStdOut.history).not.toContain(item);
   }
   expect(onExit.history).toEqual([0]);

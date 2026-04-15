@@ -37,6 +37,7 @@ export type RunColorMode = "env" | "always" | "never" | "mock";
  * @param options.completionSetup - Enables shell auto-completion support. When set to `"flag"`,
  *   adds `--completion [bash|zsh|fish]` (prints a shell completion script) and
  *   `--get-completions` (returns completions for the current command line, used by shell scripts).
+ *   The completion endpoint also accepts optional `--cursor-index <number>` before `--`.
  * @param options.onError - Custom handler for errors.
  * @param options.onExit - Overrides `process.exit`; useful for testing.
  *
@@ -93,6 +94,7 @@ export async function runAndExit<Context>(
     }
     const gcIdx = cliArgs.indexOf("--get-completions");
     if (gcIdx !== -1) {
+      const rawCursorIndex = readCompletionCursorIndex(cliArgs, gcIdx);
       const doubleIdx = cliArgs.indexOf("--", gcIdx + 1);
       const completionArgs: ReadonlyArray<string> =
         doubleIdx === -1 ? [] : cliArgs.slice(doubleIdx + 1);
@@ -115,7 +117,11 @@ export async function runAndExit<Context>(
         ...rootNode,
         options: [...rootNode.options, ...extraOptions],
       };
-      for (const completion of getCompletions(augmentedNode, completionArgs)) {
+      for (const completion of getCompletions(
+        augmentedNode,
+        completionArgs,
+        rawCursorIndex,
+      )) {
         console.log(completion);
       }
       return onExit(0);
@@ -204,6 +210,42 @@ export async function runAndExit<Context>(
     handleError(cliName, options?.onError, parsingError, typoSupport);
     return onExit(1);
   }
+}
+
+function readCompletionCursorIndex(
+  cliArgs: ReadonlyArray<string>,
+  getCompletionsIndex: number,
+): number | undefined {
+  const cursorIndexFlag = "--cursor-index";
+  const cursorIndexFlagIndex = cliArgs.indexOf(
+    cursorIndexFlag,
+    getCompletionsIndex + 1,
+  );
+  if (cursorIndexFlagIndex === -1) {
+    return undefined;
+  }
+  const completionArgsSeparatorIndex = cliArgs.indexOf(
+    "--",
+    getCompletionsIndex + 1,
+  );
+  if (
+    completionArgsSeparatorIndex !== -1 &&
+    cursorIndexFlagIndex > completionArgsSeparatorIndex
+  ) {
+    return undefined;
+  }
+  const rawCursorIndex = cliArgs[cursorIndexFlagIndex + 1];
+  if (rawCursorIndex === undefined) {
+    return undefined;
+  }
+  const parsedCursorIndex = Number(rawCursorIndex);
+  if (
+    !Number.isFinite(parsedCursorIndex) ||
+    !Number.isInteger(parsedCursorIndex)
+  ) {
+    return undefined;
+  }
+  return parsedCursorIndex;
 }
 
 function handleError(

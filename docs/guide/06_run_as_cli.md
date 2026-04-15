@@ -159,7 +159,7 @@ This adds two hidden flags:
 | Flag                          | Description                                                              |
 | ----------------------------- | ------------------------------------------------------------------------ |
 | `--completion [bash|zsh|fish]`  | Prints a shell completion script; source it in your shell init file       |
-| `--get-completions -- <args>` | Returns one completion per line for the given typed args (used by scripts) |
+| `--get-completions [--cursor-index <n>] -- <args>` | Returns one completion per line for the given args (used by scripts) |
 
 ### Install the completion script
 
@@ -176,10 +176,13 @@ my-cli --completion fish | source
 
 ### How it works
 
-Each generated script calls `my-cli --get-completions -- <typed-args>` on every
-`<TAB>`. The shell passes all already-completed words (before the cursor) as
-`<typed-args>`; the CLI walks its command tree and prints matching options and
-subcommand names. The shell then filters the list by the current partial word.
+Each generated script calls
+`my-cli --get-completions --cursor-index <n> -- <all-args>` on every `<TAB>`.
+`<n>` is the 0-based cursor position in `<all-args>`.
+
+The CLI resolves completion context from args before `<n>`, then prints matching
+options and subcommand names. The shell filters that list by the current partial
+word.
 
 When the cursor position is right after an option that expects a value (e.g.
 `my-cli --format `) no completions are offered, since the expected input at that
@@ -199,11 +202,14 @@ import {
 // Build the static completion tree from your root command
 const node: CompletionNode = rootCmd.generateCompletionNode();
 
-// Get completions for an already-typed prefix (completedArgs excludes the partial word)
-const completions: string[] = getCompletions(node, ["deploy"]);
+// Get completions for args + explicit cursor index (0-based)
+const completions: string[] = getCompletions(
+  node,
+  ["deploy", "--env", "prod"],
+  1,
+);
 // → ["--env", "--help", ...]
 
 // Generate a shell completion script string
 const script: string = generateCompletionScript("my-cli", "bash");
 ```
-
