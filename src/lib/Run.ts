@@ -238,11 +238,11 @@ function readCompletionCursorIndex(
   if (rawCursorIndex === undefined) {
     return undefined;
   }
+  if (!/^[0-9]+$/.test(rawCursorIndex)) {
+    return undefined;
+  }
   const parsedCursorIndex = Number(rawCursorIndex);
-  if (
-    !Number.isFinite(parsedCursorIndex) ||
-    !Number.isInteger(parsedCursorIndex)
-  ) {
+  if (!Number.isInteger(parsedCursorIndex)) {
     return undefined;
   }
   return parsedCursorIndex;
