@@ -196,6 +196,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
   operation: Operation<Context, Payload>,
   subcommands: { [subcommand: string]: Command<Payload, Result> },
 ): Command<Context, Result> {
+  // TODO - forbid subcommands that start with a "-" ?
   const subcommandNames = Object.keys(subcommands);
   if (subcommandNames.length === 0) {
     throw new Error("At least one subcommand is required");
