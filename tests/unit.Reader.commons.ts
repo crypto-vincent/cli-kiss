@@ -141,51 +141,45 @@ it("run", async function () {
   expect(stream.consumePositional()).toStrictEqual("positional-4");
   expect(stream.consumePositional()).toStrictEqual(undefined);
 
-  expect(kFlagUnset().values).toStrictEqual([]);
-  expect(kFlagNo().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kFlagNormal().values).toStrictEqual([
-    { inlined: null, separated: [] },
-  ]);
-  expect(kFlagPositive().values).toStrictEqual([
-    { inlined: "true", separated: [] },
-  ]);
-  expect(kFlagNegative().values).toStrictEqual([
-    { inlined: "false", separated: [] },
-  ]);
+  expect(kFlagUnset()).toStrictEqual([]);
+  expect(kFlagNo()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kFlagNormal()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kFlagPositive()).toStrictEqual([{ inlined: "true", separated: [] }]);
+  expect(kFlagNegative()).toStrictEqual([{ inlined: "false", separated: [] }]);
 
-  expect(kOptionUnset().values).toStrictEqual([]);
-  expect(kOptionSplit().values).toStrictEqual([
+  expect(kOptionUnset()).toStrictEqual([]);
+  expect(kOptionSplit()).toStrictEqual([
     { inlined: null, separated: ["1.1"] },
     { inlined: null, separated: ["1.2"] },
   ]);
-  expect(kOptionJoin().values).toStrictEqual([
+  expect(kOptionJoin()).toStrictEqual([
     { inlined: "2.1", separated: [] },
     { inlined: "2.2", separated: [] },
   ]);
 
-  expect(kA().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kB().values).toStrictEqual([
+  expect(kA()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kB()).toStrictEqual([
     { inlined: null, separated: ["3.1"] },
     { inlined: null, separated: ["3.2"] },
   ]);
 
-  expect(kC().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kD().values).toStrictEqual([
+  expect(kC()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kD()).toStrictEqual([
     { inlined: "4.1", separated: [] },
     { inlined: "4.2", separated: [] },
   ]);
 
-  expect(kE().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kF().values).toStrictEqual([
+  expect(kE()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kF()).toStrictEqual([
     { inlined: "5.1", separated: [] },
     { inlined: "5.2", separated: [] },
   ]);
 
-  expect(kG().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kH().values).toStrictEqual([{ inlined: "FALSE", separated: [] }]);
+  expect(kG()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kH()).toStrictEqual([{ inlined: "FALSE", separated: [] }]);
 
-  expect(kI().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kJ().values).toStrictEqual([{ inlined: "TRUE", separated: [] }]);
+  expect(kI()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kJ()).toStrictEqual([{ inlined: "TRUE", separated: [] }]);
 });
 
 const optionFlagRestGuard: ReaderOptionRestGuard = () => false;

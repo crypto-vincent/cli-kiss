@@ -102,33 +102,29 @@ it("run", async function () {
 
   expect(stream.consumePositional()).toStrictEqual("positional-2");
 
-  expect(kSofUnset().values).toStrictEqual([]);
-  expect(kSofNormal().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kSofPositive().values).toStrictEqual([
-    { inlined: "true", separated: [] },
-  ]);
-  expect(kSofNegative().values).toStrictEqual([
-    { inlined: "false", separated: [] },
-  ]);
+  expect(kSofUnset()).toStrictEqual([]);
+  expect(kSofNormal()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kSofPositive()).toStrictEqual([{ inlined: "true", separated: [] }]);
+  expect(kSofNegative()).toStrictEqual([{ inlined: "false", separated: [] }]);
 
-  expect(kAa().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kBb().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kCc().values).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kAa()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kBb()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kCc()).toStrictEqual([{ inlined: null, separated: [] }]);
 
-  expect(kSovUnset().values).toStrictEqual([]);
-  expect(kSovSplit().values).toStrictEqual([
+  expect(kSovUnset()).toStrictEqual([]);
+  expect(kSovSplit()).toStrictEqual([
     { inlined: null, separated: ["1.1"] },
     { inlined: null, separated: ["1.2"] },
   ]);
-  expect(kSovJoin().values).toStrictEqual([
+  expect(kSovJoin()).toStrictEqual([
     { inlined: "2.1", separated: [] },
     { inlined: "2.2", separated: [] },
   ]);
 
-  expect(kDd().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kEe().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kFf().values).toStrictEqual([{ inlined: null, separated: [] }]);
-  expect(kGg().values).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kDd()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kEe()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kFf()).toStrictEqual([{ inlined: null, separated: [] }]);
+  expect(kGg()).toStrictEqual([{ inlined: null, separated: [] }]);
 });
 
 const optionFlagRestGuard: ReaderOptionRestGuard = () => false;

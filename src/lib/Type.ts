@@ -19,6 +19,7 @@ import {
  * - {@link typeInteger}
  * - {@link typeDatetime}
  * - {@link typeUrl}
+ * - {@link typePath}
  *
  * Composed Types:
  * - {@link typeChoice}

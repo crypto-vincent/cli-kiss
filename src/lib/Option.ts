@@ -353,8 +353,8 @@ function setupOptionAliased(
     shortKey: string | undefined;
     aliasLongKeys: Array<string> | undefined;
     aliasShortKeys: Array<string> | undefined;
-    restGuard: ReaderOptionRestGuard;
     nextGuard: ReaderOptionNextGuard;
+    restGuard: ReaderOptionRestGuard;
   },
 ): () => Array<{ identifier: string; value: ReaderOptionValue }> {
   const { longKey, shortKey, aliasLongKeys, aliasShortKeys } = params;
@@ -379,25 +379,28 @@ function setupOptionMany(
   params: {
     longKeys: Array<string>;
     shortKeys: Array<string>;
-    restGuard: ReaderOptionRestGuard;
     nextGuard: ReaderOptionNextGuard;
+    restGuard: ReaderOptionRestGuard;
   },
 ): () => Array<{ identifier: string; value: ReaderOptionValue }> {
   const { longKeys, shortKeys, restGuard, nextGuard } = params;
-  const getters = new Array<ReaderOptionGetter>();
+  const getters = new Map<string, ReaderOptionGetter>();
   for (const key of longKeys) {
-    getters.push(readerOptions.registerOptionLong({ key, nextGuard }));
+    getters.set(
+      `--${key}`,
+      readerOptions.registerOptionLong({ key, nextGuard }),
+    );
   }
   for (const key of shortKeys) {
-    getters.push(
-      readerOptions.registerOptionShort({ key, restGuard, nextGuard }),
+    getters.set(
+      `-${key}`,
+      readerOptions.registerOptionShort({ key, nextGuard, restGuard }),
     );
   }
   return () => {
     const results = new Array();
-    for (const getter of getters) {
-      const { identifier, values } = getter();
-      for (const value of values) {
+    for (const [identifier, getter] of getters.entries()) {
+      for (const value of getter()) {
         results.push({ identifier, value });
       }
     }

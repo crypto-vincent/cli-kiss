@@ -25,39 +25,27 @@ it("run", async function () {
           }),
           flag1: optionFlag({
             long: "flag1",
-            aliases: {
-              longs: ["flag1-alias"],
-              shorts: ["fa"],
-            },
+            aliases: { longs: ["flag1-alias"], shorts: ["fa"] },
           }),
           flag2: optionFlag({
             long: "flag2",
-            aliases: {
-              longs: ["flag2-alias"],
-              shorts: ["fb"],
-            },
+            aliases: { longs: ["flag2-alias"], shorts: ["fb"] },
           }),
           weird: optionRepeatable({
             long: "2",
-            aliases: {
-              shorts: ["2o"],
-            },
+            aliases: { shorts: ["2o"] },
             type: typeString(),
           }),
           v1: optionSingleValue({
             long: "v1",
-            aliases: {
-              shorts: ["va"],
-            },
+            aliases: { shorts: ["va"] },
             type: typeString(),
             impliedValueIfNotInlined: () => "bypass",
             fallbackValueIfAbsent: () => undefined,
           }),
           v2: optionSingleValue({
             long: "v2",
-            aliases: {
-              shorts: ["vb"],
-            },
+            aliases: { shorts: ["vb"] },
             type: typeString(),
             impliedValueIfNotInlined: () => "bypass",
             fallbackValueIfAbsent: () => undefined,

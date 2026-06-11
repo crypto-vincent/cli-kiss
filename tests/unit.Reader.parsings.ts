@@ -11,7 +11,7 @@ it("run", async function () {
   });
   expect(readerArgs1.consumePositional()).toStrictEqual("C");
   expect(readerArgs1.consumePositional()).toStrictEqual(undefined);
-  expect(kOptionVariadicStop().values).toStrictEqual([
+  expect(kOptionVariadicStop()).toStrictEqual([
     { inlined: "1", separated: ["A", "B", "STOP"] },
   ]);
 
@@ -21,7 +21,7 @@ it("run", async function () {
     nextGuard: (_value, nextArg) => nextArg !== undefined,
   });
   expect(readerArgs2.consumePositional()).toStrictEqual(undefined);
-  expect(kOptionVariadicFull().values).toStrictEqual([
+  expect(kOptionVariadicFull()).toStrictEqual([
     { inlined: "1", separated: ["A", "B", "C"] },
   ]);
 
@@ -31,7 +31,7 @@ it("run", async function () {
     nextGuard: (value) => value.separated.length < Number(value.inlined ?? "0"),
   });
   expect(readerArgs3.consumePositional()).toStrictEqual(undefined);
-  expect(kOptionVariadicKeyed().values).toStrictEqual([
+  expect(kOptionVariadicKeyed()).toStrictEqual([
     { inlined: "2", separated: ["A", "B"] },
     { inlined: "1", separated: ["C"] },
   ]);

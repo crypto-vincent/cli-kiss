@@ -8,6 +8,7 @@ import {
 } from "./Typo";
 
 /**
+ * Represents the parsing specification for a long option
  */
 export type ReaderOptionLongSpec = {
   key: string;
@@ -15,18 +16,21 @@ export type ReaderOptionLongSpec = {
 };
 
 /**
+ * Represents the parsing specification for a short option
  */
 export type ReaderOptionShortSpec = {
   key: string;
-  restGuard: ReaderOptionRestGuard;
+  restGuard: ReaderOptionRestGuard; // TODO - should this be just a bool?
   nextGuard: ReaderOptionNextGuard;
 };
 
 /**
+ * Determines whether a token suffix is valid for a given short option.
  */
 export type ReaderOptionRestGuard = (rest: string) => boolean;
 
 /**
+ * Determines whether the next token is valid for a given option.
  */
 export type ReaderOptionNextGuard = (
   value: ReaderOptionValue,
@@ -34,13 +38,7 @@ export type ReaderOptionNextGuard = (
 ) => boolean;
 
 /**
- */
-export type ReaderOptionResult = {
-  identifier: string;
-  values: ReadonlyArray<ReaderOptionValue>;
-};
-
-/**
+ * Represents the values parsed for an option.
  */
 export type ReaderOptionValue = {
   inlined: string | null;
@@ -48,8 +46,9 @@ export type ReaderOptionValue = {
 };
 
 /**
+ * Returns the parsed values for a registered option.
  */
-export type ReaderOptionGetter = () => ReaderOptionResult;
+export type ReaderOptionGetter = () => ReadonlyArray<ReaderOptionValue>;
 
 /**
  * Option registration/query interface. Subset of {@link ReaderArgs}.
@@ -100,6 +99,7 @@ export class ReaderArgs {
   }
 
   /**
+   * Registers a long option and returns a getter for its parsed values.
    */
   registerOptionLong(longSpec: ReaderOptionLongSpec): ReaderOptionGetter {
     const identifier = `--${longSpec.key}`;
@@ -115,10 +115,11 @@ export class ReaderArgs {
       spec: longSpec,
       values,
     });
-    return () => ({ identifier, values });
+    return () => values;
   }
 
   /**
+   * Registers a short option and returns a getter for its parsed values.
    */
   registerOptionShort(shortSpec: ReaderOptionShortSpec): ReaderOptionGetter {
     const identifier = `-${shortSpec.key}`;
@@ -149,7 +150,7 @@ export class ReaderArgs {
       spec: shortSpec,
       values,
     });
-    return () => ({ identifier, values });
+    return () => values;
   }
 
   /**
