@@ -103,7 +103,7 @@ export async function runAndExit<Context>(
       return 0;
     });
   }
-  if (options?.buildVersion) {
+  if (options?.buildVersion !== undefined) {
     const versionOption = optionFlag({
       long: "version",
     }).registerAndMakeDecoder(readerArgs);

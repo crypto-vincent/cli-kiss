@@ -124,7 +124,7 @@ export type CommandInformation = {
  * );
  * ```
  */
-export function command<Context, Result>(
+export function command<Context, Result = void>(
   information: CommandInformation,
   operation: Operation<Context, Result>,
 ): Command<Context, Result> {
@@ -191,7 +191,7 @@ export function command<Context, Result>(
  * );
  * ```
  */
-export function commandWithSubcommands<Context, Payload, Result>(
+export function commandWithSubcommands<Context, Payload, Result = void>(
   information: CommandInformation,
   operation: Operation<Context, Payload>,
   subcommands: { [subcommand: string]: Command<Payload, Result> },
@@ -287,7 +287,7 @@ export function commandWithSubcommands<Context, Payload, Result>(
  * @param subcommand - Runs after `operation`.
  * @returns A {@link Command} composing both stages.
  */
-export function commandChained<Context, Payload, Result>(
+export function commandChained<Context, Payload, Result = void>(
   information: CommandInformation,
   operation: Operation<Context, Payload>,
   subcommand: Command<Payload, Result>,

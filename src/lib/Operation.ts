@@ -99,46 +99,54 @@ export type OperationInterpreter<Context, Result> = {
 export function operation<
   Context,
   Result,
-  Options extends { [option: string]: any },
-  const Positionals extends Array<any>,
+  const Options extends { [option: string]: any } = {},
+  const Positionals extends Array<any> = [],
 >(
   inputs: {
-    options: { [K in keyof Options]: Option<Options[K]> };
-    positionals: { [K in keyof Positionals]: Positional<Positionals[K]> };
+    options?: { [K in keyof Options]: Option<Options[K]> };
+    positionals?: { [K in keyof Positionals]: Positional<Positionals[K]> };
   },
   handler: (
     context: Context,
     inputs: {
-      options: Options;
-      positionals: Positionals;
+      options: { [K in keyof Options]: Options[K] };
+      positionals: { [K in keyof Positionals]: Positionals[K] };
     },
   ) => Promise<Result>,
 ): Operation<Context, Result> {
   return {
     generateUsage() {
       const optionsUsage = new Array<UsageOption>();
-      for (const optionKey in inputs.options) {
-        const optionInput = inputs.options[optionKey]!;
-        optionsUsage.push(optionInput.generateUsage());
+      if (inputs.options !== undefined) {
+        for (const optionKey in inputs.options) {
+          const optionInput = inputs.options[optionKey]!;
+          optionsUsage.push(optionInput.generateUsage());
+        }
       }
       const positionalsUsage = new Array<UsagePositional>();
-      for (const positionalInput of inputs.positionals) {
-        positionalsUsage.push(positionalInput.generateUsage());
+      if (inputs.positionals !== undefined) {
+        for (const positionalInput of inputs.positionals) {
+          positionalsUsage.push(positionalInput.generateUsage());
+        }
       }
       return { options: optionsUsage, positionals: positionalsUsage };
     },
     consumeAndMakeDecoder(readerArgs: ReaderArgs) {
       const optionsDecoders: Record<string, OptionDecoder<any>> = {};
-      for (const optionKey in inputs.options) {
-        const optionInput = inputs.options[optionKey]!;
-        optionsDecoders[optionKey] =
-          optionInput.registerAndMakeDecoder(readerArgs);
+      if (inputs.options !== undefined) {
+        for (const optionKey in inputs.options) {
+          const optionInput = inputs.options[optionKey]!;
+          optionsDecoders[optionKey] =
+            optionInput.registerAndMakeDecoder(readerArgs);
+        }
       }
       const positionalsDecoders: Array<PositionalDecoder<any>> = [];
-      for (const positionalInput of inputs.positionals) {
-        positionalsDecoders.push(
-          positionalInput.consumeAndMakeDecoder(readerArgs),
-        );
+      if (inputs.positionals !== undefined) {
+        for (const positionalInput of inputs.positionals) {
+          positionalsDecoders.push(
+            positionalInput.consumeAndMakeDecoder(readerArgs),
+          );
+        }
       }
       return {
         decodeAndMakeInterpreter() {

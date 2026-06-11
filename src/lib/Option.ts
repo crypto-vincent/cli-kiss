@@ -230,7 +230,7 @@ export function optionSingleValue<Value>(definition: {
             }
           }
           const inlined = result.value.inlined;
-          if (inlined) {
+          if (inlined !== null) {
             return decodeValue({ long, label, type, input: inlined });
           }
           if (definition.impliedValueIfNotInlined !== undefined) {
@@ -344,7 +344,7 @@ function makeErrorText(params: {
 }): TypoText {
   const errorText = new TypoText();
   errorText.push(new TypoString(`--${params.long}`, typoStyleConstants));
-  if (params.label) {
+  if (params.label !== undefined) {
     errorText.push(new TypoString(`: `));
     errorText.push(new TypoString(params.label, typoStyleUserInput));
   } else {
@@ -367,11 +367,11 @@ function setupOptionAliased(
 ): () => Array<{ identifier: string; value: ReaderOptionValue }> {
   const { longKey, shortKey, aliasLongKeys, aliasShortKeys } = params;
   const longKeys = [longKey];
-  if (aliasLongKeys) {
+  if (aliasLongKeys !== undefined) {
     longKeys.push(...aliasLongKeys);
   }
   const shortKeys = shortKey ? [shortKey] : [];
-  if (aliasShortKeys) {
+  if (aliasShortKeys !== undefined) {
     shortKeys.push(...aliasShortKeys);
   }
   return setupOptionMany(readerOptions, {

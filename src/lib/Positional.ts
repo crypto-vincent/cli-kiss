@@ -80,7 +80,7 @@ export function positionalRequired<Value>(definition: {
       if (positional === undefined) {
         const errorText = makeErrorText(label);
         errorText.push(new TypoString(`: Is required, but was not provided.`));
-        if (description) {
+        if (description !== undefined) {
           // TODO - should there be a dedicated hint here ?
           errorText.push(
             new TypoString(` (${description})`, typoStyleRegularWeaker),

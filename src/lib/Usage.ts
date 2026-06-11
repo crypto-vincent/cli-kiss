@@ -175,7 +175,7 @@ export function usageToStyledLines(params: {
   lines.push("");
   const introText = new TypoText();
   introText.push(textUsageText(usage.information.description));
-  if (usage.information.hint) {
+  if (usage.information.hint !== undefined) {
     introText.push(textDelimiter(" "));
     introText.push(textSubtleInfo(`(${usage.information.hint})`));
   }
@@ -221,7 +221,7 @@ export function usageToStyledLines(params: {
     for (const optionUsage of usage.options) {
       const typoGridRow = new Array<TypoText>();
       typoGridRow.push(new TypoText(textDelimiter("  ")));
-      if (optionUsage.short) {
+      if (optionUsage.short !== undefined) {
         typoGridRow.push(
           new TypoText(
             textConstants(`-${optionUsage.short}`),
@@ -234,11 +234,11 @@ export function usageToStyledLines(params: {
       const longOptionText = new TypoText(
         textConstants(`--${optionUsage.long}`),
       );
-      if (optionUsage.label) {
+      if (optionUsage.label !== undefined) {
         longOptionText.push(textDelimiter(" "));
         longOptionText.push(textUserInput(optionUsage.label));
       }
-      if (optionUsage.annotation) {
+      if (optionUsage.annotation !== undefined) {
         longOptionText.push(textSubtleInfo(optionUsage.annotation));
       }
       typoGridRow.push(longOptionText);
@@ -248,7 +248,7 @@ export function usageToStyledLines(params: {
     lines.push(...typoGrid.computeStyledLines(typoSupport));
   }
 
-  if (usage.information.examples) {
+  if (usage.information.examples !== undefined) {
     lines.push("");
     lines.push(textBlockTitle("Examples:").computeStyledString(typoSupport));
     for (const example of usage.information.examples) {
@@ -299,11 +299,11 @@ function createInformationals(usage: {
   hint?: string | undefined;
 }): Array<TypoText> {
   const informationals = [];
-  if (usage.description) {
+  if (usage.description !== undefined) {
     informationals.push(textDelimiter(" "));
     informationals.push(textUsefulInfo(usage.description));
   }
-  if (usage.hint) {
+  if (usage.hint !== undefined) {
     informationals.push(textDelimiter(" "));
     informationals.push(textSubtleInfo(`(${usage.hint})`));
   }
