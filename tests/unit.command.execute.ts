@@ -12,9 +12,9 @@ import {
   positionalRequired,
   positionalVariadics,
   ReaderArgs,
-  type,
   typeList,
   typeNumber,
+  typeString,
 } from "../src";
 
 const rootCommand = commandChained(
@@ -46,7 +46,7 @@ const rootCommand = commandChained(
         options: {
           string: optionSingleValue({
             long: "string-option",
-            type: type(),
+            type: typeString(),
             fallbackValueIfAbsent: () => undefined,
           }),
           number: optionRepeatable({
@@ -66,7 +66,7 @@ const rootCommand = commandChained(
         operation(
           {
             options: {},
-            positionals: [positionalRequired({ type: type() })],
+            positionals: [positionalRequired({ type: typeString() })],
           },
           async function (context, inputs) {
             return { at: "sub1", context, inputs };
@@ -80,8 +80,8 @@ const rootCommand = commandChained(
             options: {},
             positionals: [
               positionalRequired({ type: typeNumber() }),
-              positionalOptional({ type: type(), default: () => "42" }),
-              positionalVariadics({ type: type() }),
+              positionalOptional({ type: typeString(), default: () => "42" }),
+              positionalVariadics({ type: typeString() }),
             ],
           },
           async function (context, inputs) {

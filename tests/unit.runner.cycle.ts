@@ -10,9 +10,9 @@ import {
   positionalRequired,
   positionalVariadics,
   runAndExit,
-  type,
   typeChoice,
-  typeConverted,
+  typeMapped,
+  typeString,
   typeUrl,
 } from "../src";
 
@@ -419,13 +419,13 @@ async function testCase(
           optionRepeatable: optionRepeatable({
             long: "repeatable",
             short: "r",
-            type: type(),
+            type: typeString(),
             description: "Option repeatable description",
           }),
           optionSingleValue: optionSingleValue({
             long: "single-value",
             short: "s",
-            type: typeConverted(
+            type: typeMapped(
               "enum(number)",
               typeChoice("enum(string)", ["42", "43"]),
               (value) => Number(value),
@@ -464,12 +464,12 @@ async function testCase(
                 description: "Required2 positional description",
               }),
               positionalOptional({
-                type: type("optional"),
+                type: typeString("optional"),
                 description: "Optional positional description",
                 default: () => "world !",
               }),
               positionalVariadics({
-                type: type("variadic"),
+                type: typeString("variadic"),
                 description: "Variadics positional description",
               }),
             ],

@@ -12,9 +12,19 @@ import {
  * Decodes a raw CLI string into a typed value.
  * A pair of a human-readable `content` name and a `decoder` function.
  *
- * Built-in: {@link type}, {@link typeBoolean}, {@link typeNumber},
- * {@link typeInteger}, {@link typeDatetime}, {@link typeUrl}.
- * Composite: {@link typeChoice}, {@link typeConverted}, {@link typeTuple}, {@link typeList}.
+ * Primitive Types:
+ * - {@link typeString}
+ * - {@link typeBoolean}
+ * - {@link typeNumber},
+ * - {@link typeInteger}
+ * - {@link typeDatetime}
+ * - {@link typeUrl}
+ *
+ * Composed Types:
+ * - {@link typeChoice}
+ * - {@link typeMapped}
+ * - {@link typeTuple}
+ * - {@link typeList}
  *
  * @typeParam Value - Type produced by the decoder.
  */
@@ -34,62 +44,18 @@ export type Type<Value> = {
 };
 
 /**
- * Decodes a string to `boolean` (case-insensitive).
- * Used by {@link optionFlag} for `--flag=<value>`.
- *
+ * A named type that accepts any string as input.
+ * @param name - Name shown in help and errors (e.g. `"my-value"`).
  * @example
  * ```ts
- * typeBoolean("flag").decoder("true")  // → true
- * typeBoolean("flag").decoder("yes")   // → true
- * typeBoolean("flag").decoder("y")     // → true
- * typeBoolean("flag").decoder("false") // → false
- * typeBoolean("flag").decoder("no")    // → false
- * typeBoolean("flag").decoder("n")     // → false
+ * typeString("greeting").decoder("hello") // → "hello"
+ * typeString("greeting").decoder("")      // → ""
  * ```
  */
-export function typeBoolean(name?: string): Type<boolean> {
+export function typeString(name?: string): Type<string> {
   return {
-    content: name ?? "boolean",
-    decoder(input: string) {
-      const lowerInput = input.toLowerCase();
-      if (typeBooleanValuesTrue.has(lowerInput)) {
-        return true;
-      }
-      if (typeBooleanValuesFalse.has(lowerInput)) {
-        return false;
-      }
-      throwInvalidValue("a boolean", input);
-    },
-  };
-}
-const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
-const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);
-
-/**
- * Parses a date/time string via `Date.parse`.
- * Accepts any format supported by `Date.parse`, including ISO 8601.
- *
- * @example
- * ```ts
- * typeDatetime("my-datetime").decoder("2024-01-15") // → Date object for 2024-01-15
- * typeDatetime("my-datetime").decoder("2024-01-15T13:45:30Z") // → Date object for 2024-01-15 13:45:30 UTC
- * typeDatetime("my-datetime").decoder("not a date") // throws TypoError
- * ```
- */
-export function typeDatetime(name?: string): Type<Date> {
-  return {
-    content: name ?? "datetime",
-    decoder(input: string) {
-      try {
-        const timestampMs = Date.parse(input);
-        if (isNaN(timestampMs)) {
-          throw new Error();
-        }
-        return new Date(timestampMs);
-      } catch {
-        throwInvalidValue("a valid ISO_8601 datetime", input);
-      }
-    },
+    content: name ?? "string",
+    decoder: (input: string) => input,
   };
 }
 
@@ -115,6 +81,65 @@ export function typeNumber(name?: string): Type<number> {
         return parsed;
       } catch {
         throwInvalidValue("a number", input);
+      }
+    },
+  };
+}
+
+/**
+ * Decodes a string to `boolean` (case-insensitive).
+ * Used by {@link optionFlag} for `--flag=<value>`.
+ *
+ * @example
+ * ```ts
+ * typeBoolean("flag").decoder("true")  // → true
+ * typeBoolean("flag").decoder("yes")   // → true
+ * typeBoolean("flag").decoder("Y")     // → true
+ * typeBoolean("flag").decoder("FALSE") // → false
+ * typeBoolean("flag").decoder("NO")    // → false
+ * typeBoolean("flag").decoder("n")     // → false
+ * typeBoolean("flag").decoder("maybe") // throws
+ * ```
+ */
+export function typeBoolean(name?: string): Type<boolean> {
+  return {
+    content: name ?? "boolean",
+    decoder(input: string) {
+      const lowerInput = input.toLowerCase();
+      if (typeBooleanValuesTrue.has(lowerInput)) {
+        return true;
+      }
+      if (typeBooleanValuesFalse.has(lowerInput)) {
+        return false;
+      }
+      throwInvalidValue("a boolean", input);
+    },
+  };
+}
+
+/**
+ * Parses a date/time string via `Date.parse`.
+ * Accepts any format supported by `Date.parse`, including ISO 8601.
+ *
+ * @example
+ * ```ts
+ * typeDatetime("start").decoder("2024-01-15") // → Date object for 2024-01-15
+ * typeDatetime("start").decoder("2024-01-15T13:45:30Z") // → Date object for 2024-01-15 13:45:30 UTC
+ * typeDatetime("start").decoder("not a date") // throws
+ * ```
+ */
+export function typeDatetime(name?: string): Type<Date> {
+  return {
+    content: name ?? "datetime",
+    decoder(input: string) {
+      try {
+        const timestampMs = Date.parse(input);
+        if (isNaN(timestampMs)) {
+          throw new Error();
+        }
+        return new Date(timestampMs);
+      } catch {
+        throwInvalidValue("a valid ISO_8601 datetime", input);
       }
     },
   };
@@ -168,22 +193,6 @@ export function typeUrl(name?: string): Type<URL> {
 }
 
 /**
- * A named type that accepts any string as input.
- * @param name - Name shown in help and errors (e.g. `"my-value"`).
- * @example
- * ```ts
- * type("greeting").decoder("hello") // → "hello"
- * type("greeting").decoder("")      // → ""
- * ```
- */
-export function type(name?: string): Type<string> {
-  return {
-    content: name ?? "string",
-    decoder: (input: string) => input,
-  };
-}
-
-/**
  * Chains `before`'s decoder with an `after` transformation.
  * `before` errors are prefixed with `"from: <content>"` for traceability.
  *
@@ -197,15 +206,17 @@ export function type(name?: string): Type<string> {
  *
  * @example
  * ```ts
- * const typePort = typeConverted("port", typeNumber(), (n) => {
- *   if (n < 1 || n > 65535) throw new Error("Out of range");
+ * const typePort = typeMapped("port", typeNumber(), (n) => {
+ *   if (n < 1 || n > 65535) {
+ *     throw new Error("Out of range");
+ *   }
  *   return n;
  * });
- * // "--port 8080"   →  8080
- * // "--port 99999"  →  TypoError: --port: <PORT>: Port: Out of range
+ * typePort.decoder("8080");  // → 8080
+ * typePort.decoder("70000"); // throws
  * ```
  */
-export function typeConverted<Before, After>(
+export function typeMapped<Before, After>(
   name: string,
   before: Type<Before>,
   mapper: (value: Before) => After,
@@ -255,8 +266,16 @@ export function typeRenamed<Value>(
 
 /**
  * Creates a {@link Type} for filesystem paths with optional existence checks.
+ *
  * @param checks - Optional checks for path existence and type (file/directory).
  * @returns A {@link Type}`<string>` representing the path.
+ *
+ * @example
+ * ```ts
+ * const typeInputFile = typePath("input-file", { checkSyncExistAs: "file" });
+ * typeInputFile.decoder("data.txt"); // → "data.txt" if it exists and is a file, otherwise throws
+ * typeInputFile.decoder("somedir");  // throws if "somedir" exists and is a directory
+ * ```
  */
 export function typePath(
   name?: string,
@@ -436,7 +455,9 @@ export function typeTuple<const Elements extends Array<any>>(
  * typeNumbers.decoder("1,2,3")  // → [1, 2, 3]
  * typeNumbers.decoder("1,x,3")  // throws
  * const typePaths = typeList(typePath(), ":");
- * typePaths.decoder("/usr/bin:/usr/local/bin") // → ["/usr/bin", "/usr/local/bin"]
+ * typePaths.decoder("/bin:/usr") // → ["/bin", "/usr"]
+ * typePaths.decoder("/usr/bin")  // → ["/usr/bin"]
+ * typePaths.decoder("")          // → throws (empty string is not a valid path)
  * ```
  */
 export function typeList<Value>(
@@ -470,3 +491,6 @@ function throwInvalidValue(kind: string, input: string): never {
     ),
   );
 }
+
+const typeBooleanValuesTrue = new Set(["true", "yes", "on", "y"]);
+const typeBooleanValuesFalse = new Set(["false", "no", "off", "n"]);

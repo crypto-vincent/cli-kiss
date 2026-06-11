@@ -17,7 +17,7 @@ import { UsageCommand } from "./Usage";
  * @typeParam Context - Injected at execution; forwarded to handlers.
  * @typeParam Result - Produced on execution; typically `void`.
  */
-export type Command<Context, Result> = {
+export type Command<Context, Result = void> = {
   /**
    * Returns static metadata.
    */

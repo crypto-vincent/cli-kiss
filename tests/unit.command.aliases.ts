@@ -6,7 +6,7 @@ import {
   optionRepeatable,
   optionSingleValue,
   ReaderArgs,
-  type,
+  typeString,
 } from "../src";
 
 it("run", async function () {
@@ -17,7 +17,7 @@ it("run", async function () {
         options: {
           option: optionRepeatable({
             long: "option",
-            type: type(),
+            type: typeString(),
             aliases: {
               longs: ["option-alias1", "option-alias2"],
               shorts: ["pts", "o"],
@@ -42,14 +42,14 @@ it("run", async function () {
             aliases: {
               shorts: ["2o"],
             },
-            type: type(),
+            type: typeString(),
           }),
           v1: optionSingleValue({
             long: "v1",
             aliases: {
               shorts: ["va"],
             },
-            type: type(),
+            type: typeString(),
             impliedValueIfNotInlined: () => "bypass",
             fallbackValueIfAbsent: () => undefined,
           }),
@@ -58,7 +58,7 @@ it("run", async function () {
             aliases: {
               shorts: ["vb"],
             },
-            type: type(),
+            type: typeString(),
             impliedValueIfNotInlined: () => "bypass",
             fallbackValueIfAbsent: () => undefined,
           }),

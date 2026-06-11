@@ -9,7 +9,7 @@ Fails if missing.
 
 ```ts
 const name = positionalRequired({
-  type: type("person"),
+  type: typeString("person"),
   description: "The name of the person to greet",
 });
 // Usage:
@@ -29,7 +29,7 @@ Falls back to a default when absent.
 
 ```ts
 const greeting = positionalOptional({
-  type: type("greeting"),
+  type: typeString("greeting"),
   description: "Custom greeting",
   hint: "default to 'Hello'",
   default: () => "Hello",
@@ -66,7 +66,7 @@ Optionally stop collecting at a specific sentinel token:
 
 ```ts
 const args = positionalVariadics({
-  type: type("argument"),
+  type: typeString("argument"),
   endDelimiter: "STOP",
   description: "Arguments (end with STOP)",
 });
@@ -90,10 +90,10 @@ operation(
   {
     options: {},
     positionals: [
-      positionalRequired({ type: type("src") }),
-      positionalRequired({ type: type("dst") }),
-      positionalOptional({ type: type("tag"), default: () => "latest" }),
-      positionalVariadics({ type: type("extra") }),
+      positionalRequired({ type: typeString("src") }),
+      positionalRequired({ type: typeString("dst") }),
+      positionalOptional({ type: typeString("tag"), default: () => "latest" }),
+      positionalVariadics({ type: typeString("extra") }),
     ],
   },
   async function (_ctx, { positionals: [src, dst, tag, extras] }) {
@@ -101,6 +101,6 @@ operation(
   },
 );
 // Usage:
-//   my-cli in out  →  src="in", src="out", tag="latest", extras=[]
-//   my-cli in out v2 a b c  →  src="in", src="out", tag="v2", extras=["a","b","c"]
+//   my-cli in out  →  src="in", dst="out", tag="latest", extras=[]
+//   my-cli in out v2 a b c  →  src="in", dst="out", tag="v2", extras=["a","b","c"]
 ```

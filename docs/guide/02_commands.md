@@ -12,7 +12,7 @@ const greet = command(
   operation(
     {
       options: {},
-      positionals: [positionalRequired({ type: type("name") })],
+      positionals: [positionalRequired({ type: typeString("name") })],
     },
     async function (_ctx, { positionals: [name] }) {
       console.log(`Hello, ${name}!`);
@@ -85,7 +85,7 @@ const authenticatedDeploy = commandChained(
       options: {
         token: optionSingleValue({
           long: "token",
-          type: type("secret"),
+          type: typeString("secret"),
           description: "API token",
           fallbackValueIfAbsent: function () {
             const t = process.env.API_TOKEN;

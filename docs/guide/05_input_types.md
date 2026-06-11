@@ -14,7 +14,7 @@ shown in help/errors.
 
 | Type factory   | Content type | Accepts                                                             |
 | -------------- | ------------ | ------------------------------------------------------------------- |
-| `type`         | `string`     | Any string                                                          |
+| `typeString`   | `string`     | Any string                                                          |
 | `typeBoolean`  | `boolean`    | `true/yes/on/y` → true, `false/no/off/n` → false (case-insensitive) |
 | `typeNumber`   | `number`     | Integers, floats, scientific notation                               |
 | `typeInteger`  | `bigint`     | Integer strings only                                                |
@@ -23,7 +23,7 @@ shown in help/errors.
 | `typePath`     | `string`     | Non-empty path strings; optional sync existence check               |
 
 ```ts
-type("greeting").decoder("hello"); // → "hello"
+typeString("greeting").decoder("hello"); // → "hello"
 typeBoolean("flag").decoder("yes"); // → true
 typeNumber("pi").decoder("3.14"); // → 3.14
 typeInteger("id").decoder("9007199254740993"); // → 9007199254740993n
@@ -65,7 +65,7 @@ typePoint.decoder("x,2"); // → Error: at 0: a: Unable to parse: "x"
 The default separator is `","`. Pass a second argument to change it:
 
 ```ts
-typeTuple([type("name"), typeNumber()], ":");
+typeTuple([typeString("name"), typeNumber()], ":");
 // "foo:42"  →  ["foo", 42]
 ```
 
@@ -93,13 +93,15 @@ over `typeList` when users should pass multiple values as separate flags
 
 :::
 
-## `typeConverted` — transform decoded value
+## `typeMapped` — transformed decoded value
 
 Chains a base type with a transformation function:
 
 ```ts
-const typePort = typeConverted("port", typeNumber(), (n) => {
-  if (n < 1 || n > 65535) throw new Error("Out of range");
+const typePort = typeMapped("port", typeNumber(), (n) => {
+  if (n < 1 || n > 65535) {
+    throw new Error("Out of range");
+  }
   return n;
 });
 typePort.decoder("8080"); // → 8080

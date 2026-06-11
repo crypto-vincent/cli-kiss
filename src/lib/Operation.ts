@@ -12,7 +12,7 @@ import { UsageOption, UsagePositional } from "./Usage";
  * @typeParam Context - Injected at execution; forwarded to handlers.
  * @typeParam Result - Value produced on execution; typically `void`.
  */
-export type Operation<Context, Result> = {
+export type Operation<Context, Result = void> = {
   /**
    * Returns usage metadata without consuming any arguments.
    */
@@ -132,7 +132,9 @@ export function operation<
       return { options: optionsUsage, positionals: positionalsUsage };
     },
     consumeAndMakeDecoder(readerArgs: ReaderArgs) {
-      const optionsDecoders: Record<string, OptionDecoder<any>> = {};
+      const optionsDecoders = {} as {
+        [K in keyof Options]: OptionDecoder<Options[K]>;
+      };
       if (inputs.options !== undefined) {
         for (const optionKey in inputs.options) {
           const optionInput = inputs.options[optionKey]!;
@@ -140,7 +142,9 @@ export function operation<
             optionInput.registerAndMakeDecoder(readerArgs);
         }
       }
-      const positionalsDecoders: Array<PositionalDecoder<any>> = [];
+      const positionalsDecoders = [] as {
+        [K in keyof Positionals]: PositionalDecoder<Positionals[K]>;
+      };
       if (inputs.positionals !== undefined) {
         for (const positionalInput of inputs.positionals) {
           positionalsDecoders.push(
@@ -150,12 +154,16 @@ export function operation<
       }
       return {
         decodeAndMakeInterpreter() {
-          const optionsValues: any = {};
+          const optionsValues = {} as {
+            [K in keyof Options]: Options[K];
+          };
           for (const optionKey in optionsDecoders) {
             optionsValues[optionKey] =
               optionsDecoders[optionKey]!.getAndDecodeValue();
           }
-          const positionalsValues: any = [];
+          const positionalsValues = [] as {
+            [K in keyof Positionals]: Positionals[K];
+          };
           for (const positionalDecoder of positionalsDecoders) {
             positionalsValues.push(positionalDecoder.decodeValue());
           }

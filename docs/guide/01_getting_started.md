@@ -20,7 +20,7 @@ import {
   optionFlag,
   positionalRequired,
   runAndExit,
-  type,
+  typeString,
 } from "cli-kiss";
 
 const greetCommand = command(
@@ -32,7 +32,7 @@ const greetCommand = command(
       },
       positionals: [
         positionalRequired({
-          type: type("name"),
+          type: typeString("name"),
           description: "The name of the person to greet",
         }),
       ],

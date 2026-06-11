@@ -116,9 +116,9 @@ export async function runAndExit<Context>(
     });
   }
   // TODO - the lifecycle of this function should be improved
-  // TODO - how to pass the color information to the command logic ?
+  // TODO - how to pass the color TypoSupport to the command logic ?
+  // TODO - handle completions generators ?
   /*
-  // TODO - handle completions ?
   readerArgs.registerFlag({
     key: "completion",
     shorts: [],

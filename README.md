@@ -25,7 +25,7 @@ import {
   optionFlag,
   positionalRequired,
   runAndExit,
-  type,
+  typeString,
 } from "cli-kiss";
 
 const greet = command(
@@ -35,7 +35,7 @@ const greet = command(
       options: {
         loud: optionFlag({ long: "loud", description: "Print in uppercase" }),
       },
-      positionals: [positionalRequired({ type: type("name") })],
+      positionals: [positionalRequired({ type: typeString("name") })],
     },
     async (_ctx, { options: { loud }, positionals: [name] }) => {
       const text = `Hello, ${name}!`;

@@ -12,10 +12,10 @@ import {
   positionalRequired,
   positionalVariadics,
   ReaderArgs,
-  type,
   typeChoice,
   typeList,
   typeNumber,
+  typeString,
   typeTuple,
   TypoSupport,
   usageToStyledLines,
@@ -79,13 +79,13 @@ const rootCommand = commandChained<any, any, any>(
           stringOption: optionSingleValue({
             short: "s",
             long: "string-option",
-            type: type("cool-stuff"),
+            type: typeString("cool-stuff"),
             fallbackValueIfAbsent: () => undefined,
             description: "string-option description",
           }),
           complexOption: optionRepeatable({
             long: "complex-option",
-            type: typeTuple([typeNumber(), typeList(type("string"))]),
+            type: typeTuple([typeNumber(), typeList(typeString("string"))]),
             description: "complex-option description",
           }),
         },
@@ -127,7 +127,7 @@ const rootCommand = commandChained<any, any, any>(
             positionals: [
               positionalRequired({
                 description: "Required positional string",
-                type: type("pos-3.1"),
+                type: typeString("pos-3.1"),
               }),
             ],
           },
@@ -172,14 +172,14 @@ const rootCommand = commandChained<any, any, any>(
             options: {
               duduValue: optionSingleValue({
                 long: "dudu",
-                type: type("dudu-value"),
+                type: typeString("dudu-value"),
                 fallbackValueIfAbsent: () => "duduDefault",
                 hint: "Dudu option hint",
                 description: "Dudu option description",
               }),
               impliable: optionSingleValue({
                 long: "impliable",
-                type: type("text"),
+                type: typeString("text"),
                 impliedValueIfNotInlined: () => "implied",
                 fallbackValueIfAbsent: () => "absent",
               }),
@@ -192,12 +192,12 @@ const rootCommand = commandChained<any, any, any>(
               positionalOptional({
                 description: "Optional positional string",
                 hint: "Optional positional hint",
-                type: type("pos-4"),
+                type: typeString("pos-4"),
                 default: () => "42",
               }),
               positionalVariadics({
                 description: "Variadic positionals strings",
-                type: type("pos-5"),
+                type: typeString("pos-5"),
               }),
             ],
           },
