@@ -72,11 +72,6 @@ export type OptionDecoder<Value> = {
  *   short: "v",
  *   description: "Enable verbose output",
  * });
- * // Usage:
- * //   my-cli  →  false
- * //   my-cli --verbose  →  true
- * //   my-cli --verbose=yes  →  true
- * //   my-cli -v=no  →  false
  * ```
  */
 export function optionFlag(definition: {
@@ -129,9 +124,11 @@ export function optionFlag(definition: {
  *
  * Syntax: `--long value`, `--long=value`, `-s value`, `-s=value`, `-svalue`.
  * Parsing logic:
- * - absent → `fallbackValueIfNotSet()`
- * - once → decoded with `type`
+ * - absent → `fallbackValueIfAbsent()`
+ * - `--long value` → decoded with `type.decoder("value")`
  * - more than once → throws
+ * - if `impliedValueIfNotInlined` is not provided, then: `--long` / `-s` without a value → throws
+ * - if `impliedValueIfNotInlined` is provided, then: `--long` / `-s` without an inline value → `impliedValueIfNotInlined()`
  *
  * @typeParam Value - Type produced by the decoder.
  *
@@ -152,12 +149,8 @@ export function optionFlag(definition: {
  *   short: "o",
  *   type: typePath(),
  *   description: "Output directory",
- *   fallbackValueIfNotSet: () => "dist",
+ *   fallbackValueIfAbsent: () => "dist",
  * });
- * // Usage:
- * //   my-cli  →  "dist"
- * //   my-cli --output folder  →  "folder"
- * //   my-cli -o folder  →  "folder"
  * ```
  */
 export function optionSingleValue<Value>(definition: {
@@ -277,7 +270,6 @@ export function optionSingleValue<Value>(definition: {
  *   label: "PATH",
  *   description: "Input file (may be repeated)",
  * });
- * // Usage: my-cli --file a.ts --file b.ts  →  ["a.ts", "b.ts"]
  * ```
  */
 export function optionRepeatable<Value>(definition: {

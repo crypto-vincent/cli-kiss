@@ -46,6 +46,11 @@ export type PositionalDecoder<Value> = {
 /**
  * Creates a required positional — missing token throws.
  *
+ * Syntax: `<type>`, e.g. `<NAME>`.
+ * Parsing logic:
+ * - "token" → decoded with `type.decoder("token")`
+ * - token missing → throws
+ *
  * @typeParam Value - Type produced by the decoder.
  *
  * @param definition.description - Help text.
@@ -60,8 +65,6 @@ export type PositionalDecoder<Value> = {
  *   type: type("name"),
  *   description: "The name to greet",
  * });
- * // Usage:
- * //   my-cli Alice  →  "Alice"
  * ```
  */
 export function positionalRequired<Value>(definition: {
@@ -100,6 +103,11 @@ export function positionalRequired<Value>(definition: {
 /**
  * Creates an optional positional — absent token falls back to `default()`.
  *
+ * Syntax: `[type]`, e.g. `[NAME]`.
+ * Parsing logic:
+ * - "token" → decoded with `type.decoder("token")`
+ * - token missing → `default()`
+ *
  * @typeParam Value - Type produced by the decoder (or the default).
  *
  * @param definition.description - Help text.
@@ -116,9 +124,6 @@ export function positionalRequired<Value>(definition: {
  *   hint: "Defaults to \"world\"",
  *   default: () => "world",
  * });
- * // Usage:
- * //   my-cli  →  "world"
- * //   my-cli Alice  →  "Alice"
  * ```
  */
 export function positionalOptional<Value>(definition: {
@@ -155,6 +160,12 @@ export function positionalOptional<Value>(definition: {
  * Creates a variadic positional that collects zero or more remaining tokens into an array.
  * Optionally stops at `endDelimiter` (consumed, not included).
  *
+ * Syntax: `[type]...`, e.g. `[NAME]...`.
+ * Parsing logic:
+ * - "a b ..." → decoded with `[type.decoder("a")`, `type.decoder("b"), ...]``
+ * - token missing → stops collection
+ * - endDelimiter encountered → stops collection
+ *
  * @typeParam Value - Type produced by the decoder for each token.
  *
  * @param definition.endDelimiter - Sentinel token that stops collection (consumed, not included).
@@ -169,9 +180,6 @@ export function positionalOptional<Value>(definition: {
  *   type: typePath(),
  *   description: "Files to process",
  * });
- * // Usage:
- * //   my-cli  →  []
- * //   my-cli a.ts b.ts c.ts  →  ["a.ts", "b.ts", "c.ts"]
  * ```
  */
 export function positionalVariadics<Value>(definition: {

@@ -118,7 +118,7 @@ export type CommandInformation = {
  * const greet = command(
  *   { description: "Greet a user" },
  *   operation(
- *     { options: {}, positionals: [positionalRequired({ type: type("name") })] },
+ *     { positionals: [positionalRequired({ type: type("name") })] },
  *     async (_ctx, { positionals: [name] }) => console.log(`Hello, ${name}!`),
  *   ),
  * );
@@ -168,7 +168,8 @@ export function command<Context, Result = void>(
 }
 
 /**
- * Creates a command that runs `operation` first, then dispatches to a named subcommand.
+ * Creates a command that runs `operation` first,
+ * then dispatches result to a named subcommand.
  *
  * @typeParam Context - Context accepted by `operation`.
  * @typeParam Payload - Output of `operation`; becomes the subcommand's context.
@@ -275,8 +276,8 @@ export function commandWithSubcommands<Context, Payload, Result = void>(
 }
 
 /**
- * Chains an {@link Operation} and a {@link Command}: `operation` runs first, its
- * output becomes `subcommand`'s context. No token is consumed for routing.
+ * Chains an {@link Operation} and a {@link Command}: `operation` runs first,
+ * its output becomes `subcommand`'s context. No token is consumed for routing.
  *
  * @typeParam Context - Context accepted by `operation`.
  * @typeParam Payload - Output of `operation`; becomes `subcommand`'s context.
