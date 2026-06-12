@@ -35,7 +35,12 @@ const greet = command(
       options: {
         loud: optionFlag({ long: "loud", description: "Print in uppercase" }),
       },
-      positionals: [positionalRequired({ type: typeString("name") })],
+      positionals: [
+        positionalRequired({
+          type: typeString("name"),
+          description: "The name of the person to greet",
+        }),
+      ],
     },
     async (_ctx, { options: { loud }, positionals: [name] }) => {
       const text = `Hello, ${name}!`;
@@ -59,7 +64,7 @@ Usage: greet <name>
 Greet someone
 
 Positionals:
-  <name>
+  <name> The name of the person to greet
 
 Options:
   --loud[=no]  Print in uppercase

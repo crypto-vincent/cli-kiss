@@ -95,7 +95,7 @@ export class ReaderArgs {
    * Registers a long option and returns a getter for its parsed values.
    */
   registerOptionLong(longSpec: ReaderOptionLongSpec): ReaderOptionGetter {
-    const identifier = `--${longSpec.key}`;
+    const identifier = `--${longSpec.key}`; // TODO - is this necessary ?
     if (!isValidOptionKey(longSpec.key)) {
       throw new Error(`Option identifier is invalid: ${identifier}.`);
     }
