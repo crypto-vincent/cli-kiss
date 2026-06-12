@@ -402,7 +402,7 @@ export class TypoSupport {
       return TypoSupport.tty();
     }
     if (envForceColor === "3") {
-      return TypoSupport.tty(); // TODO - should there be fancy colors possible?
+      return TypoSupport.tty();
     }
     if (envForceColor) {
       return TypoSupport.tty();

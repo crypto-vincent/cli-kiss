@@ -1,7 +1,6 @@
 import {
   ReaderOptionGetter,
   ReaderOptionNextGuard,
-  ReaderOptionRestGuard,
   ReaderOptions,
   ReaderOptionValue,
 } from "./Reader";
@@ -94,8 +93,8 @@ export function optionFlag(definition: {
         shortKey: short,
         aliasLongKeys: aliases?.longs,
         aliasShortKeys: aliases?.shorts,
-        restGuard: () => false,
         nextGuard: () => false,
+        consumeGroupRestAsValue: false,
       });
       return {
         getAndDecodeValue() {
@@ -180,12 +179,6 @@ export function optionSingleValue<Value>(definition: {
         shortKey: short,
         aliasLongKeys: aliases?.longs,
         aliasShortKeys: aliases?.shorts,
-        restGuard: () => {
-          if (definition.impliedValueIfNotInlined !== undefined) {
-            return false;
-          }
-          return true;
-        },
         nextGuard: (value) => {
           if (definition.impliedValueIfNotInlined !== undefined) {
             return false;
@@ -198,6 +191,8 @@ export function optionSingleValue<Value>(definition: {
           }
           return true;
         },
+        consumeGroupRestAsValue:
+          definition.impliedValueIfNotInlined === undefined,
       });
       return {
         getAndDecodeValue() {
@@ -292,7 +287,6 @@ export function optionRepeatable<Value>(definition: {
         shortKey: short,
         aliasLongKeys: aliases?.longs,
         aliasShortKeys: aliases?.shorts,
-        restGuard: () => true,
         nextGuard: (value) => {
           if (value.inlined !== null) {
             return false;
@@ -302,6 +296,7 @@ export function optionRepeatable<Value>(definition: {
           }
           return true;
         },
+        consumeGroupRestAsValue: true,
       });
       return {
         getAndDecodeValue() {
@@ -354,7 +349,7 @@ function setupOptionAliased(
     aliasLongKeys: Array<string> | undefined;
     aliasShortKeys: Array<string> | undefined;
     nextGuard: ReaderOptionNextGuard;
-    restGuard: ReaderOptionRestGuard;
+    consumeGroupRestAsValue: boolean;
   },
 ): () => Array<{ identifier: string; value: ReaderOptionValue }> {
   const { longKey, shortKey, aliasLongKeys, aliasShortKeys } = params;
@@ -369,8 +364,8 @@ function setupOptionAliased(
   return setupOptionMany(readerOptions, {
     longKeys,
     shortKeys,
-    restGuard: params.restGuard,
     nextGuard: params.nextGuard,
+    consumeGroupRestAsValue: params.consumeGroupRestAsValue,
   });
 }
 
@@ -380,10 +375,10 @@ function setupOptionMany(
     longKeys: Array<string>;
     shortKeys: Array<string>;
     nextGuard: ReaderOptionNextGuard;
-    restGuard: ReaderOptionRestGuard;
+    consumeGroupRestAsValue: boolean;
   },
 ): () => Array<{ identifier: string; value: ReaderOptionValue }> {
-  const { longKeys, shortKeys, restGuard, nextGuard } = params;
+  const { longKeys, shortKeys, nextGuard, consumeGroupRestAsValue } = params;
   const getters = new Map<string, ReaderOptionGetter>();
   for (const key of longKeys) {
     getters.set(
@@ -394,7 +389,11 @@ function setupOptionMany(
   for (const key of shortKeys) {
     getters.set(
       `-${key}`,
-      readerOptions.registerOptionShort({ key, nextGuard, restGuard }),
+      readerOptions.registerOptionShort({
+        key,
+        nextGuard,
+        consumeGroupRestAsValue,
+      }),
     );
   }
   return () => {

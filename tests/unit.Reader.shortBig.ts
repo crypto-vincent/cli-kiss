@@ -1,9 +1,5 @@
 import { expect, it } from "@jest/globals";
-import {
-  ReaderArgs,
-  ReaderOptionNextGuard,
-  ReaderOptionRestGuard,
-} from "../src";
+import { ReaderArgs, ReaderOptionNextGuard } from "../src";
 
 it("run", async function () {
   const stream = new ReaderArgs([
@@ -25,79 +21,79 @@ it("run", async function () {
 
   const kSofUnset = stream.registerOptionShort({
     key: "sof-unset",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kSofNormal = stream.registerOptionShort({
     key: "sof-normal",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kSofPositive = stream.registerOptionShort({
     key: "sof-positive",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kSofNegative = stream.registerOptionShort({
     key: "sof-negative",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
 
   const kAa = stream.registerOptionShort({
     key: "aa",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kBb = stream.registerOptionShort({
     key: "bb",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kCc = stream.registerOptionShort({
     key: "cc",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
 
   expect(stream.consumePositional()).toStrictEqual("positional-1");
 
   const kSovSplit = stream.registerOptionShort({
     key: "sov-split",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
   const kSovJoin = stream.registerOptionShort({
     key: "sov-join",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
   const kSovUnset = stream.registerOptionShort({
     key: "sov-unset",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
 
   const kDd = stream.registerOptionShort({
     key: "dd",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kEe = stream.registerOptionShort({
     key: "ee",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
 
   const kFf = stream.registerOptionShort({
     key: "ff",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kGg = stream.registerOptionShort({
     key: "gg",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
 
   expect(stream.consumePositional()).toStrictEqual("positional-2");
@@ -127,9 +123,6 @@ it("run", async function () {
   expect(kGg()).toStrictEqual([{ inlined: null, separated: [] }]);
 });
 
-const optionFlagRestGuard: ReaderOptionRestGuard = () => false;
 const optionFlagNextGuard: ReaderOptionNextGuard = () => false;
-
-const optionValuedRestGuard: ReaderOptionRestGuard = () => true;
 const optionValuedNextGuard: ReaderOptionNextGuard = (value) =>
   value.inlined === null && value.separated.length === 0;

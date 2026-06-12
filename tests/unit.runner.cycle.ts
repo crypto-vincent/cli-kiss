@@ -20,13 +20,15 @@ it("run", async function () {
   const rootUsage = [
     "Usage: my-cli <req1> <subcommand>",
     "",
-    "Root Description",
+    "Root Description (Hint for root)",
+    "Root details1",
+    "Root details2",
     "",
     "Positionals:",
-    "  <req1>  Required1 positional description",
+    "  <req1>  Required1 positional description (Hint for req1)",
     "",
     "Subcommands:",
-    "  sub  Subcommand Description",
+    "  sub  Subcommand Description (Hint for sub)",
     "",
     "Options:",
     "  -ff, --flag[=no]                    Option flag description",
@@ -37,10 +39,12 @@ it("run", async function () {
   const subUsage = [
     "Usage: my-cli <req1> sub <req2> [optional] [variadic]...",
     "",
-    "Subcommand Description",
+    "Subcommand Description (Hint for sub)",
+    "Sub details1",
+    "Sub details2",
     "",
     "Positionals:",
-    "  <req1>         Required1 positional description",
+    "  <req1>         Required1 positional description (Hint for req1)",
     "  <req2>         Required2 positional description",
     "  [optional]     Optional positional description",
     "  [variadic]...  Variadics positional description",
@@ -123,14 +127,14 @@ it("run", async function () {
     [],
     [
       rootUsage,
-      "Error: <req1>: Is required, but was not provided. (Required1 positional description)",
+      "Error: Missing argument: <req1>: Required1 positional description (Hint for req1)",
     ],
     1,
   );
   await testCase(
     ["req1"],
     [],
-    [rootUsage, "Error: <subcommand>: Missing argument. Did you mean: sub ?"],
+    [rootUsage, "Error: Missing argument: <subcommand>. Did you mean: sub ?"],
     1,
   );
   await testCase(
@@ -138,7 +142,7 @@ it("run", async function () {
     [],
     [
       subUsage,
-      "Error: <req2>: Is required, but was not provided. (Required2 positional description)",
+      "Error: Missing argument: <req2>: Required2 positional description",
     ],
     1,
   );
@@ -167,7 +171,7 @@ it("run", async function () {
     [],
     [
       subUsage,
-      "Error: <req2>: Is required, but was not provided. (Required2 positional description)",
+      "Error: Missing argument: <req2>: Required2 positional description",
     ],
     1,
   );
@@ -252,7 +256,7 @@ it("run", async function () {
   await testCase(
     ["invalid"],
     [],
-    [rootUsage, "Error: <subcommand>: Missing argument. Did you mean: sub ?"],
+    [rootUsage, "Error: Missing argument: <subcommand>. Did you mean: sub ?"],
     1,
   );
   await testCase(
@@ -407,7 +411,11 @@ async function testCase(
   ]);
   const onExit = makeMocked<number, never>([null as never]);
   const cmd = commandWithSubcommands<null, void, void>(
-    { description: "Root Description" },
+    {
+      description: "Root Description",
+      hint: "Hint for root",
+      details: ["Root details1", "Root details2"],
+    },
     operation(
       {
         options: {
@@ -438,6 +446,7 @@ async function testCase(
           positionalRequired({
             type: typeChoice("req1", ["req1", "req1-bis"]),
             description: "Required1 positional description",
+            hint: "Hint for req1",
           }),
         ],
       },
@@ -447,7 +456,11 @@ async function testCase(
     ),
     {
       sub: command(
-        { description: "Subcommand Description" },
+        {
+          description: "Subcommand Description",
+          hint: "Hint for sub",
+          details: ["Sub details1", "Sub details2"],
+        },
         operation(
           {
             options: {

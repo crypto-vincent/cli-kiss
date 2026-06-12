@@ -197,10 +197,14 @@ export function commandWithSubcommands<Context, Payload, Result = void>(
   operation: Operation<Context, Payload>,
   subcommands: { [subcommand: string]: Command<Payload, Result> },
 ): Command<Context, Result> {
-  // TODO - forbid subcommands that start with a "-" ?
   const subcommandNames = Object.keys(subcommands);
   if (subcommandNames.length === 0) {
     throw new Error("At least one subcommand is required");
+  }
+  for (const name of subcommandNames) {
+    if (name.startsWith("-")) {
+      throw new Error(`Subcommand name "${name}" cannot start with "-".`);
+    }
   }
   return {
     getInformation() {
@@ -212,8 +216,9 @@ export function commandWithSubcommands<Context, Payload, Result = void>(
         const subcommandName = readerArgs.consumePositional();
         if (subcommandName === undefined) {
           const errorText = new TypoText();
+          errorText.push(new TypoString(`Missing argument: `));
           errorText.push(new TypoString(`<subcommand>`, typoStyleUserInput));
-          errorText.push(new TypoString(`: Missing argument.`));
+          errorText.push(new TypoString(`.`));
           suggestSubcommandNames(errorText, "", subcommandNames);
           throw new TypoError(errorText);
         }

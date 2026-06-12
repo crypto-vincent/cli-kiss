@@ -18,16 +18,9 @@ export type ReaderOptionLongSpec = {
 /**
  * Represents the parsing specification for a short option
  */
-export type ReaderOptionShortSpec = {
-  key: string;
-  restGuard: ReaderOptionRestGuard; // TODO - should this be just a bool?
-  nextGuard: ReaderOptionNextGuard;
+export type ReaderOptionShortSpec = ReaderOptionLongSpec & {
+  consumeGroupRestAsValue: boolean;
 };
-
-/**
- * Determines whether a token suffix is valid for a given short option.
- */
-export type ReaderOptionRestGuard = (rest: string) => boolean;
 
 /**
  * Determines whether the next token is valid for a given option.
@@ -244,7 +237,7 @@ export class ReaderArgs {
       this.#consumeOptionValues(shortContext, null);
       return true;
     }
-    if (shortContext.spec.restGuard(tokenRest)) {
+    if (shortContext.spec.consumeGroupRestAsValue) {
       this.#consumeOptionValues(shortContext, tokenRest);
       return true;
     }

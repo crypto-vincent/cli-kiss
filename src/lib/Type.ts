@@ -20,9 +20,9 @@ import {
  * - {@link typeDatetime}
  * - {@link typeUrl}
  * - {@link typePath}
+ * - {@link typeChoice}
  *
  * Composed Types:
- * - {@link typeChoice}
  * - {@link typeMapped}
  * - {@link typeTuple}
  * - {@link typeList}
@@ -61,6 +61,37 @@ export function typeString(name?: string): Type<string> {
 }
 
 /**
+ * Decodes a string to `boolean` (case-insensitive).
+ * Used by {@link optionFlag} for `--flag=<value>`.
+ *
+ * @example
+ * ```ts
+ * typeBoolean("flag").decoder("true")  // → true
+ * typeBoolean("flag").decoder("yes")   // → true
+ * typeBoolean("flag").decoder("Y")     // → true
+ * typeBoolean("flag").decoder("FALSE") // → false
+ * typeBoolean("flag").decoder("NO")    // → false
+ * typeBoolean("flag").decoder("n")     // → false
+ * typeBoolean("flag").decoder("maybe") // throws
+ * ```
+ */
+export function typeBoolean(name?: string): Type<boolean> {
+  return {
+    content: name ?? "boolean",
+    decoder(input: string) {
+      const lowerInput = input.toLowerCase();
+      if (typeBooleanValuesTrue.has(lowerInput)) {
+        return true;
+      }
+      if (typeBooleanValuesFalse.has(lowerInput)) {
+        return false;
+      }
+      throwInvalidValue("a boolean", input);
+    },
+  };
+}
+
+/**
  * Parses a string to `number` via `Number()`; `NaN` throws.
  *
  * @example
@@ -88,32 +119,25 @@ export function typeNumber(name?: string): Type<number> {
 }
 
 /**
- * Decodes a string to `boolean` (case-insensitive).
- * Used by {@link optionFlag} for `--flag=<value>`.
+ * Parses an integer string to `bigint` via `BigInt()`.
+ * Floats and non-numeric strings throws.
  *
  * @example
  * ```ts
- * typeBoolean("flag").decoder("true")  // → true
- * typeBoolean("flag").decoder("yes")   // → true
- * typeBoolean("flag").decoder("Y")     // → true
- * typeBoolean("flag").decoder("FALSE") // → false
- * typeBoolean("flag").decoder("NO")    // → false
- * typeBoolean("flag").decoder("n")     // → false
- * typeBoolean("flag").decoder("maybe") // throws
+ * typeInteger("my-integer").decoder("42")   // → 42n
+ * typeInteger("my-integer").decoder("3.14") // throws
+ * typeInteger("my-integer").decoder("abc")  // throws
  * ```
  */
-export function typeBoolean(name?: string): Type<boolean> {
+export function typeInteger(name?: string): Type<bigint> {
   return {
-    content: name ?? "boolean",
+    content: name ?? "integer",
     decoder(input: string) {
-      const lowerInput = input.toLowerCase();
-      if (typeBooleanValuesTrue.has(lowerInput)) {
-        return true;
+      try {
+        return BigInt(input);
+      } catch {
+        throwInvalidValue("an integer", input);
       }
-      if (typeBooleanValuesFalse.has(lowerInput)) {
-        return false;
-      }
-      throwInvalidValue("a boolean", input);
     },
   };
 }
@@ -147,30 +171,6 @@ export function typeDatetime(name?: string): Type<Date> {
 }
 
 /**
- * Parses an integer string to `bigint` via `BigInt()`.
- * Floats and non-numeric strings throws.
- *
- * @example
- * ```ts
- * typeInteger("my-integer").decoder("42")   // → 42n
- * typeInteger("my-integer").decoder("3.14") // throws
- * typeInteger("my-integer").decoder("abc")  // throws
- * ```
- */
-export function typeInteger(name?: string): Type<bigint> {
-  return {
-    content: name ?? "integer",
-    decoder(input: string) {
-      try {
-        return BigInt(input);
-      } catch {
-        throwInvalidValue("an integer", input);
-      }
-    },
-  };
-}
-
-/**
  * Parses an absolute URL string to a `URL` object.
  * Relative or malformed URLs throws.
  *
@@ -189,78 +189,6 @@ export function typeUrl(name?: string): Type<URL> {
       } catch {
         throwInvalidValue("an URL", input);
       }
-    },
-  };
-}
-
-/**
- * Chains `before`'s decoder with an `after` transformation.
- * `before` errors are prefixed with `"from: <content>"` for traceability.
- *
- * @typeParam Before - Intermediate type from `before.decoder`.
- * @typeParam After - Final type from `after.decoder`.
- *
- * @param name - Name shown in help and errors (e.g. `"my-value"`).
- * @param before - Base type to decode the raw string.
- * @param mapper - Transforms `before`'s output to the final value; errors are wrapped with context.
- * @returns A {@link Type}`<After>`.
- *
- * @example
- * ```ts
- * const typePort = typeMapped("port", typeNumber(), (n) => {
- *   if (n < 1 || n > 65535) {
- *     throw new Error("Out of range");
- *   }
- *   return n;
- * });
- * typePort.decoder("8080");  // → 8080
- * typePort.decoder("70000"); // throws
- * ```
- */
-export function typeMapped<Before, After>(
-  name: string,
-  before: Type<Before>,
-  mapper: (value: Before) => After,
-): Type<After> {
-  return {
-    content: name,
-    decoder: (input: string) => {
-      return mapper(
-        TypoError.tryWithContext(
-          () => before.decoder(input),
-          () =>
-            new TypoText(
-              new TypoString("from: "),
-              new TypoString(before.content, typoStyleLogic),
-            ),
-        ),
-      );
-    },
-  };
-}
-
-/**
- * Adds a name to a {@link Type} for clearer error messages and help text.
- *
- * @param name - Name to use for the type.
- * @param type - Base type to name.
- * @returns A {@link Type} with the given name.
- */
-export function typeRenamed<Value>(
-  type: Type<Value>,
-  name: string,
-): Type<Value> {
-  return {
-    content: name,
-    decoder: (input: string) => {
-      return TypoError.tryWithContext(
-        () => type.decoder(input),
-        () =>
-          new TypoText(
-            new TypoString("from: "),
-            new TypoString(type.content, typoStyleLogic),
-          ),
-      );
     },
   };
 }
@@ -386,6 +314,78 @@ export function typeChoice<const Value extends string>(
 }
 
 /**
+ * Chains `before`'s decoder with an `after` transformation.
+ * `before` errors are prefixed with `"from: <content>"` for traceability.
+ *
+ * @typeParam Before - Intermediate type from `before.decoder`.
+ * @typeParam After - Final type from `after.decoder`.
+ *
+ * @param name - Name shown in help and errors (e.g. `"my-value"`).
+ * @param before - Base type to decode the raw string.
+ * @param mapper - Transforms `before`'s output to the final value; errors are wrapped with context.
+ * @returns A {@link Type}`<After>`.
+ *
+ * @example
+ * ```ts
+ * const typePort = typeMapped("port", typeNumber(), (n) => {
+ *   if (n < 1 || n > 65535) {
+ *     throw new Error("Out of range");
+ *   }
+ *   return n;
+ * });
+ * typePort.decoder("8080");  // → 8080
+ * typePort.decoder("70000"); // throws
+ * ```
+ */
+export function typeMapped<Before, After>(
+  name: string,
+  before: Type<Before>,
+  mapper: (value: Before) => After,
+): Type<After> {
+  return {
+    content: name,
+    decoder: (input: string) => {
+      return mapper(
+        TypoError.tryWithContext(
+          () => before.decoder(input),
+          () =>
+            new TypoText(
+              new TypoString("from: "),
+              new TypoString(before.content, typoStyleLogic),
+            ),
+        ),
+      );
+    },
+  };
+}
+
+/**
+ * Adds a name to a {@link Type} for clearer error messages and help text.
+ *
+ * @param name - Name to use for the type.
+ * @param type - Base type to name.
+ * @returns A {@link Type} with the given name.
+ */
+export function typeRenamed<Value>(
+  type: Type<Value>,
+  name: string,
+): Type<Value> {
+  return {
+    content: name,
+    decoder: (input: string) => {
+      return TypoError.tryWithContext(
+        () => type.decoder(input),
+        () =>
+          new TypoText(
+            new TypoString("from: "),
+            new TypoString(type.content, typoStyleLogic),
+          ),
+      );
+    },
+  };
+}
+
+/**
  * Splits a delimited string into a typed tuple.
  * Each part is decoded by the corresponding element type; wrong count or decode failure throws.
  *
@@ -458,7 +458,7 @@ export function typeTuple<const Elements extends Array<any>>(
  * const typePaths = typeList(typePath(), ":");
  * typePaths.decoder("/bin:/usr") // → ["/bin", "/usr"]
  * typePaths.decoder("/usr/bin")  // → ["/usr/bin"]
- * typePaths.decoder("")          // → throws (empty string is not a valid path)
+ * typePaths.decoder("")          // → throws
  * ```
  */
 export function typeList<Value>(

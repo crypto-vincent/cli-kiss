@@ -1,9 +1,5 @@
 import { expect, it } from "@jest/globals";
-import {
-  ReaderArgs,
-  ReaderOptionNextGuard,
-  ReaderOptionRestGuard,
-} from "../src";
+import { ReaderArgs, ReaderOptionNextGuard } from "../src";
 
 it("run", async function () {
   const stream = new ReaderArgs([
@@ -78,59 +74,59 @@ it("run", async function () {
 
   const kA = stream.registerOptionShort({
     key: "a",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kB = stream.registerOptionShort({
     key: "b",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
 
   const kC = stream.registerOptionShort({
     key: "c",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kD = stream.registerOptionShort({
     key: "d",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
 
   const kE = stream.registerOptionShort({
     key: "e",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kF = stream.registerOptionShort({
     key: "f",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
 
   expect(stream.consumePositional()).toStrictEqual("positional-2");
 
   const kG = stream.registerOptionShort({
     key: "g",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kH = stream.registerOptionShort({
     key: "h",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
 
   const kI = stream.registerOptionShort({
     key: "i",
-    restGuard: optionFlagRestGuard,
     nextGuard: optionFlagNextGuard,
+    consumeGroupRestAsValue: false,
   });
   const kJ = stream.registerOptionShort({
     key: "j",
-    restGuard: optionValuedRestGuard,
     nextGuard: optionValuedNextGuard,
+    consumeGroupRestAsValue: true,
   });
 
   expect(stream.consumePositional()).toStrictEqual("positional-3");
@@ -182,9 +178,6 @@ it("run", async function () {
   expect(kJ()).toStrictEqual([{ inlined: "TRUE", separated: [] }]);
 });
 
-const optionFlagRestGuard: ReaderOptionRestGuard = () => false;
 const optionFlagNextGuard: ReaderOptionNextGuard = () => false;
-
-const optionValuedRestGuard: ReaderOptionRestGuard = () => true;
 const optionValuedNextGuard: ReaderOptionNextGuard = (value) =>
   value.inlined === null && value.separated.length === 0;

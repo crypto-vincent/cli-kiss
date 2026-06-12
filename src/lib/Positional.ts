@@ -81,12 +81,17 @@ export function positionalRequired<Value>(definition: {
     consumeAndMakeDecoder(readerPositionals: ReaderPositionals) {
       const positional = readerPositionals.consumePositional();
       if (positional === undefined) {
-        const errorText = makeErrorText(label);
-        errorText.push(new TypoString(`: Is required, but was not provided.`));
+        const errorText = makeErrorTextLabel("Missing argument", label);
         if (description !== undefined) {
-          // TODO - should there be a dedicated hint here ?
           errorText.push(
-            new TypoString(` (${description})`, typoStyleRegularWeaker),
+            new TypoString(`: `),
+            new TypoString(`${description}`),
+          );
+        }
+        if (hint !== undefined) {
+          errorText.push(
+            new TypoString(` `),
+            new TypoString(`(${hint})`, typoStyleRegularWeaker),
           );
         }
         throw new TypoError(errorText);
@@ -146,7 +151,12 @@ export function positionalOptional<Value>(definition: {
             try {
               return definition.default();
             } catch (error) {
-              throwsWhenFailedToGetDefault(label);
+              const errorText = makeErrorTextLabel(
+                "Failed to get default value",
+                label,
+              );
+              errorText.push(new TypoString("."));
+              throw new TypoError(errorText, error);
             }
           }
           return decodeValue(label, definition.type, positional);
@@ -231,14 +241,9 @@ function decodeValue<Value>(
   );
 }
 
-function makeErrorText(label: string): TypoText {
+function makeErrorTextLabel(message: string, label: string): TypoText {
   const errorText = new TypoText();
+  errorText.push(new TypoString(`${message}: `));
   errorText.push(new TypoString(label, typoStyleUserInput));
   return errorText;
-}
-
-function throwsWhenFailedToGetDefault(label: string): never {
-  const errorText = makeErrorText(label);
-  errorText.push(new TypoString(`: Failed to get default value.`));
-  throw new TypoError(errorText);
 }
